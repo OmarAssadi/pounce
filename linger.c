@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,8 @@ static char *censor(char *arg) {
 }
 
 int main(int argc, char *argv[]) {
+	int error;
+
 	const char *localHost = "localhost";
 	const char *localPort = "6697";
 	const char *localPass = NULL;
@@ -92,8 +95,6 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
-	int error;
-
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
@@ -119,36 +120,48 @@ int main(int argc, char *argv[]) {
 		.ai_protocol = IPPROTO_TCP,
 	};
 	error = getaddrinfo(localHost, localPort, &hints, &head);
-	if (error) errx(EX_NOHOST, "getaddrinfo: %s", gai_strerror(error));
-
-	int sock = -1;
-	for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
-		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (sock < 0) err(EX_OSERR, "socket");
-
-		error = bind(sock, ai->ai_addr, ai->ai_addrlen);
-		if (!error) break;
-
-		close(sock);
-		sock = -1;
+	if (error) {
+		errx(EX_NOHOST, "%s:%s: %s", localHost, localPort, gai_strerror(error));
 	}
-	if (sock < 0) err(EX_UNAVAILABLE, "bind");
+
+	enum { PollCap = 64 };
+	struct pollfd fds[PollCap];
+
+	size_t binds = 0;
+	for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
+		fds[binds].fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (fds[binds].fd < 0) err(EX_OSERR, "socket");
+
+		error = bind(fds[binds].fd, ai->ai_addr, ai->ai_addrlen);
+		if (error) {
+			warn("%s:%s", localHost, localPort);
+			close(fds[binds].fd);
+			continue;
+		}
+
+		if (++binds == PollCap) errx(EX_CONFIG, "too many sockets to bind");
+	}
+	if (!binds) return EX_UNAVAILABLE;
 	freeaddrinfo(head);
 
-	error = listen(sock, 1);
-	if (error) err(EX_IOERR, "listen");
+	for (size_t i = 0; i < binds; ++i) {
+		fds[i].events = POLLIN;
+		error = listen(fds[i].fd, 1);
+		if (error) err(EX_IOERR, "listen");
+	}
 
-	int client = accept(sock, NULL, NULL);
-	if (client < 0) err(EX_IOERR, "accept");
+	while (0 < poll(fds, binds, -1)) {
+		for (size_t i = 0; i < binds; ++i) {
+			if (!fds[i].revents) continue;
 
-	struct tls *tls;
-	error = tls_accept_socket(server, &tls, client);
-	if (error) errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
+			int sock = accept(fds[i].fd, NULL, NULL);
+			if (sock < 0) err(EX_IOERR, "accept");
 
-	char buf[4096];
-	ssize_t len = tls_read(tls, buf, sizeof(buf));
-	if (len < 0) errx(EX_IOERR, "tls_read: %s", tls_error(tls));
-
-	buf[len] = '\0';
-	printf("%s", buf);
+			struct tls *client;
+			error = tls_accept_socket(server, &client, sock);
+			if (error) {
+				errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
+			}
+		}
+	}
 }
