@@ -1,0 +1,187 @@
+.Dd October 14, 2019
+.Dt LINGER 1
+.Os
+.
+.Sh NAME
+.Nm linger
+.Nd IRC bouncer
+.
+.Sh SYNOPSIS
+.Nm
+.Op Fl C Ar cert
+.Op Fl H Ar host
+.Op Fl K Ar priv
+.Op Fl P Ar port
+.Op Fl W Ar pass
+.Op Fl a Ar auth
+.Op Fl h Ar host
+.Op Fl j Ar chan
+.Op Fl n Ar nick
+.Op Fl p Ar port
+.Op Fl r Ar real
+.Op Fl u Ar user
+.Op Fl w Ar pass
+.Op Ar client ...
+.
+.Sh DESCRIPTION
+The
+.Nm
+daemon
+is a multi-client, TLS-only IRC bouncer.
+It maintains a persistent connection to an IRC server
+while allowing clients to connect and disconnect,
+receiving messages that were missed upon reconnection.
+.
+.Pp
+The arguments are as follows:
+.
+.Bl -tag -width "-C cert"
+.It Fl C Ar cert
+Load TLS certificate from
+.Ar cert .
+The default path is
+.Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /fullchain.pem
+where
+.Ar host
+is set by
+.Fl H .
+.
+.It Fl H Ar host
+Bind to local
+.Ar host .
+The default host is localhost.
+.
+.It Fl K Ar priv
+Load TLS private key from
+.Ar priv .
+The default path is
+.Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /privkey.pem
+where
+.Ar host
+is set by
+.Fl H .
+.
+.It Fl P Ar port
+Bind to local
+.Ar port .
+The default port is 6697.
+.
+.It Fl W Ar pass
+Require the password
+.Ar pass
+to connect.
+.
+.It Fl a Ar auth
+Authenticate with SASL PLAIN.
+.Ar auth
+is a colon-separated username and password.
+.
+.It Fl h Ar host
+Connect to
+.Ar host .
+.
+.It Fl j Ar chan
+Join the comma-separated list of
+.Ar chan .
+.
+.It Fl n Ar nick
+Set nickname to
+.Ar nick .
+The default nickname is the user's name.
+.
+.It Fl p Ar port
+Connect to
+.Ar port .
+The default port is 6697.
+.
+.It Fl r Ar real
+Set realname to
+.Ar real .
+The default realname is the same as the nickname.
+.
+.It Fl u Ar user
+Set the username to
+.Ar user .
+The default username is the same as the nickname.
+.
+.It Fl w Ar pass
+Log in with the password
+.Ar pass .
+.El
+.
+.Pp
+The remaining arguments name the clients
+that will connect to the bouncer.
+Clients identify themselves by setting their username.
+There is a default client
+that will be used for non-matching usernames.
+.
+.Sh STANDARDS
+The
+.Nm linger
+daemon implements the following:
+.
+.Bl -item
+.It
+.Rs
+.%A C. Kalt
+.%T Internet Relay Chat: Client Protocol
+.%I IETF
+.%N RFC 2812
+.%D April 2000
+.%U https://tools.ietf.org/html/rfc2812
+.Re
+.
+.It
+.Rs
+.%A Kevin L. Mitchell
+.%A Perry Lorier
+.%A Lee Hardy
+.%A William Pitcock
+.%T IRCv3.1 Client Capability Negotiation
+.%I IRCv3 Working Group
+.%U https://ircv3.net/specs/core/capability-negotiation-3.1.html
+.Re
+.
+.It
+.Rs
+.%A St\('ephan Kochen
+.%A Alexey Sokolov
+.%A Kyle Fuller
+.%A James Wheare
+.%T IRCv3.2 server-time Extension
+.%I IRCv3 Working Group
+.%U https://ircv3.net/specs/extensions/server-time-3.2
+.Re
+.
+.It
+.Rs
+.%A Jilles Tjoelker
+.%A William Pitcock
+.%T IRCv3.1 SASL Authentication
+.%I IRCv3 Working Group
+.%U https://ircv3.net/specs/extensions/sasl-3.1.html
+.Re
+.
+.It
+.Rs
+.%A K. Zeilenga, Ed.
+.%Q OpenLDAP Foundation
+.%T The PLAIN Simple Authentication and Security Layer (SASL) Mechanism
+.%I IETF
+.%N RFC 4616
+.%D August 2006
+.%U https://tools.ietf.org/html/rfc4616
+.Re
+.
+.It
+.Rs
+.%A S. Josefsson
+.%Q SJD
+.%T The Base16, Base32, and Base64 Data Encodings
+.%I IETF
+.%N RFC 4648
+.%D October 2006
+.%U https://tools.ietf.org/html/rfc4648
+.Re
+.El
