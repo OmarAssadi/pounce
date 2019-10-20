@@ -16,24 +16,15 @@
 
 #include <err.h>
 #include <limits.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
 
-#ifndef DEFAULT_CERT_PATH
-#define DEFAULT_CERT_PATH "/usr/local/etc/letsencrypt/live/%s/fullchain.pem"
-#endif
-
-#ifndef DEFAULT_PRIV_PATH
-#define DEFAULT_PRIV_PATH "/usr/local/etc/letsencrypt/live/%s/privkey.pem"
-#endif
+#include "bouncer.h"
 
 static char *censor(char *arg) {
 	char *dup = strdup(arg);
@@ -43,8 +34,6 @@ static char *censor(char *arg) {
 }
 
 int main(int argc, char *argv[]) {
-	int error;
-
 	const char *localHost = "localhost";
 	const char *localPort = "6697";
 	const char *localPass = NULL;
@@ -95,73 +84,16 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
-	struct tls_config *config = tls_config_new();
-	if (!config) errx(EX_SOFTWARE, "tls_config_new");
-
-	error = tls_config_set_keypair_file(config, certPath, privPath);
-	if (error) {
-		errx(
-			EX_CONFIG, "tls_config_set_keypair_file: %s",
-			tls_config_error(config)
-		);
-	}
-
-	struct tls *server = tls_server();
-	if (!server) errx(EX_SOFTWARE, "tls_server");
-
-	error = tls_configure(server, config);
-	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(server));
-	tls_config_free(config);
-
-	struct addrinfo *head;
-	struct addrinfo hints = {
-		.ai_family = AF_UNSPEC,
-		.ai_socktype = SOCK_STREAM,
-		.ai_protocol = IPPROTO_TCP,
-	};
-	error = getaddrinfo(localHost, localPort, &hints, &head);
-	if (error) {
-		errx(EX_NOHOST, "%s:%s: %s", localHost, localPort, gai_strerror(error));
-	}
-
 	enum { PollCap = 64 };
 	struct pollfd fds[PollCap];
 
-	size_t binds = 0;
-	for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
-		fds[binds].fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (fds[binds].fd < 0) err(EX_OSERR, "socket");
-
-		error = bind(fds[binds].fd, ai->ai_addr, ai->ai_addrlen);
-		if (error) {
-			warn("%s:%s", localHost, localPort);
-			close(fds[binds].fd);
-			continue;
-		}
-
-		if (++binds == PollCap) errx(EX_CONFIG, "too many sockets to bind");
-	}
-	if (!binds) return EX_UNAVAILABLE;
-	freeaddrinfo(head);
-
-	for (size_t i = 0; i < binds; ++i) {
-		fds[i].events = POLLIN;
-		error = listen(fds[i].fd, 1);
-		if (error) err(EX_IOERR, "listen");
-	}
+	listenConfig(certPath, privPath);
+	size_t binds = listenBind(fds, PollCap, localHost, localPort);
 
 	while (0 < poll(fds, binds, -1)) {
 		for (size_t i = 0; i < binds; ++i) {
 			if (!fds[i].revents) continue;
-
-			int sock = accept(fds[i].fd, NULL, NULL);
-			if (sock < 0) err(EX_IOERR, "accept");
-
-			struct tls *client;
-			error = tls_accept_socket(server, &client, sock);
-			if (error) {
-				errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
-			}
+			struct tls *client = listenAccept(&fds[binds], fds[i].fd);
 		}
 	}
 }
