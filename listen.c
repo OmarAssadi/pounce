@@ -17,7 +17,6 @@
 #include <err.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sysexits.h>
@@ -48,11 +47,7 @@ void listenConfig(const char *cert, const char *priv) {
 	tls_config_free(config);
 }
 
-size_t
-listenBind(
-	struct pollfd fds[], size_t cap,
-	const char *host, const char *port
-) {
+size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 	struct addrinfo *head;
 	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
@@ -64,21 +59,19 @@ listenBind(
 
 	size_t len = 0;
 	for (struct addrinfo *ai = head; ai && len < cap; ai = ai->ai_next) {
-		int sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (sock < 0) err(EX_OSERR, "socket");
+		fds[len] = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (fds[len] < 0) err(EX_OSERR, "socket");
 
-		error = bind(sock, ai->ai_addr, ai->ai_addrlen);
+		error = bind(fds[len], ai->ai_addr, ai->ai_addrlen);
 		if (error) {
 			warn("%s:%s", host, port);
-			close(sock);
+			close(fds[len]);
 			continue;
 		}
 
-		error = listen(sock, 1);
+		error = listen(fds[len], 1);
 		if (error) err(EX_IOERR, "listen");
 
-		fds[len].fd = sock;
-		fds[len].events = POLLIN;
 		len++;
 	}
 	freeaddrinfo(head);
@@ -87,7 +80,7 @@ listenBind(
 	return len;
 }
 
-struct tls *listenAccept(struct pollfd *poll, int fd) {
+int listenAccept(struct tls **client, int fd) {
 	int sock = accept(fd, NULL, NULL);
 	if (sock < 0) err(EX_IOERR, "accept");
 
@@ -95,11 +88,8 @@ struct tls *listenAccept(struct pollfd *poll, int fd) {
 	int error = setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
 	if (error) err(EX_OSERR, "setsockopt");
 
-	struct tls *client;
-	error = tls_accept_socket(server, &client, sock);
+	error = tls_accept_socket(server, client, sock);
 	if (error) errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
 
-	poll->fd = sock;
-	poll->events = POLLIN;
-	return client;
+	return sock;
 }

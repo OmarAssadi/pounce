@@ -29,7 +29,8 @@
 static char *censor(char *arg) {
 	char *dup = strdup(arg);
 	if (!dup) err(EX_OSERR, "strdup");
-	memset(arg, '*', strlen(dup));
+	memset(arg, '\0', strlen(dup));
+	arg[0] = '*';
 	return dup;
 }
 
@@ -84,16 +85,24 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
-	enum { PollCap = 64 };
-	struct pollfd fds[PollCap];
-
 	listenConfig(certPath, privPath);
-	size_t binds = listenBind(fds, PollCap, localHost, localPort);
 
-	while (0 < poll(fds, binds, -1)) {
-		for (size_t i = 0; i < binds; ++i) {
+	enum { BindCap = 8 };
+	int bind[BindCap];
+	size_t bindLen = listenBind(bind, BindCap, localHost, localPort);
+
+	// Wishing for struct-of-arrays...
+	struct pollfd fds[BindCap];
+	for (size_t i = 0; i < bindLen; ++i) {
+		fds[i].fd = bind[i];
+		fds[i].events = POLLIN;
+	}
+
+	while (0 < poll(fds, bindLen, -1)) {
+		for (size_t i = 0; i < bindLen; ++i) {
 			if (!fds[i].revents) continue;
-			struct tls *client = listenAccept(&fds[binds], fds[i].fd);
+			struct tls *client;
+			int fd = listenAccept(&client, fds[i].fd);
 		}
 	}
 }

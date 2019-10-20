@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <poll.h>
 #include <stdlib.h>
 #include <tls.h>
 
@@ -27,6 +26,5 @@
 #endif
 
 void listenConfig(const char *cert, const char *priv);
-size_t
-listenBind(struct pollfd fds[], size_t cap, const char *host, const char *port);
-struct tls *listenAccept(struct pollfd *poll, int fd);
+size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
+int listenAccept(struct tls **client, int fd);
