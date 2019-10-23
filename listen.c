@@ -15,6 +15,7 @@
  */
 
 #include <err.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -80,6 +81,7 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 int listenAccept(struct tls **client, int fd) {
 	int sock = accept(fd, NULL, NULL);
 	if (sock < 0) err(EX_IOERR, "accept");
+	fcntl(sock, F_SETFL, O_NONBLOCK);
 
 	int yes = 1;
 	int error = setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
