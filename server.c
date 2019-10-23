@@ -92,7 +92,7 @@ static void format(const char *format, ...) {
 	int len = vasprintf(&buf, format, ap);
 	va_end(ap);
 	if (!buf) err(EX_OSERR, "vasprintf");
-	serverSend(format, len);
+	serverSend(buf, len);
 	free(buf);
 }
 
