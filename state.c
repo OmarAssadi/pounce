@@ -136,7 +136,7 @@ void stateParse(char *line) {
 	cmd.name = strsep(&line, " ");
 	for (size_t i = 0; line && i < ParamCap; ++i) {
 		if (line[0] == ':') {
-			cmd.params[i] = line;
+			cmd.params[i] = &line[1];
 			break;
 		}
 		cmd.params[i] = strsep(&line, " ");
