@@ -32,24 +32,24 @@
 bool verbose;
 
 enum { ParamCap = 15 };
-struct Command {
+struct Message {
 	const char *origin;
-	const char *name;
+	const char *cmd;
 	const char *params[ParamCap];
 };
 
-static inline struct Command parse(char *line) {
-	struct Command cmd = {0};
-	if (line[0] == ':') cmd.origin = 1 + strsep(&line, " ");
-	cmd.name = strsep(&line, " ");
+static inline struct Message parse(char *line) {
+	struct Message msg = {0};
+	if (line[0] == ':') msg.origin = 1 + strsep(&line, " ");
+	msg.cmd = strsep(&line, " ");
 	for (size_t i = 0; line && i < ParamCap; ++i) {
 		if (line[0] == ':') {
-			cmd.params[i] = &line[1];
+			msg.params[i] = &line[1];
 			break;
 		}
-		cmd.params[i] = strsep(&line, " ");
+		msg.params[i] = strsep(&line, " ");
 	}
-	return cmd;
+	return msg;
 }
 
 void listenConfig(const char *cert, const char *priv);

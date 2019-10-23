@@ -98,25 +98,25 @@ static void passRequired(struct Client *client) {
 	client->close = true;
 }
 
-typedef void Handler(struct Client *client, struct Command cmd);
+typedef void Handler(struct Client *client, struct Message msg);
 
-static void handleNick(struct Client *client, struct Command cmd) {
-	(void)cmd;
+static void handleNick(struct Client *client, struct Message msg) {
+	(void)msg;
 	client->need &= ~NeedNick;
 	if (!client->need) stateSync(client);
 	if (client->need == NeedPass) passRequired(client);
 }
 
-static void handleUser(struct Client *client, struct Command cmd) {
-	(void)cmd;
+static void handleUser(struct Client *client, struct Message msg) {
+	(void)msg;
 	// TODO: Identify client by username.
 	client->need &= ~NeedUser;
 	if (!client->need) stateSync(client);
 	if (client->need == NeedPass) passRequired(client);
 }
 
-static void handlePass(struct Client *client, struct Command cmd) {
-	if (!cmd.params[0] || strcmp(clientPass, cmd.params[0])) {
+static void handlePass(struct Client *client, struct Message msg) {
+	if (!msg.params[0] || strcmp(clientPass, msg.params[0])) {
 		passRequired(client);
 	} else {
 		client->need &= ~NeedPass;
@@ -124,7 +124,7 @@ static void handlePass(struct Client *client, struct Command cmd) {
 	}
 }
 
-static void handleCap(struct Client *client, struct Command cmd) {
+static void handleCap(struct Client *client, struct Message msg) {
 	// TODO...
 }
 
@@ -139,16 +139,16 @@ static const struct {
 };
 
 static void clientParse(struct Client *client, char *line) {
-	struct Command cmd = parse(line);
-	if (!cmd.name) {
+	struct Message msg = parse(line);
+	if (!msg.cmd) {
 		// FIXME: Identify client in message.
 		warnx("no command");
 		client->close = true;
 		return;
 	}
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
-		if (strcmp(cmd.name, Handlers[i].cmd)) continue;
-		Handlers[i].fn(client, cmd);
+		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
+		Handlers[i].fn(client, msg);
 		break;
 	}
 }
