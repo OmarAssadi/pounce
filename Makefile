@@ -9,6 +9,7 @@ LDLIBS = -ltls
 
 OBJS += bounce.o
 OBJS += listen.o
+OBJS += server.o
 
 all: tags linger
 
