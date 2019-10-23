@@ -1,0 +1,35 @@
+.Dd October 22, 2019
+.Dt README 7
+.Os "Causal Agency"
+.
+.Sh NAME
+.Nm linger
+.Nd IRC bouncer
+.
+.Sh DESCRIPTION
+.Nm
+requires LibreSSL
+.Pq Fl ltls
+and targets
+.Fx .
+.
+.Sh FILES
+.Bl -tag -width "bounce.h" -compact
+.It Pa bounce.h
+function prototypes and default paths
+.It Pa bounce.c
+command line parsing and event loop
+.It Pa listen.c
+local server functions
+.It Pa server.c
+remote server functions
+.It Pa client.c
+remote client functions
+.It Pa state.c
+state shared between clients
+.It Pa ring.c
+buffer between server and clients
+.El
+.
+.Sh SEE ALSO
+.Xr linger 1
