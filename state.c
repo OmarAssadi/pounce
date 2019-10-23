@@ -34,25 +34,11 @@ static struct {
 	char *myInfo[4];
 } intro;
 
-enum { ISupportCap = 32 };
+enum { SupportCap = 32 };
 static struct {
-	char *values[ISupportCap];
+	char *tokens[SupportCap];
 	size_t len;
-} iSupport;
-
-static void set(char **field, const char *value) {
-	if (*field) free(*field);
-	*field = strdup(value);
-	if (!*field) err(EX_OSERR, "strdup");
-}
-
-static void iSupportSet(const char *value) {
-	if (iSupport.len == ISupportCap) {
-		warnx("truncating ISUPPORT value %s", value);
-		return;
-	}
-	set(&iSupport.values[iSupport.len++], value);
-}
+} support;
 
 bool stateReady(void) {
 	return nick
@@ -61,15 +47,23 @@ bool stateReady(void) {
 		&& intro.yourHost
 		&& intro.created
 		&& intro.myInfo[0]
-		&& iSupport.len;
+		&& support.len;
 }
 
-enum { ParamCap = 15 };
-struct Command {
-	const char *origin;
-	const char *name;
-	const char *params[ParamCap];
-};
+static void set(char **field, const char *value) {
+	if (*field) free(*field);
+	*field = strdup(value);
+	if (!*field) err(EX_OSERR, "strdup");
+}
+
+static void supportSet(const char *token) {
+	if (support.len == SupportCap) {
+		warnx("dropping ISUPPORT token %s", token);
+		return;
+	}
+	set(&support.tokens[support.len++], token);
+}
+
 typedef void Handler(struct Command);
 
 static void handleCap(struct Command cmd) {
@@ -104,7 +98,7 @@ static void handleReplyMyInfo(struct Command cmd) {
 static void handleReplyISupport(struct Command cmd) {
 	for (size_t i = 1; i < ParamCap; ++i) {
 		if (!cmd.params[i] || strchr(cmd.params[i], ' ')) break;
-		iSupportSet(cmd.params[i]);
+		supportSet(cmd.params[i]);
 	}
 }
 
@@ -124,25 +118,11 @@ static const struct {
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
 };
-static const size_t HandlersLen = sizeof(Handlers) / sizeof(Handlers[0]);
 
 void stateParse(char *line) {
-	struct Command cmd = {0};
-	if (line[0] == ':') {
-		cmd.origin = 1 + strsep(&line, " ");
-		if (!line) errx(EX_PROTOCOL, "eof after origin");
-	}
-
-	cmd.name = strsep(&line, " ");
-	for (size_t i = 0; line && i < ParamCap; ++i) {
-		if (line[0] == ':') {
-			cmd.params[i] = &line[1];
-			break;
-		}
-		cmd.params[i] = strsep(&line, " ");
-	}
-
-	for (size_t i = 0; i < HandlersLen; ++i) {
+	struct Command cmd = parse(line);
+	if (!cmd.name) errx(EX_PROTOCOL, "no command");
+	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(cmd.name, Handlers[i].cmd)) continue;
 		Handlers[i].fn(cmd);
 		break;
