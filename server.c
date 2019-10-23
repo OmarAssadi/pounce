@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <err.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -80,6 +81,7 @@ int serverConnect(const char *host, const char *port) {
 }
 
 void serverSend(const char *ptr, size_t len) {
+	if (verbose) fprintf(stderr, "\x1B[31m%.*s\x1B[m", (int)len, ptr);
 	while (len) {
 		ssize_t ret = tls_write(client, ptr, len);
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
@@ -90,14 +92,13 @@ void serverSend(const char *ptr, size_t len) {
 }
 
 static void format(const char *format, ...) {
-	char *buf;
+	char buf[513];
 	va_list ap;
 	va_start(ap, format);
-	int len = vasprintf(&buf, format, ap);
+	int len = vsnprintf(buf, sizeof(buf), format, ap);
 	va_end(ap);
-	if (!buf) err(EX_OSERR, "vasprintf");
+	assert(len > 0 && (size_t)len < sizeof(buf));
 	serverSend(buf, len);
-	free(buf);
 }
 
 static const char Base64[64] = {
@@ -177,8 +178,11 @@ void serverRecv(void) {
 		crlf = memmem(line, &buf[len] - line, "\r\n", 2);
 		if (!crlf) break;
 		crlf[0] = '\0';
+
+		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
 		// TODO: Add line to ring if stateReady().
 		stateParse(line);
+
 		line = crlf + 2;
 	}
 	len -= line - buf;

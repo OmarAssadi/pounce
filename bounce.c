@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "C:H:K:P:W:a:h:j:n:p:r:u:w:"))) {
+	while (0 < (opt = getopt(argc, argv, "C:H:K:P:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': localHost = optarg;
@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
 			break; case 'p': port = optarg;
 			break; case 'r': real = optarg;
 			break; case 'u': user = optarg;
+			break; case 'v': verbose = true;
 			break; case 'w': pass = censor(optarg);
 			break; default:  return EX_USAGE;
 		}

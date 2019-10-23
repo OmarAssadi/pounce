@@ -30,6 +30,8 @@ struct Client {
 	struct tls *tls;
 };
 
+bool verbose;
+
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 int listenAccept(struct tls **client, int fd);

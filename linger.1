@@ -1,4 +1,4 @@
-.Dd October 22, 2019
+.Dd October 23, 2019
 .Dt LINGER 1
 .Os
 .
@@ -8,6 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
+.Op Fl v
 .Op Fl C Ar cert
 .Op Fl H Ar host
 .Op Fl K Ar priv
@@ -105,6 +106,13 @@ The default realname is the same as the nickname.
 Set the username to
 .Ar user .
 The default username is the same as the nickname.
+.
+.It Fl v
+Write IRC messages to standard error
+in red to the server,
+green from the server,
+yellow from clients
+and blue to clients.
 .
 .It Fl w Ar pass
 Log in with the password
