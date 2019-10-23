@@ -148,3 +148,35 @@ void serverLogin(
 	}
 	format("NICK %s\r\nUSER %s 0 * :%s\r\n", nick, user, real);
 }
+
+void serverAuth(void) {
+	format("AUTHENTICATE PLAIN\r\nAUTHENTICATE %s\r\nCAP END\r\n", authBase64);
+}
+
+void serverJoin(const char *join) {
+	format("JOIN :%s\r\n", join);
+}
+
+void serverRecv(void) {
+	static char buf[4096];
+	static size_t len;
+
+	ssize_t read = tls_read(client, &buf[len], sizeof(buf) - len);
+	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
+	if (read < 0) errx(EX_IOERR, "tls_read: %s", tls_error(client));
+	if (!read) errx(EX_DATAERR, "tls_read: eof");
+	len += read;
+
+	char *crlf;
+	char *line = buf;
+	for (;;) {
+		crlf = memmem(line, &buf[len] - line, "\r\n", 2);
+		if (!crlf) break;
+		crlf[0] = '\0';
+		// TODO: Add line to ring if stateReady().
+		stateParse(line);
+		line = crlf + 2;
+	}
+	len -= line - buf;
+	memmove(buf, line, len);
+}

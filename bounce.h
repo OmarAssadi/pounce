@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <tls.h>
 
@@ -34,4 +35,10 @@ void serverLogin(
 	const char *pass, const char *auth,
 	const char *nick, const char *user, const char *real
 );
+void serverAuth(void);
+void serverJoin(const char *join);
 void serverSend(const char *ptr, size_t len);
+void serverRecv(void);
+
+bool stateReady(void);
+void stateParse(char *line);

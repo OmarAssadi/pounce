@@ -95,7 +95,11 @@ int main(int argc, char *argv[]) {
 	int server = serverConnect(host, port);
 	serverLogin(pass, auth, nick, user, real);
 
-	// TODO: Wait for successful login before listening.
+	while (!stateReady()) {
+		serverRecv();
+	}
+	if (join) serverJoin(join);
+
 	for (size_t i = 0; i < bindLen; ++i) {
 		int error = listen(bind[i], 1);
 		if (error) err(EX_IOERR, "listen");
