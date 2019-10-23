@@ -155,7 +155,10 @@ void serverLogin(
 }
 
 void serverAuth(void) {
+	assert(authBase64);
 	format("AUTHENTICATE PLAIN\r\nAUTHENTICATE %s\r\nCAP END\r\n", authBase64);
+	free(authBase64);
+	authBase64 = NULL;
 }
 
 void serverJoin(const char *join) {
@@ -180,8 +183,13 @@ void serverRecv(void) {
 		crlf[0] = '\0';
 
 		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
-		// TODO: Add line to ring if stateReady().
-		stateParse(line);
+		if (!strncmp(line, "PING ", 5)) {
+			line[1] = 'O';
+			format("%s\r\n", line);
+		} else {
+			// TODO: Add line to ring if stateReady().
+			stateParse(line);
+		}
 
 		line = crlf + 2;
 	}
