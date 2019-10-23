@@ -158,9 +158,15 @@ void clientRecv(struct Client *client) {
 	for (;;) {
 		crlf = memmem(line, &client->buf[client->len] - line, "\r\n", 2);
 		if (!crlf) break;
-		crlf[0] = '\0';
-		if (verbose) fprintf(stderr, "\x1B[33m%s\x1B[m\n", line);
-		clientParse(client, line);
+		if (verbose) {
+			fprintf(stderr, "\x1B[33m%.*s\x1B[m\n", (int)(crlf - line), line);
+		}
+		if (client->need) {
+			crlf[0] = '\0';
+			clientParse(client, line);
+		} else {
+			serverSend(line, crlf + 2 - line);
+		}
 		line = crlf + 2;
 	}
 	client->len -= line - client->buf;
