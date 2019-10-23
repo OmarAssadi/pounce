@@ -104,6 +104,20 @@ static void handleReplyISupport(struct Message msg) {
 	}
 }
 
+static bool self(struct Message msg) {
+	assert(nick);
+	size_t len = strlen(nick);
+	if (strncmp(msg.origin, nick, len)) return false;
+	if (strlen(msg.origin) < len || msg.origin[len] != '!') return false;
+	return true;
+}
+
+static void handleNick(struct Message msg) {
+	if (!msg.origin) errx(EX_PROTOCOL, "NICK without origin");
+	if (!msg.params[0]) errx(EX_PROTOCOL, "NICK without new nick");
+	if (self(msg)) set(&nick, msg.params[0]);
+}
+
 static void handleError(struct Message msg) {
 	errx(EX_UNAVAILABLE, "%s", msg.params[0]);
 }
@@ -119,6 +133,7 @@ static const struct {
 	{ "005", handleReplyISupport },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
+	{ "NICK", handleNick },
 };
 
 void stateParse(char *line) {
