@@ -30,3 +30,8 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 int listenAccept(struct tls **client, int fd);
 
 int serverConnect(const char *host, const char *port);
+void serverLogin(
+	const char *pass, const char *auth,
+	const char *nick, const char *user, const char *real
+);
+void serverSend(const char *ptr, size_t len);

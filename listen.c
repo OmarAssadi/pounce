@@ -69,9 +69,6 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 			continue;
 		}
 
-		error = listen(fds[len], 1);
-		if (error) err(EX_IOERR, "listen");
-
 		len++;
 	}
 	freeaddrinfo(head);

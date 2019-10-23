@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -90,6 +91,15 @@ int main(int argc, char *argv[]) {
 	enum { BindCap = 8 };
 	int bind[BindCap];
 	size_t bindLen = listenBind(bind, BindCap, localHost, localPort);
+
+	int server = serverConnect(host, port);
+	serverLogin(pass, auth, nick, user, real);
+
+	// TODO: Wait for successful login before listening.
+	for (size_t i = 0; i < bindLen; ++i) {
+		int error = listen(bind[i], 1);
+		if (error) err(EX_IOERR, "listen");
+	}
 
 	// Wishing for struct-of-arrays...
 	struct pollfd fds[BindCap];
