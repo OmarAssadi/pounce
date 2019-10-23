@@ -35,7 +35,7 @@ static struct {
 
 static void loopAdd(int fd, struct Client *client) {
 	if (loop.len == loop.cap) {
-		loop.cap *= 2;
+		loop.cap = (loop.cap ? loop.cap * 2 : 4);
 		loop.fds = realloc(loop.fds, sizeof(struct pollfd) * loop.cap);
 		loop.clients = realloc(loop.clients, sizeof(struct Client *) * loop.cap);
 		if (!loop.fds || !loop.clients) err(EX_OSERR, "realloc");
@@ -48,9 +48,9 @@ static void loopAdd(int fd, struct Client *client) {
 }
 
 static void loopRemove(size_t i) {
-	loop.fds[i] = loop.fds[loop.len - 1];
-	loop.clients[i] = loop.clients[loop.len - 1];
 	loop.len--;
+	loop.fds[i] = loop.fds[loop.len];
+	loop.clients[i] = loop.clients[loop.len];
 }
 
 static char *censor(char *arg) {
