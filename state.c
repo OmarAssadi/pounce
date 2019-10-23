@@ -68,45 +68,48 @@ enum { ParamCap = 15 };
 struct Command {
 	const char *origin;
 	const char *name;
-	const char *target;
 	const char *params[ParamCap];
 };
 typedef void Handler(struct Command);
 
 static void handleCap(struct Command cmd) {
-	bool ack = cmd.params[0] && !strcmp(cmd.params[0], "ACK");
-	bool sasl = cmd.params[1] && !strcmp(cmd.params[1], "sasl");
+	bool ack = cmd.params[1] && !strcmp(cmd.params[1], "ACK");
+	bool sasl = cmd.params[2] && !strcmp(cmd.params[2], "sasl");
 	if (!ack || !sasl) errx(EX_CONFIG, "server does not support SASL");
 	serverAuth();
 }
 
 static void handleReplyWelcome(struct Command cmd) {
-	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
+	if (!cmd.params[1]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
 	set(&intro.origin, cmd.origin);
-	set(&intro.welcome, cmd.params[0]);
-	set(&nick, cmd.target);
+	set(&nick, cmd.params[0]);
+	set(&intro.welcome, cmd.params[1]);
 }
 static void handleReplyYourHost(struct Command cmd) {
-	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_YOURHOST without message");
-	set(&intro.yourHost, cmd.params[0]);
+	if (!cmd.params[1]) errx(EX_PROTOCOL, "RPL_YOURHOST without message");
+	set(&intro.yourHost, cmd.params[1]);
 }
 static void handleReplyCreated(struct Command cmd) {
-	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_CREATED without message");
-	set(&intro.created, cmd.params[0]);
+	if (!cmd.params[1]) errx(EX_PROTOCOL, "RPL_CREATED without message");
+	set(&intro.created, cmd.params[1]);
 }
 static void handleReplyMyInfo(struct Command cmd) {
-	if (!cmd.params[3]) errx(EX_PROTOCOL, "RPL_MYINFO without 4 parameters");
-	set(&intro.myInfo[0], cmd.params[0]);
-	set(&intro.myInfo[1], cmd.params[1]);
-	set(&intro.myInfo[2], cmd.params[2]);
-	set(&intro.myInfo[3], cmd.params[3]);
+	if (!cmd.params[4]) errx(EX_PROTOCOL, "RPL_MYINFO without 4 parameters");
+	set(&intro.myInfo[0], cmd.params[1]);
+	set(&intro.myInfo[1], cmd.params[2]);
+	set(&intro.myInfo[2], cmd.params[3]);
+	set(&intro.myInfo[3], cmd.params[4]);
 }
 
 static void handleReplyISupport(struct Command cmd) {
-	for (size_t i = 0; i < ParamCap; ++i) {
+	for (size_t i = 1; i < ParamCap; ++i) {
 		if (!cmd.params[i] || strchr(cmd.params[i], ' ')) break;
 		iSupportSet(cmd.params[i]);
 	}
+}
+
+static void handleError(struct Command cmd) {
+	errx(EX_UNAVAILABLE, "%s", cmd.params[0]);
 }
 
 static const struct {
@@ -119,6 +122,7 @@ static const struct {
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
 	{ "CAP", handleCap },
+	{ "ERROR", handleError },
 };
 static const size_t HandlersLen = sizeof(Handlers) / sizeof(Handlers[0]);
 
@@ -130,7 +134,6 @@ void stateParse(char *line) {
 	}
 
 	cmd.name = strsep(&line, " ");
-	cmd.target = strsep(&line, " ");
 	for (size_t i = 0; line && i < ParamCap; ++i) {
 		if (line[0] == ':') {
 			cmd.params[i] = line;
