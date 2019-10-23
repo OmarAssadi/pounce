@@ -27,6 +27,32 @@
 
 #include "bounce.h"
 
+static struct {
+	size_t cap, len;
+	struct pollfd *fds;
+	struct Client **clients;
+} loop;
+
+static void loopAdd(int fd, struct Client *client) {
+	if (loop.len == loop.cap) {
+		loop.cap *= 2;
+		loop.fds = realloc(loop.fds, sizeof(struct pollfd) * loop.cap);
+		loop.clients = realloc(loop.clients, sizeof(struct Client *) * loop.cap);
+		if (!loop.fds || !loop.clients) err(EX_OSERR, "realloc");
+	}
+
+	loop.fds[loop.len].fd = fd;
+	loop.fds[loop.len].events = POLLIN;
+	loop.clients[loop.len] = client;
+	loop.len++;
+}
+
+static void loopRemove(size_t i) {
+	loop.fds[i] = loop.fds[loop.len - 1];
+	loop.clients[i] = loop.clients[loop.len - 1];
+	loop.len--;
+}
+
 static char *censor(char *arg) {
 	char *dup = strdup(arg);
 	if (!dup) err(EX_OSERR, "strdup");
@@ -103,20 +129,25 @@ int main(int argc, char *argv[]) {
 	for (size_t i = 0; i < bindLen; ++i) {
 		int error = listen(bind[i], 1);
 		if (error) err(EX_IOERR, "listen");
+		loopAdd(bind[i], NULL);
 	}
+	loopAdd(server, NULL);
 
-	// Wishing for struct-of-arrays...
-	struct pollfd fds[BindCap];
-	for (size_t i = 0; i < bindLen; ++i) {
-		fds[i].fd = bind[i];
-		fds[i].events = POLLIN;
-	}
-
-	while (0 < poll(fds, bindLen, -1)) {
-		for (size_t i = 0; i < bindLen; ++i) {
-			if (!fds[i].revents) continue;
-			struct tls *client;
-			int fd = listenAccept(&client, fds[i].fd);
+	while (0 < poll(loop.fds, loop.len, -1)) {
+		for (size_t i = 0; i < loop.len; ++i) {
+			if (!loop.fds[i].revents) continue;
+			if (i < bindLen) {
+				struct Client *client = clientAlloc();
+				loopAdd(listenAccept(&client->tls, loop.fds[i].fd), client);
+			} else if (!loop.clients[i]) {
+				serverRecv();
+			} else if (loop.fds[i].revents & POLLERR) {
+				close(loop.fds[i].fd);
+				clientFree(loop.clients[i]);
+				loopRemove(i);
+			} else {
+				clientRecv(loop.clients[i]);
+			}
 		}
 	}
 }

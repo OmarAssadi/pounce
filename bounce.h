@@ -26,9 +26,16 @@
 #define DEFAULT_PRIV_PATH "/usr/local/etc/letsencrypt/live/%s/privkey.pem"
 #endif
 
+struct Client {
+	struct tls *tls;
+};
+
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 int listenAccept(struct tls **client, int fd);
+
+bool stateReady(void);
+void stateParse(char *line);
 
 int serverConnect(const char *host, const char *port);
 void serverLogin(
@@ -40,5 +47,6 @@ void serverJoin(const char *join);
 void serverSend(const char *ptr, size_t len);
 void serverRecv(void);
 
-bool stateReady(void);
-void stateParse(char *line);
+struct Client *clientAlloc(void);
+void clientFree(struct Client *client);
+void clientRecv(struct Client *client);

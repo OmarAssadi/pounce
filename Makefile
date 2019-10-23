@@ -8,6 +8,7 @@ LDLIBS = -ltls
 -include config.mk
 
 OBJS += bounce.o
+OBJS += client.o
 OBJS += listen.o
 OBJS += server.o
 OBJS += state.o
