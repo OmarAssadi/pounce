@@ -63,7 +63,7 @@ bool clientClose(const struct Client *client) {
 	return client->close;
 }
 
-static void clientSend(struct Client *client, const char *ptr, size_t len) {
+void clientSend(struct Client *client, const char *ptr, size_t len) {
 	if (verbose) fprintf(stderr, "\x1B[34m%.*s\x1B[m", (int)len, ptr);
 	while (len) {
 		ssize_t ret = tls_write(client->tls, ptr, len);
@@ -89,25 +89,38 @@ static void format(struct Client *client, const char *format, ...) {
 	clientSend(client, buf, len);
 }
 
+static void passRequired(struct Client *client) {
+	format(
+		client,
+		":invalid 464 * :Password incorrect\r\n"
+		"ERROR :Password incorrect\r\n"
+	);
+	client->close = true;
+}
+
 typedef void Handler(struct Client *client, struct Command cmd);
 
 static void handleNick(struct Client *client, struct Command cmd) {
 	(void)cmd;
 	client->need &= ~NeedNick;
+	if (!client->need) stateSync(client);
+	if (client->need == NeedPass) passRequired(client);
 }
 
 static void handleUser(struct Client *client, struct Command cmd) {
 	(void)cmd;
 	// TODO: Identify client by username.
 	client->need &= ~NeedUser;
+	if (!client->need) stateSync(client);
+	if (client->need == NeedPass) passRequired(client);
 }
 
 static void handlePass(struct Client *client, struct Command cmd) {
 	if (!cmd.params[0] || strcmp(clientPass, cmd.params[0])) {
-		format(client, ":invalid 464 * :Password incorrect\r\n");
-		client->close = true;
+		passRequired(client);
 	} else {
 		client->need &= ~NeedPass;
+		if (!client->need) stateSync(client);
 	}
 }
 

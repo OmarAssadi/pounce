@@ -29,6 +29,8 @@
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
+bool verbose;
+
 enum { ParamCap = 15 };
 struct Command {
 	const char *origin;
@@ -50,14 +52,9 @@ static inline struct Command parse(char *line) {
 	return cmd;
 }
 
-bool verbose;
-
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 int listenAccept(struct tls **client, int fd);
-
-bool stateReady(void);
-void stateParse(char *line);
 
 int serverConnect(const char *host, const char *port);
 void serverLogin(
@@ -74,3 +71,8 @@ struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
 bool clientClose(const struct Client *client);
 void clientRecv(struct Client *client);
+void clientSend(struct Client *client, const char *ptr, size_t len);
+
+bool stateReady(void);
+void stateParse(char *line);
+void stateSync(struct Client *client);

@@ -14,8 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <err.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
@@ -127,4 +129,25 @@ void stateParse(char *line) {
 		Handlers[i].fn(cmd);
 		break;
 	}
+}
+
+void stateSync(struct Client *client) {
+	char buf[4096];
+	int len = snprintf(
+		buf, sizeof(buf),
+		":%s 001 %s :%s\r\n"
+		":%s 002 %s :%s\r\n"
+		":%s 003 %s :%s\r\n"
+		":%s 004 %s %s %s %s %s\r\n",
+		intro.origin, nick, intro.welcome,
+		intro.origin, nick, intro.yourHost,
+		intro.origin, nick, intro.created,
+		intro.origin, nick,
+		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3]
+	);
+	assert(len > 0 && (size_t)len < sizeof(buf));
+
+	// TODO: Send ISUPPORT.
+
+	clientSend(client, buf, len);
 }
