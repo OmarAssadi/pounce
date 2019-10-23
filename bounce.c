@@ -43,6 +43,7 @@ static void loopAdd(int fd, struct Client *client) {
 
 	loop.fds[loop.len].fd = fd;
 	loop.fds[loop.len].events = POLLIN;
+	loop.fds[loop.len].revents = 0;
 	loop.clients[loop.len] = client;
 	loop.len++;
 }
@@ -64,7 +65,6 @@ static char *censor(char *arg) {
 int main(int argc, char *argv[]) {
 	const char *localHost = "localhost";
 	const char *localPort = "6697";
-	const char *localPass = NULL;
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 			break; case 'H': localHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'P': localPort = optarg;
-			break; case 'W': localPass = censor(optarg);
+			break; case 'W': clientPass = censor(optarg);
 			break; case 'a': auth = censor(optarg);
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
@@ -138,17 +138,22 @@ int main(int argc, char *argv[]) {
 		for (size_t i = 0; i < loop.len; ++i) {
 			if (!loop.fds[i].revents) continue;
 			if (i < bindLen) {
-				struct Client *client = clientAlloc();
-				loopAdd(listenAccept(&client->tls, loop.fds[i].fd), client);
+				struct tls *tls;
+				int fd = listenAccept(&tls, loop.fds[i].fd);
+				loopAdd(fd, clientAlloc(tls));
 			} else if (!loop.clients[i]) {
 				serverRecv();
-			} else if (loop.fds[i].revents & POLLERR) {
-				close(loop.fds[i].fd);
-				clientFree(loop.clients[i]);
-				loopRemove(i);
 			} else {
-				clientRecv(loop.clients[i]);
+				struct Client *client = loop.clients[i];
+				if (loop.fds[i].revents & POLLIN) clientRecv(client);
+				if (loop.fds[i].revents & ~POLLIN || clientClose(client)) {
+					clientFree(client);
+					close(loop.fds[i].fd);
+					loopRemove(i);
+					break;
+				}
 			}
 		}
 	}
+	err(EX_IOERR, "poll");
 }

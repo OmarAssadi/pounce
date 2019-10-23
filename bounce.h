@@ -27,10 +27,6 @@
 #define DEFAULT_PRIV_PATH "/usr/local/etc/letsencrypt/live/%s/privkey.pem"
 #endif
 
-struct Client {
-	struct tls *tls;
-};
-
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
 enum { ParamCap = 15 };
@@ -73,6 +69,8 @@ void serverJoin(const char *join);
 void serverSend(const char *ptr, size_t len);
 void serverRecv(void);
 
-struct Client *clientAlloc(void);
+char *clientPass;
+struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
+bool clientClose(const struct Client *client);
 void clientRecv(struct Client *client);
