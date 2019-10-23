@@ -1,4 +1,4 @@
-.Dd October 14, 2019
+.Dd October 22, 2019
 .Dt LINGER 1
 .Os
 .
@@ -31,6 +31,8 @@ is a multi-client, TLS-only IRC bouncer.
 It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
 receiving messages that were missed upon reconnection.
+Clients should use the IRCv3.2 server-time extension
+to know when missed messages were received.
 .
 .Pp
 The arguments are as follows:
