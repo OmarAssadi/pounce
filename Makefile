@@ -7,7 +7,7 @@ LDLIBS = -ltls
 
 -include config.mk
 
-OBJS += bouncer.o
+OBJS += bounce.o
 OBJS += listen.o
 
 all: tags linger
@@ -15,7 +15,7 @@ all: tags linger
 linger: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
 
-${OBJS}: bouncer.h
+${OBJS}: bounce.h
 
 tags: *.c *.h
 	ctags -w *.c *.h

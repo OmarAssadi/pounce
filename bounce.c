@@ -24,7 +24,7 @@
 #include <tls.h>
 #include <unistd.h>
 
-#include "bouncer.h"
+#include "bounce.h"
 
 static char *censor(char *arg) {
 	char *dup = strdup(arg);

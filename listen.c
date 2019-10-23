@@ -23,7 +23,7 @@
 #include <tls.h>
 #include <unistd.h>
 
-#include "bouncer.h"
+#include "bounce.h"
 
 static struct tls *server;
 
