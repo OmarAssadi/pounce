@@ -22,37 +22,46 @@
 
 #include "bounce.h"
 
-enum { ISupportCap = 32 };
+static char *nick;
+
+// TODO: Channels.
+
 static struct {
 	char *origin;
-	char *nick;
 	char *welcome;
 	char *yourHost;
 	char *created;
 	char *myInfo[4];
-	struct {
-		char *values[ISupportCap];
-		size_t len;
-	} iSupport;
-} state;
+} intro;
 
-bool stateReady(void) {
-	return state.origin
-		&& state.nick
-		&& state.welcome
-		&& state.yourHost
-		&& state.created
-		&& state.myInfo[0]
-		&& state.iSupport.len;
-}
+enum { ISupportCap = 32 };
+static struct {
+	char *values[ISupportCap];
+	size_t len;
+} iSupport;
 
 static void set(char **field, const char *value) {
 	if (*field) free(*field);
-	*field = NULL;
-	if (value) {
-		*field = strdup(value);
-		if (!*field) err(EX_OSERR, "strdup");
+	*field = strdup(value);
+	if (!*field) err(EX_OSERR, "strdup");
+}
+
+static void iSupportSet(const char *value) {
+	if (iSupport.len == ISupportCap) {
+		warnx("truncating ISUPPORT value %s", value);
+		return;
 	}
+	set(&iSupport.values[iSupport.len++], value);
+}
+
+bool stateReady(void) {
+	return nick
+		&& intro.origin
+		&& intro.welcome
+		&& intro.yourHost
+		&& intro.created
+		&& intro.myInfo[0]
+		&& iSupport.len;
 }
 
 enum { ParamCap = 15 };
@@ -64,39 +73,39 @@ struct Command {
 };
 typedef void Handler(struct Command);
 
-static void cap(struct Command cmd) {
+static void handleCap(struct Command cmd) {
 	bool ack = cmd.params[0] && !strcmp(cmd.params[0], "ACK");
 	bool sasl = cmd.params[1] && !strcmp(cmd.params[1], "sasl");
 	if (!ack || !sasl) errx(EX_CONFIG, "server does not support SASL");
 	serverAuth();
 }
 
-static void replyWelcome(struct Command cmd) {
-	set(&state.origin, cmd.origin);
-	set(&state.nick, cmd.target);
-	set(&state.welcome, cmd.params[0]);
+static void handleReplyWelcome(struct Command cmd) {
+	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
+	set(&intro.origin, cmd.origin);
+	set(&intro.welcome, cmd.params[0]);
+	set(&nick, cmd.target);
+}
+static void handleReplyYourHost(struct Command cmd) {
+	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_YOURHOST without message");
+	set(&intro.yourHost, cmd.params[0]);
+}
+static void handleReplyCreated(struct Command cmd) {
+	if (!cmd.params[0]) errx(EX_PROTOCOL, "RPL_CREATED without message");
+	set(&intro.created, cmd.params[0]);
+}
+static void handleReplyMyInfo(struct Command cmd) {
+	if (!cmd.params[3]) errx(EX_PROTOCOL, "RPL_MYINFO without 4 parameters");
+	set(&intro.myInfo[0], cmd.params[0]);
+	set(&intro.myInfo[1], cmd.params[1]);
+	set(&intro.myInfo[2], cmd.params[2]);
+	set(&intro.myInfo[3], cmd.params[3]);
 }
 
-static void replyYourHost(struct Command cmd) {
-	set(&state.yourHost, cmd.params[0]);
-}
-
-static void replyCreated(struct Command cmd) {
-	set(&state.created, cmd.params[0]);
-}
-
-static void replyMyInfo(struct Command cmd) {
-	set(&state.myInfo[0], cmd.params[0]);
-	set(&state.myInfo[1], cmd.params[1]);
-	set(&state.myInfo[2], cmd.params[2]);
-	set(&state.myInfo[3], cmd.params[3]);
-}
-
-static void replyISupport(struct Command cmd) {
+static void handleReplyISupport(struct Command cmd) {
 	for (size_t i = 0; i < ParamCap; ++i) {
 		if (!cmd.params[i] || strchr(cmd.params[i], ' ')) break;
-		if (state.iSupport.len == ISupportCap) break;
-		set(&state.iSupport.values[state.iSupport.len++], cmd.params[i]);
+		iSupportSet(cmd.params[i]);
 	}
 }
 
@@ -104,12 +113,12 @@ static const struct {
 	const char *cmd;
 	Handler *fn;
 } Handlers[] = {
-	{ "001", replyWelcome },
-	{ "002", replyYourHost },
-	{ "003", replyCreated },
-	{ "004", replyMyInfo },
-	{ "005", replyISupport },
-	{ "CAP", cap },
+	{ "001", handleReplyWelcome },
+	{ "002", handleReplyYourHost },
+	{ "003", handleReplyCreated },
+	{ "004", handleReplyMyInfo },
+	{ "005", handleReplyISupport },
+	{ "CAP", handleCap },
 };
 static const size_t HandlersLen = sizeof(Handlers) / sizeof(Handlers[0]);
 
