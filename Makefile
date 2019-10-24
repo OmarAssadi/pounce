@@ -10,6 +10,7 @@ LDLIBS = -ltls
 OBJS += bounce.o
 OBJS += client.o
 OBJS += listen.o
+OBJS += ring.o
 OBJS += server.o
 OBJS += state.o
 

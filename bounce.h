@@ -79,3 +79,5 @@ void clientFormat(struct Client *client, const char *format, ...)
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
+
+void ringWrite(const char *line);
