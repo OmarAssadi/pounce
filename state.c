@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,10 +24,6 @@
 #include <sysexits.h>
 
 #include "bounce.h"
-
-static char *nick;
-
-// TODO: Channels.
 
 static struct {
 	char *origin;
@@ -36,11 +33,54 @@ static struct {
 	char *myInfo[4];
 } intro;
 
-enum { SupportCap = 32 };
+static char *nick;
+
+static void set(char **field, const char *value) {
+	if (*field) free(*field);
+	*field = strdup(value);
+	if (!*field) err(EX_OSERR, "strdup");
+}
+
 static struct {
-	char *tokens[SupportCap];
-	size_t len;
+	char **names;
+	size_t cap, len;
+} chan;
+
+static void chanAdd(const char *name) {
+	if (chan.len == chan.cap) {
+		chan.cap = (chan.cap ? chan.cap * 2 : 8);
+		chan.names = realloc(chan.names, sizeof(char *) * chan.cap);
+		if (!chan.names) err(EX_OSERR, "realloc");
+	}
+	chan.names[chan.len] = strdup(name);
+	if (!chan.names[chan.len]) err(EX_OSERR, "strdup");
+	chan.len++;
+}
+
+static void chanRemove(const char *name) {
+	for (size_t i = 0; i < chan.len; ++i) {
+		if (strcmp(chan.names[i], name)) continue;
+		free(chan.names[i]);
+		chan.names[i] = chan.names[--chan.len];
+		return;
+	}
+}
+
+static struct {
+	char **tokens;
+	size_t cap, len;
 } support;
+
+static void supportAdd(const char *token) {
+	if (support.len == support.cap) {
+		support.cap = (support.cap ? support.cap * 2 : 8);
+		support.tokens = realloc(support.tokens, sizeof(char *) * support.cap);
+		if (!support.tokens) err(EX_OSERR, "realloc");
+	}
+	support.tokens[support.len] = strdup(token);
+	if (!support.tokens[support.len]) err(EX_OSERR, "strdup");
+	support.len++;
+}
 
 bool stateReady(void) {
 	return nick
@@ -50,20 +90,6 @@ bool stateReady(void) {
 		&& intro.created
 		&& intro.myInfo[0]
 		&& support.len;
-}
-
-static void set(char **field, const char *value) {
-	if (*field) free(*field);
-	*field = strdup(value);
-	if (!*field) err(EX_OSERR, "strdup");
-}
-
-static void supportSet(const char *token) {
-	if (support.len == SupportCap) {
-		warnx("dropping ISUPPORT token %s", token);
-		return;
-	}
-	set(&support.tokens[support.len++], token);
 }
 
 typedef void Handler(struct Message);
@@ -100,7 +126,7 @@ static void handleReplyMyInfo(struct Message msg) {
 static void handleReplyISupport(struct Message msg) {
 	for (size_t i = 1; i < ParamCap; ++i) {
 		if (!msg.params[i] || strchr(msg.params[i], ' ')) break;
-		supportSet(msg.params[i]);
+		supportAdd(msg.params[i]);
 	}
 }
 
@@ -118,6 +144,24 @@ static void handleNick(struct Message msg) {
 	if (self(msg)) set(&nick, msg.params[0]);
 }
 
+static void handleJoin(struct Message msg) {
+	if (!msg.origin) errx(EX_PROTOCOL, "JOIN without origin");
+	if (!msg.params[0]) errx(EX_PROTOCOL, "JOIN without channel");
+	if (self(msg)) chanAdd(msg.params[0]);
+}
+
+static void handlePart(struct Message msg) {
+	if (!msg.origin) errx(EX_PROTOCOL, "PART without origin");
+	if (!msg.params[0]) errx(EX_PROTOCOL, "PART without channel");
+	if (self(msg)) chanRemove(msg.params[0]);
+}
+
+static void handleKick(struct Message msg) {
+	if (!msg.params[0]) errx(EX_PROTOCOL, "KICK without channel");
+	if (!msg.params[1]) errx(EX_PROTOCOL, "KICK without nick");
+	if (!strcmp(msg.params[1], nick)) chanRemove(msg.params[0]);
+}
+
 static void handleError(struct Message msg) {
 	errx(EX_UNAVAILABLE, "%s", msg.params[0]);
 }
@@ -133,7 +177,10 @@ static const struct {
 	{ "005", handleReplyISupport },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
+	{ "JOIN", handleJoin },
+	{ "KICK", handleKick },
 	{ "NICK", handleNick },
+	{ "PART", handlePart },
 };
 
 void stateParse(char *line) {
@@ -146,23 +193,55 @@ void stateParse(char *line) {
 	}
 }
 
+// FIXME: Deduplicate this.
+static void format(struct Client *client, const char *format, ...) {
+	char buf[513];
+	va_list ap;
+	va_start(ap, format);
+	int len = vsnprintf(buf, sizeof(buf), format, ap);
+	va_end(ap);
+	assert(len > 0 && (size_t)len < sizeof(buf));
+	clientSend(client, buf, len);
+}
+
 void stateSync(struct Client *client) {
-	char buf[4096];
-	int len = snprintf(
-		buf, sizeof(buf),
-		":%s 001 %s :%s\r\n"
-		":%s 002 %s :%s\r\n"
-		":%s 003 %s :%s\r\n"
-		":%s 004 %s %s %s %s %s\r\n",
-		intro.origin, nick, intro.welcome,
-		intro.origin, nick, intro.yourHost,
-		intro.origin, nick, intro.created,
+	format(client, ":%s 001 %s :%s\r\n", intro.origin, nick, intro.welcome);
+	format(client, ":%s 002 %s :%s\r\n", intro.origin, nick, intro.yourHost);
+	format(client, ":%s 003 %s :%s\r\n", intro.origin, nick, intro.created);
+	format(
+		client, ":%s 004 %s %s %s %s\r\n",
 		intro.origin, nick,
 		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3]
 	);
-	assert(len > 0 && (size_t)len < sizeof(buf));
 
-	// TODO: Send ISUPPORT.
+	size_t i;
+	for (i = 0; support.len - i >= 13; i += 13) {
+		format(
+			client,
+			":%s 005 %s"
+			" %s %s %s %s %s %s %s %s %s %s %s %s %s"
+			" :are supported by this server\r\n",
+			intro.origin, nick,
+			support.tokens[i + 0], support.tokens[i + 1],
+			support.tokens[i + 2], support.tokens[i + 3],
+			support.tokens[i + 4], support.tokens[i + 5],
+			support.tokens[i + 6], support.tokens[i + 7],
+			support.tokens[i + 8], support.tokens[i + 9],
+			support.tokens[i + 10], support.tokens[i + 11],
+			support.tokens[i + 12]
+		);
+	}
+	// FIXME: Do something about this?
+	if (i < support.len) {
+		format(client, ":%s 005 %s", intro.origin, nick);
+		for (; i < support.len; ++i) {
+			format(client, " %s", support.tokens[i]);
+		}
+		format(client, " :are supported by this server\r\n");
+	}
 
-	clientSend(client, buf, len);
+	// FIXME: Send a proper self origin.
+	for (size_t i = 0; i < chan.len; ++i) {
+		format(client, ":%s JOIN %s\r\n", nick, chan.names[i]);
+	}
 }
