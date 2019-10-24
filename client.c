@@ -38,6 +38,7 @@ enum Need {
 struct Client {
 	bool error;
 	struct tls *tls;
+	size_t reader;
 	enum Need need;
 	bool serverTime;
 	char buf[4096];
@@ -112,8 +113,11 @@ static void handleNick(struct Client *client, struct Message msg) {
 }
 
 static void handleUser(struct Client *client, struct Message msg) {
-	(void)msg;
-	// TODO: Identify client by username.
+	if (!msg.params[0]) {
+		client->error = true;
+		return;
+	}
+	client->reader = ringReader(msg.params[0]);
 	client->need &= ~NeedUser;
 	if (!client->need) stateSync(client);
 	if (client->need == NeedPass) passRequired(client);

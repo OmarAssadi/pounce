@@ -81,3 +81,4 @@ void stateParse(char *line);
 void stateSync(struct Client *client);
 
 void ringWrite(const char *line);
+size_t ringReader(const char *name);
