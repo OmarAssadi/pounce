@@ -37,6 +37,7 @@ struct Client {
 	bool error;
 	struct tls *tls;
 	enum Need need;
+	bool serverTime;
 	char buf[4096];
 	size_t len;
 };
@@ -48,6 +49,7 @@ struct Client *clientAlloc(struct tls *tls) {
 	client->error = false;
 	client->tls = tls;
 	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
+	client->serverTime = false;
 	client->len = 0;
 
 	return client;
@@ -125,7 +127,34 @@ static void handlePass(struct Client *client, struct Message msg) {
 }
 
 static void handleCap(struct Client *client, struct Message msg) {
-	// TODO...
+	if (!msg.params[0]) msg.params[0] = "";
+
+	if (!strcmp(msg.params[0], "END")) {
+		client->need &= ~NeedCapEnd;
+		if (!client->need) stateSync(client);
+
+	} else if (!strcmp(msg.params[0], "LS")) {
+		client->need |= NeedCapEnd;
+		clientFormat(client, ":invalid CAP * LS :server-time\r\n");
+
+	} else if (!strcmp(msg.params[0], "REQ") && msg.params[1]) {
+		client->need |= NeedCapEnd;
+		if (!strcmp(msg.params[1], "server-time")) {
+			client->serverTime = true;
+			clientFormat(client, ":invalid CAP * ACK :server-time\r\n");
+		} else {
+			clientFormat(client, ":invalid CAP * NAK :%s\r\n", msg.params[1]);
+		}
+
+	} else if (!strcmp(msg.params[0], "LIST")) {
+		clientFormat(
+			client, ":invalid CAP * LIST :%s\r\n",
+			(client->serverTime ? "server-time" : "")
+		);
+
+	} else {
+		clientFormat(client, ":invalid 410 * :Invalid CAP subcommand\r\n");
+	}
 }
 
 static const struct {
