@@ -71,7 +71,6 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 	if (verbose) fprintf(stderr, "\x1B[34m%.*s\x1B[m", (int)len, ptr);
 	while (len) {
 		ssize_t ret = tls_write(client->tls, ptr, len);
-		// FIXME: Handle non-blocking?
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
 		if (ret < 0) {
 			warnx("tls_write: %s", tls_error(client->tls));
