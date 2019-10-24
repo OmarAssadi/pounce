@@ -162,6 +162,13 @@ static void handleCap(struct Client *client, struct Message msg) {
 	}
 }
 
+static void handleQuit(struct Client *client, struct Message msg) {
+	(void)msg;
+	clientFormat(client, "ERROR :Detaching\r\n");
+	client->error = true;
+	// TODO: Set AWAY if no more clients attached.
+}
+
 static const struct {
 	const char *cmd;
 	Handler *fn;
@@ -169,6 +176,7 @@ static const struct {
 	{ "CAP", handleCap },
 	{ "NICK", handleNick },
 	{ "PASS", handlePass },
+	{ "QUIT", handleQuit },
 	{ "USER", handleUser },
 };
 
@@ -189,6 +197,7 @@ static void clientParse(struct Client *client, char *line) {
 
 static bool intercept(const char *line, size_t len) {
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
+	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
 	// TODO: Intercept PRIVMSG to send to other clients.
 	return false;
 }
