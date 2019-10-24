@@ -26,7 +26,7 @@
 
 #include "bounce.h"
 
-static const char *Origin = "invalid";
+static const char *Origin = "irc.invalid";
 
 enum Need {
 	NeedNick = 1 << 0,
