@@ -33,7 +33,10 @@ static struct {
 	char *myInfo[4];
 } intro;
 
-static char *nick;
+static struct {
+	char *nick;
+	char *origin;
+} self;
 
 static void set(char **field, const char *value) {
 	if (*field) free(*field);
@@ -83,7 +86,7 @@ static void supportAdd(const char *token) {
 }
 
 bool stateReady(void) {
-	return nick
+	return self.nick
 		&& intro.origin
 		&& intro.welcome
 		&& intro.yourHost
@@ -104,7 +107,7 @@ static void handleCap(struct Message msg) {
 static void handleReplyWelcome(struct Message msg) {
 	if (!msg.params[1]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
 	set(&intro.origin, msg.origin);
-	set(&nick, msg.params[0]);
+	set(&self.nick, msg.params[0]);
 	set(&intro.welcome, msg.params[1]);
 }
 static void handleReplyYourHost(struct Message msg) {
@@ -130,36 +133,39 @@ static void handleReplyISupport(struct Message msg) {
 	}
 }
 
-static bool self(struct Message msg) {
-	assert(nick);
-	size_t len = strlen(nick);
-	if (strncmp(msg.origin, nick, len)) return false;
+static bool fromSelf(struct Message msg) {
+	assert(self.nick);
+	size_t len = strlen(self.nick);
+	if (strncmp(msg.origin, self.nick, len)) return false;
 	if (strlen(msg.origin) < len || msg.origin[len] != '!') return false;
+	if (!self.origin || strcmp(self.origin, msg.origin)) {
+		set(&self.origin, msg.origin);
+	}
 	return true;
 }
 
 static void handleNick(struct Message msg) {
 	if (!msg.origin) errx(EX_PROTOCOL, "NICK without origin");
 	if (!msg.params[0]) errx(EX_PROTOCOL, "NICK without new nick");
-	if (self(msg)) set(&nick, msg.params[0]);
+	if (fromSelf(msg)) set(&self.nick, msg.params[0]);
 }
 
 static void handleJoin(struct Message msg) {
 	if (!msg.origin) errx(EX_PROTOCOL, "JOIN without origin");
 	if (!msg.params[0]) errx(EX_PROTOCOL, "JOIN without channel");
-	if (self(msg)) chanAdd(msg.params[0]);
+	if (fromSelf(msg)) chanAdd(msg.params[0]);
 }
 
 static void handlePart(struct Message msg) {
 	if (!msg.origin) errx(EX_PROTOCOL, "PART without origin");
 	if (!msg.params[0]) errx(EX_PROTOCOL, "PART without channel");
-	if (self(msg)) chanRemove(msg.params[0]);
+	if (fromSelf(msg)) chanRemove(msg.params[0]);
 }
 
 static void handleKick(struct Message msg) {
 	if (!msg.params[0]) errx(EX_PROTOCOL, "KICK without channel");
 	if (!msg.params[1]) errx(EX_PROTOCOL, "KICK without nick");
-	if (!strcmp(msg.params[1], nick)) chanRemove(msg.params[0]);
+	if (!strcmp(msg.params[1], self.nick)) chanRemove(msg.params[0]);
 }
 
 static void handleError(struct Message msg) {
@@ -205,12 +211,12 @@ static void format(struct Client *client, const char *format, ...) {
 }
 
 void stateSync(struct Client *client) {
-	format(client, ":%s 001 %s :%s\r\n", intro.origin, nick, intro.welcome);
-	format(client, ":%s 002 %s :%s\r\n", intro.origin, nick, intro.yourHost);
-	format(client, ":%s 003 %s :%s\r\n", intro.origin, nick, intro.created);
+	format(client, ":%s 001 %s :%s\r\n", intro.origin, self.nick, intro.welcome);
+	format(client, ":%s 002 %s :%s\r\n", intro.origin, self.nick, intro.yourHost);
+	format(client, ":%s 003 %s :%s\r\n", intro.origin, self.nick, intro.created);
 	format(
 		client, ":%s 004 %s %s %s %s\r\n",
-		intro.origin, nick,
+		intro.origin, self.nick,
 		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3]
 	);
 
@@ -221,7 +227,7 @@ void stateSync(struct Client *client) {
 			":%s 005 %s"
 			" %s %s %s %s %s %s %s %s %s %s %s %s %s"
 			" :are supported by this server\r\n",
-			intro.origin, nick,
+			intro.origin, self.nick,
 			support.tokens[i + 0], support.tokens[i + 1],
 			support.tokens[i + 2], support.tokens[i + 3],
 			support.tokens[i + 4], support.tokens[i + 5],
@@ -233,15 +239,14 @@ void stateSync(struct Client *client) {
 	}
 	// FIXME: Do something about this?
 	if (i < support.len) {
-		format(client, ":%s 005 %s", intro.origin, nick);
+		format(client, ":%s 005 %s", intro.origin, self.nick);
 		for (; i < support.len; ++i) {
 			format(client, " %s", support.tokens[i]);
 		}
 		format(client, " :are supported by this server\r\n");
 	}
 
-	// FIXME: Send a proper self origin.
 	for (size_t i = 0; i < chan.len; ++i) {
-		format(client, ":%s JOIN %s\r\n", nick, chan.names[i]);
+		format(client, ":%s JOIN %s\r\n", self.origin, chan.names[i]);
 	}
 }
