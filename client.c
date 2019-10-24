@@ -130,8 +130,10 @@ static void handleCap(struct Client *client, struct Message msg) {
 	if (!msg.params[0]) msg.params[0] = "";
 
 	if (!strcmp(msg.params[0], "END")) {
-		client->need &= ~NeedCapEnd;
-		if (!client->need) stateSync(client);
+		if (client->need & NeedCapEnd) {
+			client->need &= ~NeedCapEnd;
+			if (!client->need) stateSync(client);
+		}
 
 	} else if (!strcmp(msg.params[0], "LS")) {
 		client->need |= NeedCapEnd;
