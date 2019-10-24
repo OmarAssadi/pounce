@@ -1,4 +1,4 @@
-.Dd October 23, 2019
+.Dd October 24, 2019
 .Dt LINGER 1
 .Os
 .
@@ -22,7 +22,6 @@
 .Op Fl r Ar real
 .Op Fl u Ar user
 .Op Fl w Ar pass
-.Op Ar client ...
 .
 .Sh DESCRIPTION
 The
@@ -33,7 +32,8 @@ It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
 receiving messages that were missed upon reconnection.
 Clients should use the IRCv3.2 server-time extension
-to know when missed messages were received.
+to know when missed messages were received
+and uniquely identify themselves by username.
 .
 .Pp
 The arguments are as follows:
@@ -118,13 +118,6 @@ and blue to clients.
 Log in with the password
 .Ar pass .
 .El
-.
-.Pp
-The remaining arguments name the clients
-that will connect to the bouncer.
-Clients identify themselves by setting their username.
-There is a default client
-that will be used for non-matching usernames.
 .
 .Sh STANDARDS
 The
