@@ -69,7 +69,7 @@ void serverRecv(void);
 char *clientPass;
 struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
-bool clientClose(const struct Client *client);
+bool clientError(const struct Client *client);
 void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
 

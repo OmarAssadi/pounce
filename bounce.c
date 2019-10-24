@@ -28,30 +28,30 @@
 #include "bounce.h"
 
 static struct {
-	size_t cap, len;
 	struct pollfd *fds;
 	struct Client **clients;
-} loop;
+	size_t cap, len;
+} event;
 
-static void loopAdd(int fd, struct Client *client) {
-	if (loop.len == loop.cap) {
-		loop.cap = (loop.cap ? loop.cap * 2 : 4);
-		loop.fds = realloc(loop.fds, sizeof(struct pollfd) * loop.cap);
-		loop.clients = realloc(loop.clients, sizeof(struct Client *) * loop.cap);
-		if (!loop.fds || !loop.clients) err(EX_OSERR, "realloc");
+static void eventAdd(int fd, struct Client *client) {
+	if (event.len == event.cap) {
+		event.cap = (event.cap ? event.cap * 2 : 8);
+		event.fds = realloc(event.fds, sizeof(*event.fds) * event.cap);
+		if (!event.fds) err(EX_OSERR, "realloc");
+		event.clients = realloc(
+			event.clients, sizeof(*event.clients) * event.cap
+		);
+		if (!event.clients) err(EX_OSERR, "realloc");
 	}
-
-	loop.fds[loop.len].fd = fd;
-	loop.fds[loop.len].events = POLLIN;
-	loop.fds[loop.len].revents = 0;
-	loop.clients[loop.len] = client;
-	loop.len++;
+	event.fds[event.len] = (struct pollfd) { .fd = fd, .events = POLLIN };
+	event.clients[event.len] = client;
+	event.len++;
 }
 
-static void loopRemove(size_t i) {
-	loop.len--;
-	loop.fds[i] = loop.fds[loop.len];
-	loop.clients[i] = loop.clients[loop.len];
+static void eventRemove(size_t i) {
+	event.len--;
+	event.fds[i] = event.fds[event.len];
+	event.clients[i] = event.clients[event.len];
 }
 
 static char *censor(char *arg) {
@@ -115,9 +115,8 @@ int main(int argc, char *argv[]) {
 
 	listenConfig(certPath, privPath);
 
-	enum { BindCap = 8 };
-	int bind[BindCap];
-	size_t bindLen = listenBind(bind, BindCap, localHost, localPort);
+	int bind[8];
+	size_t binds = listenBind(bind, 8, localHost, localPort);
 
 	int server = serverConnect(host, port);
 	serverLogin(pass, auth, nick, user, real);
@@ -127,29 +126,29 @@ int main(int argc, char *argv[]) {
 	}
 	if (join) serverJoin(join);
 
-	for (size_t i = 0; i < bindLen; ++i) {
+	for (size_t i = 0; i < binds; ++i) {
 		int error = listen(bind[i], 1);
 		if (error) err(EX_IOERR, "listen");
-		loopAdd(bind[i], NULL);
+		eventAdd(bind[i], NULL);
 	}
-	loopAdd(server, NULL);
+	eventAdd(server, NULL);
 
-	while (0 < poll(loop.fds, loop.len, -1)) {
-		for (size_t i = 0; i < loop.len; ++i) {
-			if (!loop.fds[i].revents) continue;
-			if (i < bindLen) {
+	while (0 < poll(event.fds, event.len, -1)) {
+		for (size_t i = 0; i < event.len; ++i) {
+			if (!event.fds[i].revents) continue;
+			if (i < binds) {
 				struct tls *tls;
-				int fd = listenAccept(&tls, loop.fds[i].fd);
-				loopAdd(fd, clientAlloc(tls));
-			} else if (!loop.clients[i]) {
+				int fd = listenAccept(&tls, event.fds[i].fd);
+				eventAdd(fd, clientAlloc(tls));
+			} else if (!event.clients[i]) {
 				serverRecv();
 			} else {
-				struct Client *client = loop.clients[i];
-				if (loop.fds[i].revents & POLLIN) clientRecv(client);
-				if (loop.fds[i].revents & ~POLLIN || clientClose(client)) {
+				struct Client *client = event.clients[i];
+				if (event.fds[i].revents & POLLIN) clientRecv(client);
+				if (event.fds[i].revents & ~POLLIN || clientError(client)) {
 					clientFree(client);
-					close(loop.fds[i].fd);
-					loopRemove(i);
+					close(event.fds[i].fd);
+					eventRemove(i);
 					break;
 				}
 			}

@@ -34,7 +34,7 @@ enum Need {
 };
 
 struct Client {
-	bool close;
+	bool error;
 	struct tls *tls;
 	enum Need need;
 	char buf[4096];
@@ -45,7 +45,7 @@ struct Client *clientAlloc(struct tls *tls) {
 	struct Client *client = malloc(sizeof(*client));
 	if (!client) err(EX_OSERR, "malloc");
 
-	client->close = false;
+	client->error = false;
 	client->tls = tls;
 	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
 	client->len = 0;
@@ -59,8 +59,8 @@ void clientFree(struct Client *client) {
 	free(client);
 }
 
-bool clientClose(const struct Client *client) {
-	return client->close;
+bool clientError(const struct Client *client) {
+	return client->error;
 }
 
 void clientSend(struct Client *client, const char *ptr, size_t len) {
@@ -71,7 +71,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
 		if (ret < 0) {
 			warnx("tls_write: %s", tls_error(client->tls));
-			client->close = true;
+			client->error = true;
 			return;
 		}
 		ptr += ret;
@@ -95,7 +95,7 @@ static void passRequired(struct Client *client) {
 		":invalid 464 * :Password incorrect\r\n"
 		"ERROR :Password incorrect\r\n"
 	);
-	client->close = true;
+	client->error = true;
 }
 
 typedef void Handler(struct Client *client, struct Message msg);
@@ -143,7 +143,7 @@ static void clientParse(struct Client *client, char *line) {
 	if (!msg.cmd) {
 		// FIXME: Identify client in message.
 		warnx("no command");
-		client->close = true;
+		client->error = true;
 		return;
 	}
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
@@ -161,7 +161,7 @@ void clientRecv(struct Client *client) {
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
 	if (read < 0) warnx("tls_read: %s", tls_error(client->tls));
 	if (read < 1) {
-		client->close = true;
+		client->error = true;
 		return;
 	}
 	client->len += read;
