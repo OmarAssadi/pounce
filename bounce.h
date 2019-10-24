@@ -62,9 +62,10 @@ void serverLogin(
 	const char *nick, const char *user, const char *real
 );
 void serverAuth(void);
-void serverJoin(const char *join);
-void serverSend(const char *ptr, size_t len);
 void serverRecv(void);
+void serverSend(const char *ptr, size_t len);
+void serverFormat(const char *format, ...)
+	__attribute__((format(printf, 1, 2)));
 
 char *clientPass;
 struct Client *clientAlloc(struct tls *tls);

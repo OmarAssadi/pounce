@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 	while (!stateReady()) {
 		serverRecv();
 	}
-	if (join) serverJoin(join);
+	if (join) serverFormat("JOIN :%s\r\n", join);
 
 	for (size_t i = 0; i < binds; ++i) {
 		int error = listen(bind[i], 1);

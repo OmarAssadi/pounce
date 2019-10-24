@@ -91,7 +91,7 @@ void serverSend(const char *ptr, size_t len) {
 	}
 }
 
-static void format(const char *format, ...) {
+void serverFormat(const char *format, ...) {
 	char buf[513];
 	va_list ap;
 	va_start(ap, format);
@@ -141,7 +141,7 @@ void serverLogin(
 	const char *pass, const char *auth,
 	const char *nick, const char *user, const char *real
 ) {
-	if (pass) format("PASS :%s\r\n", pass);
+	if (pass) serverFormat("PASS :%s\r\n", pass);
 	if (auth) {
 		byte plain[1 + strlen(auth)];
 		plain[0] = 0;
@@ -149,20 +149,18 @@ void serverLogin(
 			plain[1 + i] = (auth[i] == ':' ? 0 : auth[i]);
 		}
 		authBase64 = base64(plain, sizeof(plain));
-		format("CAP REQ :sasl\r\n");
+		serverFormat("CAP REQ :sasl\r\n");
 	}
-	format("NICK %s\r\nUSER %s 0 * :%s\r\n", nick, user, real);
+	serverFormat("NICK %s\r\nUSER %s 0 * :%s\r\n", nick, user, real);
 }
 
 void serverAuth(void) {
 	assert(authBase64);
-	format("AUTHENTICATE PLAIN\r\nAUTHENTICATE %s\r\nCAP END\r\n", authBase64);
+	serverFormat(
+		"AUTHENTICATE PLAIN\r\nAUTHENTICATE %s\r\nCAP END\r\n", authBase64
+	);
 	free(authBase64);
 	authBase64 = NULL;
-}
-
-void serverJoin(const char *join) {
-	format("JOIN :%s\r\n", join);
 }
 
 void serverRecv(void) {
@@ -185,7 +183,7 @@ void serverRecv(void) {
 		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
 		if (!strncmp(line, "PING ", 5)) {
 			line[1] = 'O';
-			format("%s\r\n", line);
+			serverFormat("%s\r\n", line);
 		} else {
 			// TODO: Add line to ring if stateReady().
 			stateParse(line);
