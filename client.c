@@ -184,6 +184,12 @@ static void clientParse(struct Client *client, char *line) {
 	}
 }
 
+static bool intercept(const char *line, size_t len) {
+	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
+	// TODO: Intercept PRIVMSG to send to other clients.
+	return false;
+}
+
 void clientRecv(struct Client *client) {
 	ssize_t read = tls_read(
 		client->tls,
@@ -205,7 +211,7 @@ void clientRecv(struct Client *client) {
 		if (verbose) {
 			fprintf(stderr, "\x1B[33m%.*s\x1B[m\n", (int)(crlf - line), line);
 		}
-		if (client->need) {
+		if (client->need || intercept(line, crlf - line)) {
 			crlf[0] = '\0';
 			clientParse(client, line);
 		} else {
