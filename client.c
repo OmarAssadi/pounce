@@ -46,15 +46,10 @@ struct Client {
 };
 
 struct Client *clientAlloc(struct tls *tls) {
-	struct Client *client = malloc(sizeof(*client));
-	if (!client) err(EX_OSERR, "malloc");
-
-	client->error = false;
+	struct Client *client = calloc(1, sizeof(*client));
+	if (!client) err(EX_OSERR, "calloc");
 	client->tls = tls;
 	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
-	client->serverTime = false;
-	client->len = 0;
-
 	return client;
 }
 
@@ -185,12 +180,7 @@ static const struct {
 
 static void clientParse(struct Client *client, char *line) {
 	struct Message msg = parse(line);
-	if (!msg.cmd) {
-		// FIXME: Identify client in message.
-		warnx("no command");
-		client->error = true;
-		return;
-	}
+	if (!msg.cmd) return;
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
 		Handlers[i].fn(client, msg);
