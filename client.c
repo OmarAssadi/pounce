@@ -139,11 +139,11 @@ static void handleCap(struct Client *client, struct Message msg) {
 		}
 
 	} else if (!strcmp(msg.params[0], "LS")) {
-		client->need |= NeedCapEnd;
+		if (client->need) client->need |= NeedCapEnd;
 		clientFormat(client, ":%s CAP * LS :server-time\r\n", Origin);
 
 	} else if (!strcmp(msg.params[0], "REQ") && msg.params[1]) {
-		client->need |= NeedCapEnd;
+		if (client->need) client->need |= NeedCapEnd;
 		if (!strcmp(msg.params[1], "server-time")) {
 			client->serverTime = true;
 			clientFormat(client, ":%s CAP * ACK :server-time\r\n", Origin);
