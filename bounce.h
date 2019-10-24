@@ -73,6 +73,8 @@ void clientFree(struct Client *client);
 bool clientError(const struct Client *client);
 void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
+void clientFormat(struct Client *client, const char *format, ...)
+	__attribute__((format(printf, 2, 3)));
 
 bool stateReady(void);
 void stateParse(char *line);

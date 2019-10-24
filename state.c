@@ -16,7 +16,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -199,30 +198,27 @@ void stateParse(char *line) {
 	}
 }
 
-// FIXME: Deduplicate this.
-static void format(struct Client *client, const char *format, ...) {
-	char buf[513];
-	va_list ap;
-	va_start(ap, format);
-	int len = vsnprintf(buf, sizeof(buf), format, ap);
-	va_end(ap);
-	assert(len > 0 && (size_t)len < sizeof(buf));
-	clientSend(client, buf, len);
-}
-
 void stateSync(struct Client *client) {
-	format(client, ":%s 001 %s :%s\r\n", intro.origin, self.nick, intro.welcome);
-	format(client, ":%s 002 %s :%s\r\n", intro.origin, self.nick, intro.yourHost);
-	format(client, ":%s 003 %s :%s\r\n", intro.origin, self.nick, intro.created);
-	format(
-		client, ":%s 004 %s %s %s %s\r\n",
+	assert(stateReady());
+
+	clientFormat(
+		client, ":%s 001 %s :%s\r\n", intro.origin, self.nick, intro.welcome
+	);
+	clientFormat(
+		client, ":%s 002 %s :%s\r\n", intro.origin, self.nick, intro.yourHost
+	);
+	clientFormat(
+		client, ":%s 003 %s :%s\r\n", intro.origin, self.nick, intro.created
+	);
+	clientFormat(
+		client, ":%s 004 %s %s %s %s %s\r\n",
 		intro.origin, self.nick,
 		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3]
 	);
 
 	size_t i;
 	for (i = 0; support.len - i >= 13; i += 13) {
-		format(
+		clientFormat(
 			client,
 			":%s 005 %s"
 			" %s %s %s %s %s %s %s %s %s %s %s %s %s"
@@ -237,16 +233,26 @@ void stateSync(struct Client *client) {
 			support.tokens[i + 12]
 		);
 	}
-	// FIXME: Do something about this?
 	if (i < support.len) {
-		format(client, ":%s 005 %s", intro.origin, self.nick);
+		char buf[513];
+		size_t len = 0;
+		len += snprintf(
+			buf, sizeof(buf), ":%s 005 %s", intro.origin, self.nick
+		);
 		for (; i < support.len; ++i) {
-			format(client, " %s", support.tokens[i]);
+			len += snprintf(
+				&buf[len], sizeof(buf) - len, " %s", support.tokens[i]
+			);
 		}
-		format(client, " :are supported by this server\r\n");
+		len += snprintf(
+			&buf[len], sizeof(buf) - len, " :are supported by this server\r\n"
+		);
+		assert(len < sizeof(buf));
+		clientSend(client, buf, len);
 	}
 
+	if (chan.len) assert(self.origin);
 	for (size_t i = 0; i < chan.len; ++i) {
-		format(client, ":%s JOIN %s\r\n", self.origin, chan.names[i]);
+		clientFormat(client, ":%s JOIN %s\r\n", self.origin, chan.names[i]);
 	}
 }

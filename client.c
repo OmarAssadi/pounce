@@ -79,7 +79,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 	}
 }
 
-static void format(struct Client *client, const char *format, ...) {
+void clientFormat(struct Client *client, const char *format, ...) {
 	char buf[513];
 	va_list ap;
 	va_start(ap, format);
@@ -90,7 +90,7 @@ static void format(struct Client *client, const char *format, ...) {
 }
 
 static void passRequired(struct Client *client) {
-	format(
+	clientFormat(
 		client,
 		":invalid 464 * :Password incorrect\r\n"
 		"ERROR :Password incorrect\r\n"
