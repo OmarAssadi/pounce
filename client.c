@@ -26,6 +26,8 @@
 
 #include "bounce.h"
 
+static const char *Origin = "invalid";
+
 enum Need {
 	NeedNick = 1 << 0,
 	NeedUser = 1 << 1,
@@ -94,8 +96,9 @@ void clientFormat(struct Client *client, const char *format, ...) {
 static void passRequired(struct Client *client) {
 	clientFormat(
 		client,
-		":invalid 464 * :Password incorrect\r\n"
-		"ERROR :Password incorrect\r\n"
+		":%s 464 * :Password incorrect\r\n"
+		"ERROR :Password incorrect\r\n",
+		Origin
 	);
 	client->error = true;
 }
@@ -137,25 +140,25 @@ static void handleCap(struct Client *client, struct Message msg) {
 
 	} else if (!strcmp(msg.params[0], "LS")) {
 		client->need |= NeedCapEnd;
-		clientFormat(client, ":invalid CAP * LS :server-time\r\n");
+		clientFormat(client, ":%s CAP * LS :server-time\r\n", Origin);
 
 	} else if (!strcmp(msg.params[0], "REQ") && msg.params[1]) {
 		client->need |= NeedCapEnd;
 		if (!strcmp(msg.params[1], "server-time")) {
 			client->serverTime = true;
-			clientFormat(client, ":invalid CAP * ACK :server-time\r\n");
+			clientFormat(client, ":%s CAP * ACK :server-time\r\n", Origin);
 		} else {
-			clientFormat(client, ":invalid CAP * NAK :%s\r\n", msg.params[1]);
+			clientFormat(client, ":%s CAP * NAK :%s\r\n", Origin, msg.params[1]);
 		}
 
 	} else if (!strcmp(msg.params[0], "LIST")) {
 		clientFormat(
-			client, ":invalid CAP * LIST :%s\r\n",
-			(client->serverTime ? "server-time" : "")
+			client, ":%s CAP * LIST :%s\r\n",
+			Origin, (client->serverTime ? "server-time" : "")
 		);
 
 	} else {
-		clientFormat(client, ":invalid 410 * :Invalid CAP subcommand\r\n");
+		clientFormat(client, ":%s 410 * :Invalid CAP subcommand\r\n", Origin);
 	}
 }
 
