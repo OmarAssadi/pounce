@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <err.h>
 #include <limits.h>
 #include <poll.h>
@@ -120,10 +121,7 @@ int main(int argc, char *argv[]) {
 
 	int server = serverConnect(host, port);
 	serverLogin(pass, auth, nick, user, real);
-
-	while (!stateReady()) {
-		serverRecv();
-	}
+	while (!stateReady()) serverRecv();
 	if (join) serverFormat("JOIN :%s\r\n", join);
 
 	for (size_t i = 0; i < binds; ++i) {
@@ -135,22 +133,30 @@ int main(int argc, char *argv[]) {
 
 	while (0 < poll(event.fds, event.len, -1)) {
 		for (size_t i = 0; i < event.len; ++i) {
-			if (!event.fds[i].revents) continue;
+			short revents = event.fds[i].revents;
+			if (!revents) continue;
+
 			if (i < binds) {
 				int fd;
 				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
 				eventAdd(fd, clientAlloc(tls));
 				continue;
 			}
+
 			if (!event.clients[i]) {
-				serverRecv();
+				if (revents & POLLIN) {
+					serverRecv();
+				} else {
+					errx(EX_UNAVAILABLE, "server hung up");
+				}
 				continue;
 			}
-			short revents = event.fds[i].revents;
+
 			struct Client *client = event.clients[i];
 			if (revents & POLLIN) clientRecv(client);
 			if (revents & POLLOUT) clientConsume(client);
 			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
+				// TODO: Set AWAY if no more clients remain.
 				clientFree(client);
 				close(event.fds[i].fd);
 				eventRemove(i);
@@ -158,8 +164,8 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		for (size_t i = 0; i < event.len; ++i) {
-			if (!event.clients[i]) continue;
+		for (size_t i = binds + 1; i < event.len; ++i) {
+			assert(event.clients[i]);
 			if (clientDiff(event.clients[i])) {
 				event.fds[i].events |= POLLOUT;
 			} else {
