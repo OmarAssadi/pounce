@@ -94,81 +94,87 @@ bool stateReady(void) {
 		&& support.len;
 }
 
-typedef void Handler(struct Message);
+typedef void Handler(struct Message *msg);
 
-static void handleCap(struct Message msg) {
-	bool ack = msg.params[1] && !strcmp(msg.params[1], "ACK");
-	bool sasl = msg.params[2] && !strcmp(msg.params[2], "sasl");
+static void handleCap(struct Message *msg) {
+	bool ack = msg->params[1] && !strcmp(msg->params[1], "ACK");
+	bool sasl = msg->params[2] && !strncmp(msg->params[2], "sasl", 4);
 	if (!ack || !sasl) errx(EX_CONFIG, "server does not support SASL");
 	serverAuth();
 }
 
-static void handleReplyWelcome(struct Message msg) {
-	if (!msg.params[1]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
-	set(&intro.origin, msg.origin);
-	set(&self.nick, msg.params[0]);
-	set(&intro.welcome, msg.params[1]);
-}
-static void handleReplyYourHost(struct Message msg) {
-	if (!msg.params[1]) errx(EX_PROTOCOL, "RPL_YOURHOST without message");
-	set(&intro.yourHost, msg.params[1]);
-}
-static void handleReplyCreated(struct Message msg) {
-	if (!msg.params[1]) errx(EX_PROTOCOL, "RPL_CREATED without message");
-	set(&intro.created, msg.params[1]);
-}
-static void handleReplyMyInfo(struct Message msg) {
-	if (!msg.params[4]) errx(EX_PROTOCOL, "RPL_MYINFO without 4 parameters");
-	set(&intro.myInfo[0], msg.params[1]);
-	set(&intro.myInfo[1], msg.params[2]);
-	set(&intro.myInfo[2], msg.params[3]);
-	set(&intro.myInfo[3], msg.params[4]);
+static void handleReplyWelcome(struct Message *msg) {
+	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
+	set(&intro.origin, msg->origin);
+	set(&self.nick, msg->params[0]);
+	set(&intro.welcome, msg->params[1]);
 }
 
-static void handleReplyISupport(struct Message msg) {
+static void handleReplyYourHost(struct Message *msg) {
+	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_YOURHOST without message");
+	set(&intro.yourHost, msg->params[1]);
+}
+
+static void handleReplyCreated(struct Message *msg) {
+	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_CREATED without message");
+	set(&intro.created, msg->params[1]);
+}
+
+static void handleReplyMyInfo(struct Message *msg) {
+	if (!msg->params[4]) errx(EX_PROTOCOL, "RPL_MYINFO without 4 parameters");
+	set(&intro.myInfo[0], msg->params[1]);
+	set(&intro.myInfo[1], msg->params[2]);
+	set(&intro.myInfo[2], msg->params[3]);
+	set(&intro.myInfo[3], msg->params[4]);
+}
+
+static void handleReplyISupport(struct Message *msg) {
 	for (size_t i = 1; i < ParamCap; ++i) {
-		if (!msg.params[i] || strchr(msg.params[i], ' ')) break;
-		supportAdd(msg.params[i]);
+		if (!msg->params[i] || strchr(msg->params[i], ' ')) break;
+		supportAdd(msg->params[i]);
 	}
 }
 
-static bool fromSelf(struct Message msg) {
-	assert(self.nick);
+static bool fromSelf(const struct Message *msg) {
+	if (!self.nick) return false;
 	size_t len = strlen(self.nick);
-	if (strncmp(msg.origin, self.nick, len)) return false;
-	if (strlen(msg.origin) < len || msg.origin[len] != '!') return false;
-	if (!self.origin || strcmp(self.origin, msg.origin)) {
-		set(&self.origin, msg.origin);
+	if (strlen(msg->origin) < len) return false;
+	if (strncmp(msg->origin, self.nick, len)) return false;
+	if (msg->origin[len] != '!') return false;
+	if (!self.origin || strcmp(self.origin, msg->origin)) {
+		set(&self.origin, msg->origin);
 	}
 	return true;
 }
 
-static void handleNick(struct Message msg) {
-	if (!msg.origin) errx(EX_PROTOCOL, "NICK without origin");
-	if (!msg.params[0]) errx(EX_PROTOCOL, "NICK without new nick");
-	if (fromSelf(msg)) set(&self.nick, msg.params[0]);
+static void handleNick(struct Message *msg) {
+	if (!msg->origin) errx(EX_PROTOCOL, "NICK without origin");
+	if (!msg->params[0]) errx(EX_PROTOCOL, "NICK without nick");
+	if (fromSelf(msg)) set(&self.nick, msg->params[0]);
 }
 
-static void handleJoin(struct Message msg) {
-	if (!msg.origin) errx(EX_PROTOCOL, "JOIN without origin");
-	if (!msg.params[0]) errx(EX_PROTOCOL, "JOIN without channel");
-	if (fromSelf(msg)) chanAdd(msg.params[0]);
+static void handleJoin(struct Message *msg) {
+	if (!msg->origin) errx(EX_PROTOCOL, "JOIN without origin");
+	if (!msg->params[0]) errx(EX_PROTOCOL, "JOIN without channel");
+	if (fromSelf(msg)) chanAdd(msg->params[0]);
 }
 
-static void handlePart(struct Message msg) {
-	if (!msg.origin) errx(EX_PROTOCOL, "PART without origin");
-	if (!msg.params[0]) errx(EX_PROTOCOL, "PART without channel");
-	if (fromSelf(msg)) chanRemove(msg.params[0]);
+static void handlePart(struct Message *msg) {
+	if (!msg->origin) errx(EX_PROTOCOL, "PART without origin");
+	if (!msg->params[0]) errx(EX_PROTOCOL, "PART without channel");
+	if (fromSelf(msg)) chanRemove(msg->params[0]);
 }
 
-static void handleKick(struct Message msg) {
-	if (!msg.params[0]) errx(EX_PROTOCOL, "KICK without channel");
-	if (!msg.params[1]) errx(EX_PROTOCOL, "KICK without nick");
-	if (!strcmp(msg.params[1], self.nick)) chanRemove(msg.params[0]);
+static void handleKick(struct Message *msg) {
+	if (!msg->params[0]) errx(EX_PROTOCOL, "KICK without channel");
+	if (!msg->params[1]) errx(EX_PROTOCOL, "KICK without nick");
+	if (self.nick && !strcmp(msg->params[1], self.nick)) {
+		chanRemove(msg->params[0]);
+	}
 }
 
-static void handleError(struct Message msg) {
-	errx(EX_UNAVAILABLE, "%s", msg.params[0]);
+static void handleError(struct Message *msg) {
+	errx(EX_UNAVAILABLE, "%s", msg->params[0]);
 }
 
 static const struct {
@@ -190,10 +196,10 @@ static const struct {
 
 void stateParse(char *line) {
 	struct Message msg = parse(line);
-	if (!msg.cmd) errx(EX_PROTOCOL, "no command");
+	if (!msg.cmd) return;
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
-		Handlers[i].fn(msg);
+		Handlers[i].fn(&msg);
 		break;
 	}
 }
@@ -202,13 +208,13 @@ void stateSync(struct Client *client) {
 	assert(stateReady());
 
 	clientFormat(
-		client, ":%s 001 %s :%s\r\n", intro.origin, self.nick, intro.welcome
-	);
-	clientFormat(
-		client, ":%s 002 %s :%s\r\n", intro.origin, self.nick, intro.yourHost
-	);
-	clientFormat(
-		client, ":%s 003 %s :%s\r\n", intro.origin, self.nick, intro.created
+		client,
+		":%s 001 %s :%s\r\n"
+		":%s 002 %s :%s\r\n"
+		":%s 003 %s :%s\r\n",
+		intro.origin, self.nick, intro.welcome,
+		intro.origin, self.nick, intro.yourHost,
+		intro.origin, self.nick, intro.created
 	);
 	clientFormat(
 		client, ":%s 004 %s %s %s %s %s\r\n",
@@ -234,21 +240,11 @@ void stateSync(struct Client *client) {
 		);
 	}
 	if (i < support.len) {
-		char buf[513];
-		size_t len = 0;
-		len += snprintf(
-			buf, sizeof(buf), ":%s 005 %s", intro.origin, self.nick
-		);
+		clientFormat(client, ":%s 005 %s", intro.origin, self.nick);
 		for (; i < support.len; ++i) {
-			len += snprintf(
-				&buf[len], sizeof(buf) - len, " %s", support.tokens[i]
-			);
+			clientFormat(client, " %s", support.tokens[i]);
 		}
-		len += snprintf(
-			&buf[len], sizeof(buf) - len, " :are supported by this server\r\n"
-		);
-		assert(len < sizeof(buf));
-		clientSend(client, buf, len);
+		clientFormat(client, " :are supported by this server\r\n");
 	}
 
 	if (chan.len) assert(self.origin);
