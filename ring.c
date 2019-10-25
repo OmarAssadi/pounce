@@ -31,7 +31,7 @@ static struct {
 	size_t write;
 } ring;
 
-void ringWrite(const char *line) {
+void ringProduce(const char *line) {
 	size_t i = ring.write++ % RingLen;
 	if (ring.lines[i]) free(ring.lines[i]);
 	ring.times[i] = time(NULL);
@@ -45,7 +45,7 @@ static struct {
 	size_t cap, len;
 } read;
 
-size_t ringReader(const char *name) {
+size_t ringConsumer(const char *name) {
 	for (size_t i = 0; i < read.len; ++i) {
 		if (!strcmp(read.names[i], name)) return i;
 	}
@@ -64,18 +64,18 @@ size_t ringReader(const char *name) {
 	return read.len++;
 }
 
-size_t ringDiff(size_t reader) {
-	assert(reader < read.len);
-	return ring.write - read.ptrs[reader];
+size_t ringDiff(size_t consumer) {
+	assert(consumer < read.len);
+	return ring.write - read.ptrs[consumer];
 }
 
-const char *ringRead(time_t *time, size_t reader) {
-	assert(reader < read.len);
-	if (!ringDiff(reader)) return NULL;
-	if (ringDiff(reader) > RingLen) {
-		read.ptrs[reader] = ring.write - RingLen;
+const char *ringConsume(time_t *time, size_t consumer) {
+	assert(consumer < read.len);
+	if (!ringDiff(consumer)) return NULL;
+	if (ringDiff(consumer) > RingLen) {
+		read.ptrs[consumer] = ring.write - RingLen;
 	}
-	size_t i = read.ptrs[reader]++ % RingLen;
+	size_t i = read.ptrs[consumer]++ % RingLen;
 	if (time) *time = ring.times[i];
 	return ring.lines[i];
 }

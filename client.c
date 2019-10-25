@@ -38,7 +38,7 @@ enum Need {
 struct Client {
 	bool error;
 	struct tls *tls;
-	size_t reader;
+	size_t consumer;
 	enum Need need;
 	bool serverTime;
 	char buf[4096];
@@ -112,7 +112,7 @@ static void handleUser(struct Client *client, struct Message msg) {
 		client->error = true;
 		return;
 	}
-	client->reader = ringReader(msg.params[0]);
+	client->consumer = ringConsumer(msg.params[0]);
 	client->need &= ~NeedUser;
 	if (!client->need) stateSync(client);
 	if (client->need == NeedPass) passRequired(client);
@@ -231,13 +231,13 @@ void clientRecv(struct Client *client) {
 
 size_t clientDiff(const struct Client *client) {
 	if (client->need) return 0;
-	return ringDiff(client->reader);
+	return ringDiff(client->consumer);
 }
 
 // TODO: Read several lines based on LOWAT for POLLOUT?
-void clientRead(struct Client *client) {
+void clientConsume(struct Client *client) {
 	time_t time;
-	const char *line = ringRead(&time, client->reader);
+	const char *line = ringConsume(&time, client->consumer);
 	if (!line) return;
 	if (client->serverTime) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];

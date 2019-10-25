@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 			short revents = event.fds[i].revents;
 			struct Client *client = event.clients[i];
 			if (revents & POLLIN) clientRecv(client);
-			if (revents & POLLOUT) clientRead(client);
+			if (revents & POLLOUT) clientConsume(client);
 			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
 				clientFree(client);
 				close(event.fds[i].fd);

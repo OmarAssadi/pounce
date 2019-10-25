@@ -185,7 +185,7 @@ void serverRecv(void) {
 			line[1] = 'O';
 			serverFormat("%s\r\n", line);
 		} else {
-			if (stateReady()) ringWrite(line);
+			if (stateReady()) ringProduce(line);
 			stateParse(line);
 		}
 

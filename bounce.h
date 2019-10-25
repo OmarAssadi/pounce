@@ -53,10 +53,10 @@ static inline struct Message parse(char *line) {
 	return msg;
 }
 
-void ringWrite(const char *line);
-size_t ringReader(const char *name);
-size_t ringDiff(size_t reader);
-const char *ringRead(time_t *time, size_t reader);
+void ringProduce(const char *line);
+size_t ringConsumer(const char *name);
+size_t ringDiff(size_t consumer);
+const char *ringConsume(time_t *time, size_t consumer);
 
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
@@ -82,7 +82,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len);
 void clientFormat(struct Client *client, const char *format, ...)
 	__attribute__((format(printf, 2, 3)));
 size_t clientDiff(const struct Client *client);
-void clientRead(struct Client *client);
+void clientConsume(struct Client *client);
 
 bool stateReady(void);
 void stateParse(char *line);
