@@ -119,6 +119,7 @@ static void handleUser(struct Client *client, struct Message msg) {
 }
 
 static void handlePass(struct Client *client, struct Message msg) {
+	if (!clientPass) return;
 	if (!msg.params[0] || strcmp(clientPass, msg.params[0])) {
 		passRequired(client);
 	} else {
@@ -226,4 +227,24 @@ void clientRecv(struct Client *client) {
 	}
 	client->len -= line - client->buf;
 	memmove(client->buf, line, client->len);
+}
+
+size_t clientDiff(const struct Client *client) {
+	if (client->need) return 0;
+	return ringDiff(client->reader);
+}
+
+// TODO: Read several lines based on LOWAT for POLLOUT?
+void clientRead(struct Client *client) {
+	time_t time;
+	const char *line = ringRead(&time, client->reader);
+	if (!line) return;
+	if (client->serverTime) {
+		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
+		struct tm *tm = gmtime(&time);
+		strftime(ts, sizeof(ts), "%FT%T.000Z", tm);
+		clientFormat(client, "@time=%s %s\r\n", ts, line);
+	} else {
+		clientFormat(client, "%s\r\n", line);
+	}
 }

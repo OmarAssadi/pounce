@@ -53,6 +53,11 @@ static inline struct Message parse(char *line) {
 	return msg;
 }
 
+void ringWrite(const char *line);
+size_t ringReader(const char *name);
+size_t ringDiff(size_t reader);
+const char *ringRead(time_t *time, size_t reader);
+
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 int listenAccept(struct tls **client, int fd);
@@ -76,12 +81,9 @@ void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
 void clientFormat(struct Client *client, const char *format, ...)
 	__attribute__((format(printf, 2, 3)));
+size_t clientDiff(const struct Client *client);
+void clientRead(struct Client *client);
 
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
-
-void ringWrite(const char *line);
-size_t ringReader(const char *name);
-size_t ringDiff(size_t reader);
-const char *ringRead(time_t *time, size_t reader);

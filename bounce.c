@@ -140,17 +140,30 @@ int main(int argc, char *argv[]) {
 				struct tls *tls;
 				int fd = listenAccept(&tls, event.fds[i].fd);
 				eventAdd(fd, clientAlloc(tls));
-			} else if (!event.clients[i]) {
+				continue;
+			}
+			if (!event.clients[i]) {
 				serverRecv();
+				continue;
+			}
+			short revents = event.fds[i].revents;
+			struct Client *client = event.clients[i];
+			if (revents & POLLIN) clientRecv(client);
+			if (revents & POLLOUT) clientRead(client);
+			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
+				clientFree(client);
+				close(event.fds[i].fd);
+				eventRemove(i);
+				break;
+			}
+		}
+
+		for (size_t i = 0; i < event.len; ++i) {
+			if (!event.clients[i]) continue;
+			if (clientDiff(event.clients[i])) {
+				event.fds[i].events |= POLLOUT;
 			} else {
-				struct Client *client = event.clients[i];
-				if (event.fds[i].revents & POLLIN) clientRecv(client);
-				if (event.fds[i].revents & ~POLLIN || clientError(client)) {
-					clientFree(client);
-					close(event.fds[i].fd);
-					eventRemove(i);
-					break;
-				}
+				event.fds[i].events &= ~POLLOUT;
 			}
 		}
 	}
