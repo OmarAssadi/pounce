@@ -169,13 +169,31 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 	client->error = true;
 }
 
+static void handlePrivmsg(struct Client *client, struct Message *msg) {
+	if (!msg->params[0] || !msg->params[1]) return;
+	// FIXME: Check against ISUPPORT CHANTYPES?
+	if (msg->params[0][0] == '#') {
+		char line[1024];
+		snprintf(
+			line, sizeof(line), ":%s %s %s :%s",
+			stateSelf(), msg->cmd, msg->params[0], msg->params[1]
+		);
+		size_t diff = ringDiff(client->consumer);
+		ringProduce(line);
+		if (!diff) ringConsume(NULL, client->consumer);
+	}
+	serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
+}
+
 static const struct {
 	const char *cmd;
 	Handler *fn;
 } Handlers[] = {
 	{ "CAP", handleCap },
 	{ "NICK", handleNick },
+	{ "NOTICE", handlePrivmsg },
 	{ "PASS", handlePass },
+	{ "PRIVMSG", handlePrivmsg },
 	{ "QUIT", handleQuit },
 	{ "USER", handleUser },
 };
@@ -193,7 +211,8 @@ static void clientParse(struct Client *client, char *line) {
 static bool intercept(const char *line, size_t len) {
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
 	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
-	// TODO: Intercept PRIVMSG and NOTICE to send to other clients.
+	if (len >= 7 && !memcmp(line, "NOTICE ", 7)) return true;
+	if (len >= 8 && !memcmp(line, "PRIVMSG ", 8)) return true;
 	return false;
 }
 

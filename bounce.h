@@ -87,3 +87,4 @@ void clientConsume(struct Client *client);
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
+const char *stateSelf(void);

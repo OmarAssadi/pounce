@@ -94,6 +94,12 @@ bool stateReady(void) {
 		&& support.len;
 }
 
+const char *stateSelf(void) {
+	if (self.origin) return self.origin;
+	if (self.nick) return self.nick;
+	return "*";
+}
+
 typedef void Handler(struct Message *msg);
 
 static void handleCap(struct Message *msg) {
