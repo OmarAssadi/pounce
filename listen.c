@@ -27,6 +27,7 @@
 
 static struct tls *server;
 
+// TODO: Make this callable more than once to reload certificates?
 void listenConfig(const char *cert, const char *priv) {
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
@@ -77,16 +78,16 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 	return len;
 }
 
-int listenAccept(struct tls **client, int fd) {
-	int sock = accept(fd, NULL, NULL);
-	if (sock < 0) err(EX_IOERR, "accept");
+struct tls *listenAccept(int *fd, int bind) {
+	*fd = accept(bind, NULL, NULL);
+	if (*fd < 0) err(EX_IOERR, "accept");
 
 	int yes = 1;
-	int error = setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
+	int error = setsockopt(*fd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
 	if (error) err(EX_OSERR, "setsockopt");
 
-	error = tls_accept_socket(server, client, sock);
+	struct tls *client;
+	error = tls_accept_socket(server, &client, *fd);
 	if (error) errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
-
-	return sock;
+	return client;
 }

@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
 		for (size_t i = 0; i < event.len; ++i) {
 			if (!event.fds[i].revents) continue;
 			if (i < binds) {
-				struct tls *tls;
-				int fd = listenAccept(&tls, event.fds[i].fd);
+				int fd;
+				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
 				eventAdd(fd, clientAlloc(tls));
 				continue;
 			}

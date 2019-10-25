@@ -60,7 +60,7 @@ const char *ringConsume(time_t *time, size_t consumer);
 
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
-int listenAccept(struct tls **client, int fd);
+struct tls *listenAccept(int *fd, int bind);
 
 int serverConnect(const char *host, const char *port);
 void serverLogin(
