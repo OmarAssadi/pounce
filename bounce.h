@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <tls.h>
 
 #ifndef DEFAULT_CERT_PATH
@@ -82,3 +83,5 @@ void stateSync(struct Client *client);
 
 void ringWrite(const char *line);
 size_t ringReader(const char *name);
+size_t ringDiff(size_t reader);
+const char *ringRead(time_t *time, size_t reader);

@@ -41,25 +41,41 @@ void ringWrite(const char *line) {
 
 static struct {
 	char **names;
-	size_t *reads;
+	size_t *ptrs;
 	size_t cap, len;
-} reader;
+} read;
 
 size_t ringReader(const char *name) {
-	for (size_t i = 0; i < reader.len; ++i) {
-		if (!strcmp(reader.names[i], name)) return i;
+	for (size_t i = 0; i < read.len; ++i) {
+		if (!strcmp(read.names[i], name)) return i;
 	}
 
-	if (reader.len == reader.cap) {
-		reader.cap = (reader.cap ? reader.cap * 2 : 8);
-		reader.names = realloc(reader.names, sizeof(*reader.names) * reader.cap);
-		if (!reader.names) err(EX_OSERR, "realloc");
-		reader.reads = realloc(reader.reads, sizeof(*reader.reads) * reader.cap);
-		if (!reader.reads) err(EX_OSERR, "realloc");
+	if (read.len == read.cap) {
+		read.cap = (read.cap ? read.cap * 2 : 8);
+		read.names = realloc(read.names, sizeof(*read.names) * read.cap);
+		if (!read.names) err(EX_OSERR, "realloc");
+		read.ptrs = realloc(read.ptrs, sizeof(*read.ptrs) * read.cap);
+		if (!read.ptrs) err(EX_OSERR, "realloc");
 	}
 
-	reader.names[reader.len] = strdup(name);
-	if (!reader.names[reader.len]) err(EX_OSERR, "strdup");
-	reader.reads[reader.len] = 0;
-	return reader.len++;
+	read.names[read.len] = strdup(name);
+	if (!read.names[read.len]) err(EX_OSERR, "strdup");
+	read.ptrs[read.len] = 0;
+	return read.len++;
+}
+
+size_t ringDiff(size_t reader) {
+	assert(reader < read.len);
+	return ring.write - read.ptrs[reader];
+}
+
+const char *ringRead(time_t *time, size_t reader) {
+	assert(reader < read.len);
+	if (!ringDiff(reader)) return NULL;
+	if (ringDiff(reader) > RingLen) {
+		read.ptrs[reader] = ring.write - RingLen;
+	}
+	size_t i = read.ptrs[reader]++ % RingLen;
+	if (time) *time = ring.times[i];
+	return ring.lines[i];
 }
