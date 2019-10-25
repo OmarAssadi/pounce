@@ -36,13 +36,13 @@ enum Need {
 };
 
 struct Client {
-	bool error;
 	struct tls *tls;
-	size_t consumer;
 	enum Need need;
+	size_t consumer;
 	bool serverTime;
 	char buf[4096];
 	size_t len;
+	bool error;
 };
 
 struct Client *clientAlloc(struct tls *tls) {
@@ -79,12 +79,12 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 }
 
 void clientFormat(struct Client *client, const char *format, ...) {
-	char buf[513];
+	char buf[1024];
 	va_list ap;
 	va_start(ap, format);
 	int len = vsnprintf(buf, sizeof(buf), format, ap);
 	va_end(ap);
-	assert(len > 0 && (size_t)len < sizeof(buf));
+	assert((size_t)len < sizeof(buf));
 	clientSend(client, buf, len);
 }
 
@@ -98,59 +98,61 @@ static void passRequired(struct Client *client) {
 	client->error = true;
 }
 
-typedef void Handler(struct Client *client, struct Message msg);
-
-static void handleNick(struct Client *client, struct Message msg) {
-	(void)msg;
-	client->need &= ~NeedNick;
-	if (!client->need) stateSync(client);
+static void sync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
+	if (!client->need) stateSync(client);
 }
 
-static void handleUser(struct Client *client, struct Message msg) {
-	if (!msg.params[0]) {
+typedef void Handler(struct Client *client, struct Message *msg);
+
+static void handleNick(struct Client *client, struct Message *msg) {
+	(void)msg;
+	client->need &= ~NeedNick;
+	sync(client);
+}
+
+static void handleUser(struct Client *client, struct Message *msg) {
+	if (!msg->params[0]) {
 		client->error = true;
 		return;
 	}
-	client->consumer = ringConsumer(msg.params[0]);
+	client->consumer = ringConsumer(msg->params[0]);
 	client->need &= ~NeedUser;
-	if (!client->need) stateSync(client);
-	if (client->need == NeedPass) passRequired(client);
+	sync(client);
 }
 
-static void handlePass(struct Client *client, struct Message msg) {
+static void handlePass(struct Client *client, struct Message *msg) {
 	if (!clientPass) return;
-	if (!msg.params[0] || strcmp(clientPass, msg.params[0])) {
+	if (!msg->params[0] || strcmp(msg->params[0], clientPass)) {
 		passRequired(client);
 	} else {
 		client->need &= ~NeedPass;
-		if (!client->need) stateSync(client);
+		sync(client);
 	}
 }
 
-static void handleCap(struct Client *client, struct Message msg) {
-	if (!msg.params[0]) msg.params[0] = "";
+static void handleCap(struct Client *client, struct Message *msg) {
+	if (!msg->params[0]) msg->params[0] = "";
 
-	if (!strcmp(msg.params[0], "END")) {
-		if (client->need & NeedCapEnd) {
-			client->need &= ~NeedCapEnd;
-			if (!client->need) stateSync(client);
-		}
+	if (!strcmp(msg->params[0], "END")) {
+		if (!client->need) return;
+		client->need &= ~NeedCapEnd;
+		sync(client);
 
-	} else if (!strcmp(msg.params[0], "LS")) {
+	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
 		clientFormat(client, ":%s CAP * LS :server-time\r\n", Origin);
 
-	} else if (!strcmp(msg.params[0], "REQ") && msg.params[1]) {
+	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
-		if (!strcmp(msg.params[1], "server-time")) {
+		if (!strcmp(msg->params[1], "server-time")) {
 			client->serverTime = true;
 			clientFormat(client, ":%s CAP * ACK :server-time\r\n", Origin);
 		} else {
-			clientFormat(client, ":%s CAP * NAK :%s\r\n", Origin, msg.params[1]);
+			clientFormat(client, ":%s CAP * NAK :%s\r\n", Origin, msg->params[1]);
 		}
 
-	} else if (!strcmp(msg.params[0], "LIST")) {
+	} else if (!strcmp(msg->params[0], "LIST")) {
 		clientFormat(
 			client, ":%s CAP * LIST :%s\r\n",
 			Origin, (client->serverTime ? "server-time" : "")
@@ -161,11 +163,10 @@ static void handleCap(struct Client *client, struct Message msg) {
 	}
 }
 
-static void handleQuit(struct Client *client, struct Message msg) {
+static void handleQuit(struct Client *client, struct Message *msg) {
 	(void)msg;
 	clientFormat(client, "ERROR :Detaching\r\n");
 	client->error = true;
-	// TODO: Set AWAY if no more clients attached.
 }
 
 static const struct {
@@ -184,7 +185,7 @@ static void clientParse(struct Client *client, char *line) {
 	if (!msg.cmd) return;
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
-		Handlers[i].fn(client, msg);
+		Handlers[i].fn(client, &msg);
 		break;
 	}
 }
@@ -192,7 +193,7 @@ static void clientParse(struct Client *client, char *line) {
 static bool intercept(const char *line, size_t len) {
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
 	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
-	// TODO: Intercept PRIVMSG to send to other clients.
+	// TODO: Intercept PRIVMSG and NOTICE to send to other clients.
 	return false;
 }
 
@@ -202,8 +203,8 @@ void clientRecv(struct Client *client) {
 		&client->buf[client->len], sizeof(client->buf) - client->len
 	);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
-	if (read < 0) warnx("tls_read: %s", tls_error(client->tls));
-	if (read < 1) {
+	if (read < 0) {
+		warnx("tls_read: %s", tls_error(client->tls));
 		client->error = true;
 		return;
 	}
@@ -234,7 +235,6 @@ size_t clientDiff(const struct Client *client) {
 	return ringDiff(client->consumer);
 }
 
-// TODO: Read several lines based on LOWAT for POLLOUT?
 void clientConsume(struct Client *client) {
 	time_t time;
 	const char *line = ringConsume(&time, client->consumer);
