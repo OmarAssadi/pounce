@@ -92,12 +92,12 @@ void serverSend(const char *ptr, size_t len) {
 }
 
 void serverFormat(const char *format, ...) {
-	char buf[513];
+	char buf[1024];
 	va_list ap;
 	va_start(ap, format);
 	int len = vsnprintf(buf, sizeof(buf), format, ap);
 	va_end(ap);
-	assert(len > 0 && (size_t)len < sizeof(buf));
+	assert((size_t)len < sizeof(buf));
 	serverSend(buf, len);
 }
 
@@ -108,7 +108,6 @@ static const char Base64[64] = {
 static char *base64(const byte *src, size_t len) {
 	char *dst = malloc(1 + (len + 2) / 3 * 4);
 	if (!dst) err(EX_OSERR, "malloc");
-
 	size_t i = 0;
 	while (len > 2) {
 		dst[i++] = Base64[0x3F & (src[0] >> 2)];
@@ -118,7 +117,6 @@ static char *base64(const byte *src, size_t len) {
 		src += 3;
 		len -= 3;
 	}
-
 	if (len) {
 		dst[i++] = Base64[0x3F & (src[0] >> 2)];
 		if (len > 1) {
@@ -130,37 +128,40 @@ static char *base64(const byte *src, size_t len) {
 		}
 		dst[i++] = '=';
 	}
-
 	dst[i] = '\0';
 	return dst;
 }
 
-static char *authBase64;
+static char *authPlain;
 
 void serverLogin(
 	const char *pass, const char *auth,
 	const char *nick, const char *user, const char *real
 ) {
-	if (pass) serverFormat("PASS :%s\r\n", pass);
 	if (auth) {
 		byte plain[1 + strlen(auth)];
 		plain[0] = 0;
 		for (size_t i = 0; auth[i]; ++i) {
 			plain[1 + i] = (auth[i] == ':' ? 0 : auth[i]);
 		}
-		authBase64 = base64(plain, sizeof(plain));
+		authPlain = base64(plain, sizeof(plain));
 		serverFormat("CAP REQ :sasl\r\n");
 	}
-	serverFormat("NICK %s\r\nUSER %s 0 * :%s\r\n", nick, user, real);
+	if (pass) serverFormat("PASS :%s\r\n", pass);
+	serverFormat("NICK %s\r\n", nick);
+	serverFormat("USER %s 0 * :%s\r\n", user, real);
 }
 
 void serverAuth(void) {
-	assert(authBase64);
+	assert(authPlain);
 	serverFormat(
-		"AUTHENTICATE PLAIN\r\nAUTHENTICATE %s\r\nCAP END\r\n", authBase64
+		"AUTHENTICATE PLAIN\r\n"
+		"AUTHENTICATE %s\r\n"
+		"CAP END\r\n",
+		authPlain
 	);
-	free(authBase64);
-	authBase64 = NULL;
+	free(authPlain);
+	authPlain = NULL;
 }
 
 void serverRecv(void) {
@@ -170,7 +171,6 @@ void serverRecv(void) {
 	ssize_t read = tls_read(client, &buf[len], sizeof(buf) - len);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
 	if (read < 0) errx(EX_IOERR, "tls_read: %s", tls_error(client));
-	if (!read) errx(EX_DATAERR, "tls_read: eof");
 	len += read;
 
 	char *crlf;
@@ -179,16 +179,13 @@ void serverRecv(void) {
 		crlf = memmem(line, &buf[len] - line, "\r\n", 2);
 		if (!crlf) break;
 		crlf[0] = '\0';
-
 		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
 		if (!strncmp(line, "PING ", 5)) {
-			line[1] = 'O';
-			serverFormat("%s\r\n", line);
+			serverFormat("PONG :irc.invalid\r\n");
 		} else {
 			if (stateReady()) ringProduce(line);
 			stateParse(line);
 		}
-
 		line = crlf + 2;
 	}
 	len -= line - buf;
