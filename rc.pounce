@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# PROVIDE: pounce
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name='pounce'
+rcvar='pounce_enable'
+
+load_rc_config "${name}"
+
+: ${pounce_enable:="NO"}
+
+_command='/usr/local/bin/pounce'
+command='/usr/sbin/daemon'
+pidprefix="/var/run/${name}"
+pidfile="${pidprefix}.pid"
+
+if [ -n "$2" ]; then
+	profile=$2
+	if [ -n "${pounce_profiles}" ]; then
+		pidfile="${pidprefix}.${profile}.pid"
+		eval pounce_enable="\${pounce_${profile}_enable:-${pounce_enable}}"
+		eval pounce_flags="\${pounce_${profile}_flags:-${pounce_flags}}"
+		eval pounce_user="\${pounce_${profile}_user:-${pounce_user}}"
+	else
+		echo "$0: extra argument ignored"
+	fi
+else
+	if [ -n "${pounce_profiles}" -a -n "$1" ]; then
+		for profile in ${pounce_profiles}; do
+			echo "===> ${name} profile: ${profile}"
+			/usr/local/etc/rc.d/${name} "$1" "${profile}" || exit "$?"
+		done
+		exit
+	fi
+fi
+
+_pounce_flags=$pounce_flags
+_pounce_user=$pounce_user
+unset pounce_flags pounce_user
+command_args="\
+	-r -P ${pidfile} -T ${name}${profile:+/${profile}} \
+	${_pounce_user:+-u ${_pounce_user}} \
+	-- ${_command} ${_pounce_flags}"
+
+run_rc_command "$1"

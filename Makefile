@@ -29,10 +29,11 @@ tags: *.c *.h
 clean:
 	rm -f tags pounce ${OBJS}
 
-install: pounce pounce.1
-	install -d ${PREFIX}/bin ${MANDIR}/man1
+install: pounce pounce.1 rc.pounce
+	install -d ${PREFIX}/bin ${MANDIR}/man1 ${PREFIX}/etc/rc.d
 	install pounce ${PREFIX}/bin
 	install -m 644 pounce.1 ${MANDIR}/man1
+	install rc.pounce ${PREFIX}/etc/rc.d/pounce
 
 uninstall:
-	rm -f ${PREFIX}/bin/pounce ${MANDIR}/man1/pounce.1
+	rm -f ${PREFIX}/bin/pounce ${MANDIR}/man1/pounce.1 ${PREFIX}/etc/rc.d/pounce
