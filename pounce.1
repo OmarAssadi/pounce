@@ -38,7 +38,7 @@ and uniquely identify themselves by username.
 .Pp
 The arguments are as follows:
 .
-.Bl -tag -width "-C cert"
+.Bl -tag -width "-W @file"
 .It Fl C Ar cert
 Load TLS certificate from
 .Ar cert .
@@ -74,10 +74,22 @@ Require the password
 .Ar pass
 to connect.
 .
+.It Fl W Cm @ Ns Ar file
+Set
+.Fl W Ar pass
+to the first line read from
+.Ar file .
+.
 .It Fl a Ar auth
 Authenticate with SASL PLAIN.
 .Ar auth
 is a colon-separated username and password.
+.
+.It Fl a Cm @ Ns Ar file
+Set
+.Fl a Ar auth
+to the first line read from
+.Ar file .
 .
 .It Fl h Ar host
 Connect to
@@ -117,6 +129,12 @@ and blue to clients.
 .It Fl w Ar pass
 Log in with the password
 .Ar pass .
+.
+.It Fl w Cm @ Ns Ar file
+Set
+.Fl w Ar pass
+to the first line read from
+.Ar file .
 .El
 .
 .Pp
@@ -133,7 +151,7 @@ The default nickname.
 .El
 .
 .Sh EXAMPLES
-.Bd -literal -offset indent
+.Bd -literal
 .Nm Fl H Li pounce.example.org Fl h Li chat.freenode.net Fl j Li '#ascii.town'
 .Ed
 .

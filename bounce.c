@@ -55,12 +55,26 @@ static void eventRemove(size_t i) {
 	event.clients[i] = event.clients[event.len];
 }
 
-static char *censor(char *arg) {
-	char *dup = strdup(arg);
-	if (!dup) err(EX_OSERR, "strdup");
-	memset(arg, '\0', strlen(dup));
+static char *sensitive(char *arg) {
+	char *value = NULL;
+	if (arg[0] == '@') {
+		FILE *file = fopen(&arg[1], "r");
+		if (!file) err(EX_NOINPUT, "%s", &arg[1]);
+
+		size_t cap = 0;
+		ssize_t len = getline(&value, &cap, file);
+		if (len < 0) err(EX_IOERR, "%s", &arg[1]);
+
+		if (len && value[len - 1] == '\n') value[len - 1] = '\0';
+		fclose(file);
+
+	} else {
+		value = strdup(arg);
+		if (!value) err(EX_OSERR, "strdup");
+	}
+	memset(arg, '\0', strlen(arg));
 	arg[0] = '*';
-	return dup;
+	return value;
 }
 
 int main(int argc, char *argv[]) {
@@ -85,8 +99,8 @@ int main(int argc, char *argv[]) {
 			break; case 'H': localHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'P': localPort = optarg;
-			break; case 'W': clientPass = censor(optarg);
-			break; case 'a': auth = censor(optarg);
+			break; case 'W': clientPass = sensitive(optarg);
+			break; case 'a': auth = sensitive(optarg);
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
 			break; case 'n': nick = optarg;
@@ -94,7 +108,7 @@ int main(int argc, char *argv[]) {
 			break; case 'r': real = optarg;
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
-			break; case 'w': pass = censor(optarg);
+			break; case 'w': pass = sensitive(optarg);
 			break; default:  return EX_USAGE;
 		}
 	}
