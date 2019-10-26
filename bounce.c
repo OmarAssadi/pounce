@@ -16,8 +16,10 @@
 
 #include <assert.h>
 #include <err.h>
+#include <errno.h>
 #include <limits.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +29,11 @@
 #include <unistd.h>
 
 #include "bounce.h"
+
+static volatile sig_atomic_t signals[NSIG];
+static void signalHandler(int signal) {
+	signals[signal] = 1;
+}
 
 static struct {
 	struct pollfd *fds;
@@ -148,8 +155,16 @@ int main(int argc, char *argv[]) {
 	}
 	eventAdd(server, NULL);
 
+	signal(SIGINT, signalHandler);
+	signal(SIGTERM, signalHandler);
+
 	size_t clients = 0;
-	while (0 < poll(event.fds, event.len, -1)) {
+	for (;;) {
+		int nfds = poll(event.fds, event.len, -1);
+		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
+		if (signals[SIGINT] || signals[SIGTERM]) break;
+		if (nfds < 0) continue;
+
 		for (size_t i = 0; i < event.len; ++i) {
 			short revents = event.fds[i].revents;
 			if (!revents) continue;
@@ -158,6 +173,8 @@ int main(int argc, char *argv[]) {
 				int fd;
 				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
 				eventAdd(fd, clientAlloc(tls));
+				// FIXME: This should only be done after a successful client
+				// registration.
 				if (!clients++) serverFormat("AWAY\r\n");
 				continue;
 			}
@@ -192,5 +209,13 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	err(EX_IOERR, "poll");
+
+	serverFormat("QUIT\r\n");
+	for (size_t i = 0; i < event.len; ++i) {
+		if (event.clients[i]) {
+			clientFormat(event.clients[i], "ERROR :Disconnecting\r\n");
+			clientFree(event.clients[i]);
+		}
+		close(event.fds[i].fd);
+	}
 }
