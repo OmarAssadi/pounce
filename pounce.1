@@ -1,4 +1,4 @@
-.Dd October 25, 2019
+.Dd October 26, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl v
+.Op Fl NTv
 .Op Fl C Ar cert
 .Op Fl H Ar host
 .Op Fl K Ar priv
@@ -64,10 +64,20 @@ where
 is set by
 .Fl H .
 .
+.It Fl N
+Request
+.Ql NAMES
+for each channel when a client connects.
+.
 .It Fl P Ar port
 Bind to local
 .Ar port .
 The default port is 6697.
+.
+.It Fl T
+Request
+.Ql TOPIC
+for each channel when a client connects.
 .
 .It Fl W Ar pass
 Require the password

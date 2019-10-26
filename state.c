@@ -263,5 +263,7 @@ void stateSync(struct Client *client) {
 	if (chan.len) assert(self.origin);
 	for (size_t i = 0; i < chan.len; ++i) {
 		clientFormat(client, ":%s JOIN %s\r\n", self.origin, chan.names[i]);
+		if (stateJoinTopic) serverFormat("TOPIC %s\r\n", chan.names[i]);
+		if (stateJoinNames) serverFormat("NAMES %s\r\n", chan.names[i]);
 	}
 }

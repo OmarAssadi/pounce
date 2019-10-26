@@ -87,6 +87,8 @@ void clientFormat(struct Client *client, const char *format, ...)
 size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
+bool stateJoinNames;
+bool stateJoinTopic;
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);

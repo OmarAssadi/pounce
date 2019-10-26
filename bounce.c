@@ -93,12 +93,14 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "C:H:K:P:W:a:h:j:n:p:r:u:vw:"))) {
+	while (0 < (opt = getopt(argc, argv, "C:H:K:NTP:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': localHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
+			break; case 'N': stateJoinNames = true;
 			break; case 'P': localPort = optarg;
+			break; case 'T': stateJoinTopic = true;
 			break; case 'W': clientPass = sensitive(optarg);
 			break; case 'a': auth = sensitive(optarg);
 			break; case 'h': host = optarg;
