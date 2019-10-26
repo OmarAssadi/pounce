@@ -119,6 +119,24 @@ Log in with the password
 .Ar pass .
 .El
 .
+.Pp
+When using
+.Xr certbot 8
+to obtain TLS certificates,
+is it sufficient to specify the domain with
+.Fl H .
+.
+.Sh ENVIRONMENT
+.Bl -tag -width Ds
+.It Ev USER
+The default nickname.
+.El
+.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+.Nm Fl H Li pounce.example.org Fl h Li chat.freenode.net Fl j Li '#ascii.town'
+.Ed
+.
 .Sh STANDARDS
 The
 .Nm
@@ -199,3 +217,12 @@ daemon implements the following:
 .%U https://tools.ietf.org/html/rfc4648
 .Re
 .El
+.
+.Sh AUTHORS
+.An June Bug Aq Mt june@causal.agency
+.
+.Sh CAVEATS
+One instance of
+.Nm ,
+and therefore one local port,
+is required for each server connection.

@@ -4,9 +4,17 @@
 .
 .Sh NAME
 .Nm pounce
-.Nd IRC bouncer
+.Nd IRC pouncer :3
 .
 .Sh DESCRIPTION
+.Nm
+is a multi-client, TLS-only IRC bouncer.
+It takes a simple approach,
+using a multiple-consumer ring buffer
+and the IRCv3.2 server-time extension
+to communicate with clients.
+.
+.Pp
 .Nm
 requires LibreSSL
 .Pq Fl ltls
@@ -16,7 +24,7 @@ and targets
 .Sh FILES
 .Bl -tag -width "bounce.h" -compact
 .It Pa bounce.h
-function prototypes and default paths
+common declarations and default paths
 .It Pa bounce.c
 command line parsing and event loop
 .It Pa listen.c
