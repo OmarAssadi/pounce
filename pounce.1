@@ -9,6 +9,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl NTv
+.Op Fl A Ar away
 .Op Fl C Ar cert
 .Op Fl H Ar host
 .Op Fl K Ar priv
@@ -39,6 +40,11 @@ and uniquely identify themselves by username.
 The arguments are as follows:
 .
 .Bl -tag -width "-W @file"
+.It Fl A Ar away
+Set away status to
+.Ar away
+when no clients are connected.
+.
 .It Fl C Ar cert
 Load TLS certificate from
 .Ar cert .

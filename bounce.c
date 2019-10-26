@@ -91,10 +91,12 @@ int main(int argc, char *argv[]) {
 	const char *user = NULL;
 	const char *real = NULL;
 	const char *join = NULL;
+	const char *away = "pounced :3";
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "C:H:K:NTP:W:a:h:j:n:p:r:u:vw:"))) {
+	while (0 < (opt = getopt(argc, argv, "A:C:H:K:NTP:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
+			break; case 'A': away = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': localHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
@@ -147,6 +149,7 @@ int main(int argc, char *argv[]) {
 	}
 	eventAdd(server, NULL);
 
+	size_t clients = 0;
 	while (0 < poll(event.fds, event.len, -1)) {
 		for (size_t i = 0; i < event.len; ++i) {
 			short revents = event.fds[i].revents;
@@ -156,6 +159,7 @@ int main(int argc, char *argv[]) {
 				int fd;
 				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
 				eventAdd(fd, clientAlloc(tls));
+				if (!clients++) serverFormat("AWAY\r\n");
 				continue;
 			}
 
@@ -172,10 +176,10 @@ int main(int argc, char *argv[]) {
 			if (revents & POLLIN) clientRecv(client);
 			if (revents & POLLOUT) clientConsume(client);
 			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
-				// TODO: Set AWAY if no more clients remain.
 				clientFree(client);
 				close(event.fds[i].fd);
 				eventRemove(i);
+				if (!--clients) serverFormat("AWAY :%s\r\n", away);
 				break;
 			}
 		}
