@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "A:C:H:K:NTP:W:a:h:j:n:p:r:u:vw:"))) {
+	while (0 < (opt = getopt(argc, argv, "A:C:H:K:NP:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
 			break; case 'A': away = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateJoinNames = true;
 			break; case 'P': localPort = optarg;
-			break; case 'T': stateJoinTopic = true;
 			break; case 'W': clientPass = sensitive(optarg);
 			break; case 'a': auth = sensitive(optarg);
 			break; case 'h': host = optarg;

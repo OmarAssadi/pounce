@@ -43,28 +43,45 @@ static void set(char **field, const char *value) {
 	if (!*field) err(EX_OSERR, "strdup");
 }
 
+struct Channel {
+	char *name;
+	char *topic;
+};
+
 static struct {
-	char **names;
+	struct Channel *ptr;
 	size_t cap, len;
-} chan;
+} chans;
 
 static void chanAdd(const char *name) {
-	if (chan.len == chan.cap) {
-		chan.cap = (chan.cap ? chan.cap * 2 : 8);
-		chan.names = realloc(chan.names, sizeof(char *) * chan.cap);
-		if (!chan.names) err(EX_OSERR, "realloc");
+	if (chans.len == chans.cap) {
+		chans.cap = (chans.cap ? chans.cap * 2 : 8);
+		chans.ptr = realloc(chans.ptr, sizeof(*chans.ptr) * chans.cap);
+		if (!chans.ptr) err(EX_OSERR, "realloc");
 	}
-	chan.names[chan.len] = strdup(name);
-	if (!chan.names[chan.len]) err(EX_OSERR, "strdup");
-	chan.len++;
+	struct Channel *chan = &chans.ptr[chans.len++];
+	chan->name = strdup(name);
+	if (!chan->name) err(EX_OSERR, "strdup");
+	chan->topic = NULL;
+}
+
+static void chanTopic(const char *name, const char *topic) {
+	for (size_t i = 0; i < chans.len; ++i) {
+		if (strcmp(chans.ptr[i].name, name)) continue;
+		free(chans.ptr[i].topic);
+		chans.ptr[i].topic = strdup(topic);
+		if (!chans.ptr[i].topic) err(EX_OSERR, "strdup");
+		break;
+	}
 }
 
 static void chanRemove(const char *name) {
-	for (size_t i = 0; i < chan.len; ++i) {
-		if (strcmp(chan.names[i], name)) continue;
-		free(chan.names[i]);
-		chan.names[i] = chan.names[--chan.len];
-		return;
+	for (size_t i = 0; i < chans.len; ++i) {
+		if (strcmp(chans.ptr[i].name, name)) continue;
+		free(chans.ptr[i].name);
+		free(chans.ptr[i].topic);
+		chans.ptr[i] = chans.ptr[--chans.len];
+		break;
 	}
 }
 
@@ -179,6 +196,18 @@ static void handleKick(struct Message *msg) {
 	}
 }
 
+static void handleTopic(struct Message *msg) {
+	if (!msg->params[0]) errx(EX_PROTOCOL, "TOPIC without channel");
+	if (!msg->params[1]) errx(EX_PROTOCOL, "TOPIC without topic");
+	chanTopic(msg->params[0], msg->params[1]);
+}
+
+static void handleReplyTopic(struct Message *msg) {
+	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_TOPIC without channel");
+	if (!msg->params[2]) errx(EX_PROTOCOL, "RPL_TOPIC without topic");
+	chanTopic(msg->params[1], msg->params[2]);
+}
+
 static void handleError(struct Message *msg) {
 	errx(EX_UNAVAILABLE, "%s", msg->params[0]);
 }
@@ -192,12 +221,14 @@ static const struct {
 	{ "003", handleReplyCreated },
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
+	{ "332", handleReplyTopic },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
 	{ "JOIN", handleJoin },
 	{ "KICK", handleKick },
 	{ "NICK", handleNick },
 	{ "PART", handlePart },
+	{ "TOPIC", handleTopic },
 };
 
 void stateParse(char *line) {
@@ -260,10 +291,16 @@ void stateSync(struct Client *client) {
 		clientFormat(client, " :are supported by this server\r\n");
 	}
 
-	if (chan.len) assert(self.origin);
-	for (size_t i = 0; i < chan.len; ++i) {
-		clientFormat(client, ":%s JOIN %s\r\n", self.origin, chan.names[i]);
-		if (stateJoinTopic) serverFormat("TOPIC %s\r\n", chan.names[i]);
-		if (stateJoinNames) serverFormat("NAMES %s\r\n", chan.names[i]);
+	if (chans.len) assert(self.origin);
+	for (size_t i = 0; i < chans.len; ++i) {
+		const struct Channel *chan = &chans.ptr[i];
+		clientFormat(client, ":%s JOIN %s\r\n", self.origin, chan->name);
+		if (chan->topic) {
+			clientFormat(
+				client, ":%s 332 %s %s :%s\r\n",
+				Origin, self.nick, chan->name, chan->topic
+			);
+		}
+		if (stateJoinNames) serverFormat("NAMES %s\r\n", chan->name);
 	}
 }
