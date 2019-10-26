@@ -114,9 +114,13 @@ static void handleUser(struct Client *client, struct Message *msg) {
 		client->error = true;
 		return;
 	}
-	client->consumer = ringConsumer(msg->params[0]);
-	client->need &= ~NeedUser;
-	sync(client);
+	if (client->need & NeedPass) {
+		passRequired(client);
+	} else {
+		client->need &= ~NeedUser;
+		client->consumer = ringConsumer(msg->params[0]);
+		sync(client);
+	}
 }
 
 static void handlePass(struct Client *client, struct Message *msg) {
