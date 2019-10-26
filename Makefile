@@ -1,3 +1,5 @@
+PREFIX = /usr/local
+MANDIR = ${PREFIX}/man
 LIBRESSL_PREFIX = /usr/local
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
@@ -26,3 +28,11 @@ tags: *.c *.h
 
 clean:
 	rm -f tags pounce ${OBJS}
+
+install: pounce pounce.1
+	install -d ${PREFIX}/bin ${MANDIR}/man1
+	install pounce ${PREFIX}/bin
+	install -m 644 pounce.1 ${MANDIR}/man1
+
+uninstall:
+	rm -f ${PREFIX}/bin/pounce ${MANDIR}/man1/pounce.1
