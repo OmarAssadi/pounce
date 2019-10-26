@@ -14,9 +14,9 @@ OBJS += ring.o
 OBJS += server.o
 OBJS += state.o
 
-all: tags linger
+all: tags pounce
 
-linger: ${OBJS}
+pounce: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
 
 ${OBJS}: bounce.h
@@ -25,4 +25,4 @@ tags: *.c *.h
 	ctags -w *.c *.h
 
 clean:
-	rm -f tags linger ${OBJS}
+	rm -f tags pounce ${OBJS}
