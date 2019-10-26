@@ -204,6 +204,7 @@ static void clientParse(struct Client *client, char *line) {
 		Handlers[i].fn(client, &msg);
 		break;
 	}
+	client->error = true;
 }
 
 static bool intercept(const char *line, size_t len) {
