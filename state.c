@@ -107,8 +107,7 @@ bool stateReady(void) {
 		&& intro.welcome
 		&& intro.yourHost
 		&& intro.created
-		&& intro.myInfo[0]
-		&& support.len;
+		&& intro.myInfo[0];
 }
 
 const char *stateSelf(void) {
