@@ -215,6 +215,13 @@ void stateSync(struct Client *client) {
 
 	clientFormat(
 		client,
+		":%s NOTICE %s :"
+		"pounce is AGPLv3 fwee softwawe ^w^  code is avaiwable fwom %s\r\n",
+		Origin, self.nick, SourceURL
+	);
+
+	clientFormat(
+		client,
 		":%s 001 %s :%s\r\n"
 		":%s 002 %s :%s\r\n"
 		":%s 003 %s :%s\r\n",

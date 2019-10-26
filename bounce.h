@@ -30,6 +30,9 @@
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
+static const char *SourceURL = "https://code.causal.agency/june/pounce";
+static const char *Origin = "irc.invalid";
+
 bool verbose;
 
 enum { ParamCap = 15 };
