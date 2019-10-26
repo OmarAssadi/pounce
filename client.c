@@ -202,7 +202,7 @@ static void clientParse(struct Client *client, char *line) {
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
 		Handlers[i].fn(client, &msg);
-		break;
+		return;
 	}
 	client->error = true;
 }
