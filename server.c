@@ -186,7 +186,7 @@ void serverRecv(void) {
 		crlf[0] = '\0';
 		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
 		if (!strncmp(line, "PING ", 5)) {
-			serverFormat("PONG :irc.invalid\r\n");
+			serverFormat("PONG %s\r\n", &line[5]);
 		} else {
 			if (stateReady()) ringProduce(line);
 			stateParse(line);
