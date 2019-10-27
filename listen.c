@@ -63,6 +63,10 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 		fds[len] = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fds[len] < 0) err(EX_OSERR, "socket");
 
+		int yes = 1;
+		error = setsockopt(fds[len], SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+		if (error) err(EX_OSERR, "setsockopt");
+
 		error = bind(fds[len], ai->ai_addr, ai->ai_addrlen);
 		if (error) {
 			warn("%s:%s", host, port);
