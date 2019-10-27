@@ -67,7 +67,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 		ssize_t ret = tls_write(client->tls, ptr, len);
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
 		if (ret < 0) {
-			warnx("tls_write: %s", tls_error(client->tls));
+			warnx("client tls_write: %s", tls_error(client->tls));
 			client->error = true;
 			return;
 		}
@@ -226,7 +226,7 @@ void clientRecv(struct Client *client) {
 	);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
 	if (read <= 0) {
-		if (read < 0) warnx("tls_read: %s", tls_error(client->tls));
+		if (read < 0) warnx("client tls_read: %s", tls_error(client->tls));
 		client->error = true;
 		return;
 	}

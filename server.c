@@ -90,7 +90,7 @@ void serverSend(const char *ptr, size_t len) {
 	while (len) {
 		ssize_t ret = tls_write(client, ptr, len);
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
-		if (ret < 0) errx(EX_IOERR, "tls_write: %s", tls_error(client));
+		if (ret < 0) errx(EX_IOERR, "server tls_write: %s", tls_error(client));
 		ptr += ret;
 		len -= ret;
 	}
@@ -170,7 +170,7 @@ void serverRecv(void) {
 
 	ssize_t read = tls_read(client, &buf[len], sizeof(buf) - len);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
-	if (read < 0) errx(EX_IOERR, "tls_read: %s", tls_error(client));
+	if (read < 0) errx(EX_IOERR, "server tls_read: %s", tls_error(client));
 	len += read;
 
 	char *crlf;
