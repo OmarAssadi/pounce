@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 
+	bool insecure = false;
 	const char *host = NULL;
 	const char *port = "6697";
 	const char *pass = NULL;
@@ -101,8 +102,9 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "A:C:H:K:NP:W:a:h:j:n:p:r:u:vw:"))) {
+	while (0 < (opt = getopt(argc, argv, "!A:C:H:K:NP:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
+			break; case '!': insecure = true;
 			break; case 'A': away = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': localHost = optarg;
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
 	int bind[8];
 	size_t binds = listenBind(bind, 8, localHost, localPort);
 
-	int server = serverConnect(host, port);
+	int server = serverConnect(insecure, host, port);
 	serverLogin(pass, auth, nick, user, real);
 	while (!stateReady()) serverRecv();
 	if (join) serverFormat("JOIN :%s\r\n", join);

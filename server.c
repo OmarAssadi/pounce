@@ -33,12 +33,17 @@ typedef unsigned char byte;
 
 static struct tls *client;
 
-int serverConnect(const char *host, const char *port) {
+int serverConnect(bool insecure, const char *host, const char *port) {
 	int error;
 
 	struct tls_config *config = tls_config_new();
 	error = tls_config_set_ciphers(config, "compat");
 	if (error) errx(EX_SOFTWARE, "tls_config");
+
+	if (insecure) {
+		tls_config_insecure_noverifycert(config);
+		tls_config_insecure_noverifyname(config);
+	}
 
 	client = tls_client();
 	if (!client) errx(EX_SOFTWARE, "tls_client");

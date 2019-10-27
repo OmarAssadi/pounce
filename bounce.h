@@ -65,7 +65,7 @@ void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 struct tls *listenAccept(int *fd, int bind);
 
-int serverConnect(const char *host, const char *port);
+int serverConnect(bool insecure, const char *host, const char *port);
 void serverLogin(
 	const char *pass, const char *auth,
 	const char *nick, const char *user, const char *real
