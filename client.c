@@ -225,8 +225,8 @@ void clientRecv(struct Client *client) {
 		&client->buf[client->len], sizeof(client->buf) - client->len
 	);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
-	if (read < 0) {
-		warnx("tls_read: %s", tls_error(client->tls));
+	if (read <= 0) {
+		if (read < 0) warnx("tls_read: %s", tls_error(client->tls));
 		client->error = true;
 		return;
 	}
