@@ -1,4 +1,4 @@
-.Dd October 26, 2019
+.Dd October 27, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -152,8 +152,19 @@ to the first line read from
 When using
 .Xr certbot 8
 to obtain TLS certificates,
-is it sufficient to specify the domain with
+it is sufficient to specify the domain with
 .Fl H .
+.
+.Pp
+Upon receiving the
+.Dv SIGUSR1
+signal,
+the certificate and private key
+will be reloaded from the paths
+specified by
+.Fl C
+and
+.Fl K .
 .
 .Sh ENVIRONMENT
 .Bl -tag -width Ds

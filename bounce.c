@@ -159,14 +159,20 @@ int main(int argc, char *argv[]) {
 
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
+	signal(SIGUSR1, signalHandler);
 
 	size_t clients = 0;
 	for (;;) {
 		int nfds = poll(event.fds, event.len, -1);
 		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
-		if (signals[SIGINT] || signals[SIGTERM]) break;
-		if (nfds < 0) continue;
 
+		if (signals[SIGINT] || signals[SIGTERM]) break;
+		if (signals[SIGUSR1]) {
+			listenConfig(certPath, privPath);
+			signals[SIGUSR1] = 0;
+		}
+
+		if (nfds < 0) continue;
 		for (size_t i = 0; i < event.len; ++i) {
 			short revents = event.fds[i].revents;
 			if (!revents) continue;

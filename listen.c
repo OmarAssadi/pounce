@@ -27,8 +27,11 @@
 
 static struct tls *server;
 
-// TODO: Make this callable more than once to reload certificates?
 void listenConfig(const char *cert, const char *priv) {
+	tls_free(server);
+	server = tls_server();
+	if (!server) errx(EX_SOFTWARE, "tls_server");
+
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
@@ -39,9 +42,6 @@ void listenConfig(const char *cert, const char *priv) {
 			tls_config_error(config)
 		);
 	}
-
-	server = tls_server();
-	if (!server) errx(EX_SOFTWARE, "tls_server");
 
 	error = tls_configure(server, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(server));
