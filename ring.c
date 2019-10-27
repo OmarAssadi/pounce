@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
 #include <time.h>
@@ -78,4 +79,14 @@ const char *ringConsume(time_t *time, size_t consumer) {
 	size_t i = read.ptrs[consumer]++ % RingLen;
 	if (time) *time = ring.times[i];
 	return ring.lines[i];
+}
+
+void ringInfo(void) {
+	fprintf(stderr, "producer: %zu\n", ring.write);
+	for (size_t i = 0; i < read.len; ++i) {
+		fprintf(
+			stderr, "consumer %s: %zu (%zu)\n",
+			read.names[i], read.ptrs[i], ring.write - read.ptrs[i]
+		);
+	}
 }

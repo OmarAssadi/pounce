@@ -30,6 +30,10 @@
 
 #include "bounce.h"
 
+#ifndef SIGINFO
+#define SIGINFO SIGUSR2
+#endif
+
 static volatile sig_atomic_t signals[NSIG];
 static void signalHandler(int signal) {
 	signals[signal] = 1;
@@ -159,6 +163,7 @@ int main(int argc, char *argv[]) {
 
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
+	signal(SIGINFO, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
 	size_t clients = 0;
@@ -167,6 +172,10 @@ int main(int argc, char *argv[]) {
 		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
 
 		if (signals[SIGINT] || signals[SIGTERM]) break;
+		if (signals[SIGINFO]) {
+			ringInfo();
+			signals[SIGINFO] = 0;
+		}
 		if (signals[SIGUSR1]) {
 			listenConfig(certPath, privPath);
 			signals[SIGUSR1] = 0;

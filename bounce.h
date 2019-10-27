@@ -60,6 +60,7 @@ void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
 size_t ringDiff(size_t consumer);
 const char *ringConsume(time_t *time, size_t consumer);
+void ringInfo(void);
 
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
