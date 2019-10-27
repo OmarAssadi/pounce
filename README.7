@@ -1,4 +1,4 @@
-.Dd October 25, 2019
+.Dd October 26, 2019
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -20,6 +20,29 @@ requires LibreSSL
 .Pq Fl ltls
 and targets
 .Fx .
+.
+.Sh RATIONALE
+As a former
+.Xr znc 1
+user,
+I was dissatisfied with the multi-client experience it offered.
+I wanted to connect from both my laptop and my phone
+and have full chat history on both.
+With
+.Xr znc 1 ,
+my options were either having both clients
+spammed with redundant history every time they connect,
+or having one client consume the buffer
+and the other get no history at all.
+.
+.Pp
+With a multiple-consumer ring buffer,
+each client has its own place in the history
+and can be brought up to date independently.
+Additionally,
+by expecting clients to implement the server-time extension,
+all events can be accurately replayed,
+rather than being limited to messages.
 .
 .Sh FILES
 .Bl -tag -width "rc.pounce" -compact
