@@ -174,10 +174,17 @@ int main(int argc, char *argv[]) {
 			if (i < binds) {
 				int fd;
 				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
-				eventAdd(fd, clientAlloc(tls));
-				// FIXME: This should only be done after a successful client
-				// registration.
-				if (!clients++) serverFormat("AWAY\r\n");
+				int error = tls_handshake(tls);
+				if (error) {
+					warnx("tls_handshake: %s", tls_error(tls));
+					tls_free(tls);
+					close(fd);
+				} else {
+					eventAdd(fd, clientAlloc(tls));
+					// FIXME: This should only be done after a successful
+					// client registration.
+					if (!clients++) serverFormat("AWAY\r\n");
+				}
 				continue;
 			}
 
