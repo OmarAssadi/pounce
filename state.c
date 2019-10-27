@@ -162,6 +162,12 @@ static void handleReplyISupport(struct Message *msg) {
 	}
 }
 
+static void handleErrorNicknameInUse(struct Message *msg) {
+	if (self.nick) return;
+	if (!msg->params[1]) errx(EX_PROTOCOL, "ERR_NICKNAMEINUSE without nick");
+	serverFormat("NICK %s_\r\n", msg->params[1]);
+}
+
 static bool fromSelf(const struct Message *msg) {
 	if (!self.nick) return false;
 	size_t len = strlen(self.nick);
@@ -226,6 +232,7 @@ static const struct {
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
 	{ "332", handleReplyTopic },
+	{ "433", handleErrorNicknameInUse },
 	{ "AUTHENTICATE", handleAuthenticate },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
