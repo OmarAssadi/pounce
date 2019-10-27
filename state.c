@@ -122,6 +122,11 @@ static void handleCap(struct Message *msg) {
 	bool ack = msg->params[1] && !strcmp(msg->params[1], "ACK");
 	bool sasl = msg->params[2] && !strncmp(msg->params[2], "sasl", 4);
 	if (!ack || !sasl) errx(EX_CONFIG, "server does not support SASL");
+	serverFormat("AUTHENTICATE PLAIN\r\n");
+}
+
+static void handleAuthenticate(struct Message *msg) {
+	(void)msg;
 	serverAuth();
 }
 
@@ -221,6 +226,7 @@ static const struct {
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
 	{ "332", handleReplyTopic },
+	{ "AUTHENTICATE", handleAuthenticate },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
 	{ "JOIN", handleJoin },

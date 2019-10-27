@@ -159,12 +159,7 @@ void serverLogin(
 
 void serverAuth(void) {
 	assert(authPlain);
-	serverFormat(
-		"AUTHENTICATE PLAIN\r\n"
-		"AUTHENTICATE %s\r\n"
-		"CAP END\r\n",
-		authPlain
-	);
+	serverFormat("AUTHENTICATE %s\r\nCAP END\r\n", authPlain);
 	free(authPlain);
 	authPlain = NULL;
 }
