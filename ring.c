@@ -103,3 +103,81 @@ void ringInfo(void) {
 		);
 	}
 }
+
+static const size_t FileVersion = 0x0165636E756F70;
+
+static int writeSize(FILE *file, size_t value) {
+	return (fwrite(&value, sizeof(value), 1, file) ? 0 : -1);
+}
+static int writeTime(FILE *file, time_t time) {
+	return (fwrite(&time, sizeof(time), 1, file) ? 0 : -1);
+}
+static int writeString(FILE *file, const char *str) {
+	return (fwrite(str, strlen(str) + 1, 1, file) ? 0 : -1);
+}
+
+int ringSave(FILE *file) {
+	if (writeSize(file, FileVersion)) return -1;
+	if (writeSize(file, producer)) return -1;
+	if (writeSize(file, consumers.len)) return -1;
+	for (size_t i = 0; i < consumers.len; ++i) {
+		if (writeString(file, consumers.ptr[i].name)) return -1;
+		if (writeSize(file, consumers.ptr[i].pos)) return -1;
+	}
+	for (size_t i = 0; i < RingLen; ++i) {
+		if (writeTime(file, ring.times[i])) return -1;
+	}
+	for (size_t i = 0; i < RingLen; ++i) {
+		if (!ring.lines[i]) break;
+		if (writeString(file, ring.lines[i])) return -1;
+	}
+	return 0;
+}
+
+static void readSize(FILE *file, size_t *value) {
+	fread(value, sizeof(*value), 1, file);
+	if (ferror(file)) err(EX_IOERR, "fread");
+	if (feof(file)) err(EX_DATAERR, "unexpected eof");
+}
+static void readTime(FILE *file, time_t *time) {
+	fread(time, sizeof(*time), 1, file);
+	if (ferror(file)) err(EX_IOERR, "fread");
+	if (feof(file)) err(EX_DATAERR, "unexpected eof");
+}
+static void readString(FILE *file, char **buf, size_t *cap) {
+	ssize_t len = getdelim(buf, cap, '\0', file);
+	if (len < 0 && !feof(file)) err(EX_IOERR, "getdelim");
+}
+
+void ringLoad(FILE *file) {
+	size_t version;
+	fread(&version, sizeof(version), 1, file);
+	if (ferror(file)) err(EX_IOERR, "fread");
+	if (feof(file)) return;
+
+	if (version != FileVersion) errx(EX_DATAERR, "unknown file version");
+	readSize(file, &producer);
+
+	char *buf = NULL;
+	size_t cap = 0;
+
+	size_t len;
+	readSize(file, &len);
+	for (size_t i = 0; i < len; ++i) {
+		readString(file, &buf, &cap);
+		size_t consumer = ringConsumer(buf);
+		readSize(file, &consumers.ptr[consumer].pos);
+	}
+
+	for (size_t i = 0; i < RingLen; ++i) {
+		readTime(file, &ring.times[i]);
+	}
+	for (size_t i = 0; i < RingLen; ++i) {
+		readString(file, &buf, &cap);
+		if (feof(file)) break;
+		ring.lines[i] = strdup(buf);
+		if (!ring.lines[i]) err(EX_OSERR, "strdup");
+	}
+
+	free(buf);
+}

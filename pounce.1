@@ -17,6 +17,7 @@
 .Op Fl Q Ar quit
 .Op Fl W Ar pass
 .Op Fl a Ar auth
+.Op Fl f Ar file
 .Op Fl h Ar host
 .Op Fl j Ar chan
 .Op Fl n Ar nick
@@ -106,6 +107,15 @@ is a colon-separated username and password.
 Set
 .Fl a Ar auth
 to the first line read from
+.Ar file .
+.
+.It Fl f Ar file
+Load the contents of the ring buffer from
+.Ar file
+if it exists.
+The file is then truncated.
+On shutdown,
+save the contents of the ring buffer to
 .Ar file .
 .
 .It Fl h Ar host

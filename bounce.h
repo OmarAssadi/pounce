@@ -15,6 +15,7 @@
  */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -64,6 +65,8 @@ size_t ringDiff(size_t consumer);
 const char *ringPeek(time_t *time, size_t consumer);
 const char *ringConsume(time_t *time, size_t consumer);
 void ringInfo(void);
+int ringSave(FILE *file);
+void ringLoad(FILE *file);
 
 void listenConfig(const char *cert, const char *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);

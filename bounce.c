@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -88,11 +89,20 @@ static char *sensitive(char *arg) {
 	return value;
 }
 
+static FILE *saveFile;
+static void exitSave(void) {
+	int error = ringSave(saveFile);
+	if (error) warn("fwrite");
+	error = fclose(saveFile);
+	if (error) warn("fclose");
+}
+
 int main(int argc, char *argv[]) {
 	const char *localHost = "localhost";
 	const char *localPort = "6697";
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
+	const char *save = NULL;
 
 	bool insecure = false;
 	const char *host = NULL;
@@ -107,7 +117,8 @@ int main(int argc, char *argv[]) {
 	const char *quit = "connection reset by purr";
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "!A:C:H:K:NP:Q:W:a:h:j:n:p:r:u:vw:"))) {
+	const char *opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:u:vw:";
+	while (0 < (opt = getopt(argc, argv, opts))) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'A': away = optarg;
@@ -119,6 +130,7 @@ int main(int argc, char *argv[]) {
 			break; case 'Q': quit = optarg;
 			break; case 'W': clientPass = sensitive(optarg);
 			break; case 'a': auth = sensitive(optarg);
+			break; case 'f': save = optarg;
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
 			break; case 'n': nick = optarg;
@@ -145,6 +157,19 @@ int main(int argc, char *argv[]) {
 	}
 	if (!user) user = nick;
 	if (!real) real = nick;
+
+	if (save) {
+		umask(0066);
+		saveFile = fopen(save, "a+");
+		if (!saveFile) err(EX_CANTCREAT, "%s", save);
+
+		rewind(saveFile);
+		ringLoad(saveFile);
+
+		int error = ftruncate(fileno(saveFile), 0);
+		if (error) err(EX_IOERR, "ftruncate");
+		atexit(exitSave);
+	}
 
 	listenConfig(certPath, privPath);
 
