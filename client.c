@@ -172,11 +172,7 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 }
 
 static void handlePrivmsg(struct Client *client, struct Message *msg) {
-	if (client->need || !msg->params[0] || !msg->params[1]) {
-		client->error = true;
-		return;
-	}
-
+	if (!msg->params[0] || !msg->params[1]) return;
 	char line[1024];
 	snprintf(
 		line, sizeof(line), ":%s %s %s :%s",
@@ -192,14 +188,15 @@ static void handlePrivmsg(struct Client *client, struct Message *msg) {
 static const struct {
 	const char *cmd;
 	Handler *fn;
+	bool need;
 } Handlers[] = {
-	{ "CAP", handleCap },
-	{ "NICK", handleNick },
-	{ "NOTICE", handlePrivmsg },
-	{ "PASS", handlePass },
-	{ "PRIVMSG", handlePrivmsg },
-	{ "QUIT", handleQuit },
-	{ "USER", handleUser },
+	{ "CAP", handleCap, false },
+	{ "NICK", handleNick, false },
+	{ "NOTICE", handlePrivmsg, true },
+	{ "PASS", handlePass, false },
+	{ "PRIVMSG", handlePrivmsg, true },
+	{ "QUIT", handleQuit, true },
+	{ "USER", handleUser, false },
 };
 
 static void clientParse(struct Client *client, char *line) {
@@ -207,6 +204,7 @@ static void clientParse(struct Client *client, char *line) {
 	if (!msg.cmd) return;
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
 		if (strcmp(msg.cmd, Handlers[i].cmd)) continue;
+		if (Handlers[i].need && client->need) break;
 		Handlers[i].fn(client, &msg);
 		return;
 	}
