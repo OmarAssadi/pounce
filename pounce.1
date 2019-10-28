@@ -1,4 +1,4 @@
-.Dd October 27, 2019
+.Dd October 28, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -14,6 +14,7 @@
 .Op Fl H Ar host
 .Op Fl K Ar priv
 .Op Fl P Ar port
+.Op Fl Q Ar quit
 .Op Fl W Ar pass
 .Op Fl a Ar auth
 .Op Fl h Ar host
@@ -79,6 +80,11 @@ for each channel when a client connects.
 Bind to local
 .Ar port .
 The default port is 6697.
+.
+.It Fl Q Ar quit
+Quit with message
+.Ar quit
+when shutting down.
 .
 .It Fl W Ar pass
 Require the password

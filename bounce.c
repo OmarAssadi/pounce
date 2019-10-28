@@ -104,9 +104,10 @@ int main(int argc, char *argv[]) {
 	const char *real = NULL;
 	const char *join = NULL;
 	const char *away = "pounced :3";
+	const char *quit = "connection reset by purr";
 
 	int opt;
-	while (0 < (opt = getopt(argc, argv, "!A:C:H:K:NP:W:a:h:j:n:p:r:u:vw:"))) {
+	while (0 < (opt = getopt(argc, argv, "!A:C:H:K:NP:Q:W:a:h:j:n:p:r:u:vw:"))) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'A': away = optarg;
@@ -115,6 +116,7 @@ int main(int argc, char *argv[]) {
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateJoinNames = true;
 			break; case 'P': localPort = optarg;
+			break; case 'Q': quit = optarg;
 			break; case 'W': clientPass = sensitive(optarg);
 			break; case 'a': auth = sensitive(optarg);
 			break; case 'h': host = optarg;
@@ -234,7 +236,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	serverFormat("QUIT\r\n");
+	serverFormat("QUIT :%s\r\n", quit);
 	for (size_t i = 0; i < event.len; ++i) {
 		if (event.clients[i]) {
 			clientFormat(event.clients[i], "ERROR :Disconnecting\r\n");
