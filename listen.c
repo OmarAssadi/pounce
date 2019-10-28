@@ -17,8 +17,10 @@
 #include <err.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -27,7 +29,23 @@
 
 static struct tls *server;
 
-void listenConfig(const char *cert, const char *priv) {
+static byte *reread(size_t *len, FILE *file) {
+	struct stat stat;
+	int error = fstat(fileno(file), &stat);
+	if (error) err(EX_IOERR, "fstat");
+
+	byte *buf = malloc(stat.st_size);
+	if (!buf) err(EX_OSERR, "malloc");
+
+	fpurge(file);
+	rewind(file);
+	*len = fread(buf, 1, stat.st_size, file);
+	if (ferror(file)) err(EX_IOERR, "fread");
+
+	return buf;
+}
+
+void listenConfig(FILE *cert, FILE *priv) {
 	tls_free(server);
 	server = tls_server();
 	if (!server) errx(EX_SOFTWARE, "tls_server");
@@ -35,13 +53,20 @@ void listenConfig(const char *cert, const char *priv) {
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
-	int error = tls_config_set_keypair_file(config, cert, priv);
+	size_t len;
+	byte *buf = reread(&len, cert);
+	int error = tls_config_set_cert_mem(config, buf, len);
 	if (error) {
-		errx(
-			EX_CONFIG, "tls_config_set_keypair_file: %s",
-			tls_config_error(config)
-		);
+		errx(EX_CONFIG, "tls_config_set_cert_mem: %s", tls_config_error(config));
 	}
+	free(buf);
+
+	buf = reread(&len, priv);
+	error = tls_config_set_key_mem(config, buf, len);
+	if (error) {
+		errx(EX_CONFIG, "tls_config_set_key_mem: %s", tls_config_error(config));
+	}
+	free(buf);
 
 	error = tls_configure(server, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(server));

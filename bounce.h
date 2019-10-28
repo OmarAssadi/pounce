@@ -74,7 +74,7 @@ void ringInfo(void);
 int ringSave(FILE *file);
 void ringLoad(FILE *file);
 
-void listenConfig(const char *cert, const char *priv);
+void listenConfig(FILE *cert, FILE *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 struct tls *listenAccept(int *fd, int bind);
 

@@ -194,6 +194,12 @@ int main(int argc, char *argv[]) {
 	ringAlloc(ring);
 	if (save) saveLoad(save);
 
+	FILE *cert = fopen(certPath, "r");
+	if (!cert) err(EX_NOINPUT, "%s", certPath);
+	FILE *priv = fopen(privPath, "r");
+	if (!priv) err(EX_NOINPUT, "%s", privPath);
+	listenConfig(cert, priv);
+
 	int bind[8];
 	listenConfig(certPath, privPath);
 	size_t binds = listenBind(bind, 8, bindHost, bindPort);
@@ -204,11 +210,14 @@ int main(int argc, char *argv[]) {
 	int error = cap_enter();
 	if (error) err(EX_OSERR, "cap_enter");
 
-	cap_rights_t sockRights, bindRights;
+	cap_rights_t fileRights, sockRights, bindRights;
+	cap_rights_init(&fileRights, CAP_FSTAT, CAP_PREAD);
 	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
 
+	cap_rights_limit(fileno(cert), &fileRights);
+	cap_rights_limit(fileno(priv), &fileRights);
 	for (size_t i = 0; i < binds; ++i) {
 		error = cap_rights_limit(bind[i], &bindRights);
 		if (error) err(EX_OSERR, "cap_rights_limit");
@@ -248,7 +257,7 @@ int main(int argc, char *argv[]) {
 			signals[SIGINFO] = 0;
 		}
 		if (signals[SIGUSR1]) {
-			listenConfig(certPath, privPath);
+			listenConfig(cert, priv);
 			signals[SIGUSR1] = 0;
 		}
 
