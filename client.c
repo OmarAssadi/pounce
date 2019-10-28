@@ -259,7 +259,7 @@ size_t clientDiff(const struct Client *client) {
 
 void clientConsume(struct Client *client) {
 	time_t time;
-	const char *line = ringConsume(&time, client->consumer);
+	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
 	if (client->serverTime) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
@@ -269,4 +269,5 @@ void clientConsume(struct Client *client) {
 	} else {
 		clientFormat(client, "%s\r\n", line);
 	}
+	if (!client->error) ringConsume(NULL, client->consumer);
 }

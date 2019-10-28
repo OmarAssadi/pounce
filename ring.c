@@ -70,15 +70,21 @@ size_t ringDiff(size_t consumer) {
 	return ring.write - read.ptrs[consumer];
 }
 
-const char *ringConsume(time_t *time, size_t consumer) {
+const char *ringPeek(time_t *time, size_t consumer) {
 	assert(consumer < read.len);
 	if (!ringDiff(consumer)) return NULL;
 	if (ringDiff(consumer) > RingLen) {
 		read.ptrs[consumer] = ring.write - RingLen;
 	}
-	size_t i = read.ptrs[consumer]++ % RingLen;
+	size_t i = read.ptrs[consumer] % RingLen;
 	if (time) *time = ring.times[i];
 	return ring.lines[i];
+}
+
+const char *ringConsume(time_t *time, size_t consumer) {
+	const char *line = ringPeek(time, consumer);
+	read.ptrs[consumer]++;
+	return line;
 }
 
 void ringInfo(void) {

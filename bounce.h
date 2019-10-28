@@ -59,6 +59,7 @@ static inline struct Message parse(char *line) {
 void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
 size_t ringDiff(size_t consumer);
+const char *ringPeek(time_t *time, size_t consumer);
 const char *ringConsume(time_t *time, size_t consumer);
 void ringInfo(void);
 
