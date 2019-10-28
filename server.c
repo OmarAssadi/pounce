@@ -80,6 +80,9 @@ int serverConnect(bool insecure, const char *host, const char *port) {
 	error = tls_connect_socket(client, sock, host);
 	if (error) errx(EX_PROTOCOL, "tls_connect: %s", tls_error(client));
 
+	error = tls_handshake(client);
+	if (error) errx(EX_PROTOCOL, "tls_handshake: %s", tls_error(client));
+
 	return sock;
 }
 

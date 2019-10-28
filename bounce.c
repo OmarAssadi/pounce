@@ -34,6 +34,10 @@
 #include <tls.h>
 #include <unistd.h>
 
+#ifdef __FreeBSD__
+#include <sys/capsicum.h>
+#endif
+
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
@@ -195,6 +199,24 @@ int main(int argc, char *argv[]) {
 	size_t binds = listenBind(bind, 8, bindHost, bindPort);
 
 	int server = serverConnect(insecure, host, port);
+
+#ifdef __FreeBSD__
+	int error = cap_enter();
+	if (error) err(EX_OSERR, "cap_enter");
+
+	cap_rights_t sockRights, bindRights;
+	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
+	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
+	cap_rights_merge(&bindRights, &sockRights);
+
+	for (size_t i = 0; i < binds; ++i) {
+		error = cap_rights_limit(bind[i], &bindRights);
+		if (error) err(EX_OSERR, "cap_rights_limit");
+	}
+	error = cap_rights_limit(server, &sockRights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
+#endif
+
 	stateLogin(pass, auth, nick, user, real);
 	if (pass) explicit_bzero(pass, strlen(pass));
 	if (auth) explicit_bzero(auth, strlen(auth));
