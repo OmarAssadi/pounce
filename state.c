@@ -130,6 +130,16 @@ static void handleAuthenticate(struct Message *msg) {
 	serverAuth();
 }
 
+static void handleReplyLoggedIn(struct Message *msg) {
+	(void)msg;
+	serverFormat("CAP END\r\n");
+}
+
+static void handleErrorSASLFail(struct Message *msg) {
+	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_SASLFAIL without message");
+	errx(EX_CONFIG, "%s", msg->params[1]);
+}
+
 static void handleReplyWelcome(struct Message *msg) {
 	if (!msg->params[1]) errx(EX_PROTOCOL, "RPL_WELCOME without message");
 	set(&intro.origin, msg->origin);
@@ -233,6 +243,10 @@ static const struct {
 	{ "005", handleReplyISupport },
 	{ "332", handleReplyTopic },
 	{ "433", handleErrorNicknameInUse },
+	{ "900", handleReplyLoggedIn },
+	{ "904", handleErrorSASLFail },
+	{ "905", handleErrorSASLFail },
+	{ "906", handleErrorSASLFail },
 	{ "AUTHENTICATE", handleAuthenticate },
 	{ "CAP", handleCap },
 	{ "ERROR", handleError },
