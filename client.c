@@ -173,17 +173,14 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 
 static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	if (!msg->params[0] || !msg->params[1]) return;
-	// FIXME: Check against ISUPPORT CHANTYPES?
-	if (msg->params[0][0] == '#') {
-		char line[1024];
-		snprintf(
-			line, sizeof(line), ":%s %s %s :%s",
-			stateSelf(), msg->cmd, msg->params[0], msg->params[1]
-		);
-		size_t diff = ringDiff(client->consumer);
-		ringProduce(line);
-		if (!diff) ringConsume(NULL, client->consumer);
-	}
+	char line[1024];
+	snprintf(
+		line, sizeof(line), ":%s %s %s :%s",
+		stateEcho(), msg->cmd, msg->params[0], msg->params[1]
+	);
+	size_t diff = ringDiff(client->consumer);
+	ringProduce(line);
+	if (!diff) ringConsume(NULL, client->consumer);
 	serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
 }
 

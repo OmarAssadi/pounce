@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 	size_t binds = listenBind(bind, 8, localHost, localPort);
 
 	int server = serverConnect(insecure, host, port);
-	serverLogin(pass, auth, nick, user, real);
+	stateLogin(pass, auth, nick, user, real);
 	while (!stateReady()) serverRecv();
 	if (join) serverFormat("JOIN :%s\r\n", join);
 

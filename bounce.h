@@ -30,6 +30,8 @@
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
+typedef unsigned char byte;
+
 static const char *SourceURL = "https://code.causal.agency/june/pounce";
 static const char *Origin = "irc.invalid";
 
@@ -68,11 +70,6 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 struct tls *listenAccept(int *fd, int bind);
 
 int serverConnect(bool insecure, const char *host, const char *port);
-void serverLogin(
-	const char *pass, const char *auth,
-	const char *nick, const char *user, const char *real
-);
-void serverAuth(void);
 void serverRecv(void);
 void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)
@@ -90,7 +87,11 @@ size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
 bool stateJoinNames;
+void stateLogin(
+	const char *pass, const char *auth,
+	const char *nick, const char *user, const char *real
+);
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
-const char *stateSelf(void);
+const char *stateEcho(void);

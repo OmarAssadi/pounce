@@ -29,8 +29,6 @@
 
 #include "bounce.h"
 
-typedef unsigned char byte;
-
 static struct tls *client;
 
 int serverConnect(bool insecure, const char *host, const char *port) {
@@ -104,64 +102,6 @@ void serverFormat(const char *format, ...) {
 	va_end(ap);
 	assert((size_t)len < sizeof(buf));
 	serverSend(buf, len);
-}
-
-static const char Base64[64] = {
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-};
-
-static char *base64(const byte *src, size_t len) {
-	char *dst = malloc(1 + (len + 2) / 3 * 4);
-	if (!dst) err(EX_OSERR, "malloc");
-	size_t i = 0;
-	while (len > 2) {
-		dst[i++] = Base64[0x3F & (src[0] >> 2)];
-		dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
-		dst[i++] = Base64[0x3F & (src[1] << 2 | src[2] >> 6)];
-		dst[i++] = Base64[0x3F & src[2]];
-		src += 3;
-		len -= 3;
-	}
-	if (len) {
-		dst[i++] = Base64[0x3F & (src[0] >> 2)];
-		if (len > 1) {
-			dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
-			dst[i++] = Base64[0x3F & (src[1] << 2)];
-		} else {
-			dst[i++] = Base64[0x3F & (src[0] << 4)];
-			dst[i++] = '=';
-		}
-		dst[i++] = '=';
-	}
-	dst[i] = '\0';
-	return dst;
-}
-
-static char *authPlain;
-
-void serverLogin(
-	const char *pass, const char *auth,
-	const char *nick, const char *user, const char *real
-) {
-	if (auth) {
-		byte plain[1 + strlen(auth)];
-		plain[0] = 0;
-		for (size_t i = 0; auth[i]; ++i) {
-			plain[1 + i] = (auth[i] == ':' ? 0 : auth[i]);
-		}
-		authPlain = base64(plain, sizeof(plain));
-		serverFormat("CAP REQ :sasl\r\n");
-	}
-	if (pass) serverFormat("PASS :%s\r\n", pass);
-	serverFormat("NICK %s\r\n", nick);
-	serverFormat("USER %s 0 * :%s\r\n", user, real);
-}
-
-void serverAuth(void) {
-	assert(authPlain);
-	serverFormat("AUTHENTICATE %s\r\n", authPlain);
-	free(authPlain);
-	authPlain = NULL;
 }
 
 void serverRecv(void) {
