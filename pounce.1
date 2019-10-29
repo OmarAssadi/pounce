@@ -1,4 +1,4 @@
-.Dd October 28, 2019
+.Dd October 29, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -282,3 +282,11 @@ One instance of
 .Nm ,
 and therefore one local port,
 is required for each server connection.
+.
+.Pp
+The
+.Nm
+daemon makes no distinction between channels.
+Elevated activity in one channel
+may push messages from a quieter channel
+out of the buffer.
