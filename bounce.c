@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sysexits.h>
@@ -67,6 +68,33 @@ static void eventRemove(size_t i) {
 	event.clients[i] = event.clients[event.len];
 }
 
+static FILE *saveFile;
+
+static void saveExit(void) {
+	int error = ringSave(saveFile);
+	if (error) warn("fwrite");
+	error = fclose(saveFile);
+	if (error) warn("fclose");
+}
+
+static void saveLoad(const char *path) {
+	umask(0066);
+	saveFile = fopen(path, "a+");
+	if (!saveFile) err(EX_CANTCREAT, "%s", path);
+
+	int error = flock(fileno(saveFile), LOCK_EX | LOCK_NB);
+	if (error && errno != EWOULDBLOCK) err(EX_OSERR, "flock");
+	if (error) errx(EX_CANTCREAT, "%s: lock held by other process", path);
+
+	rewind(saveFile);
+	ringLoad(saveFile);
+
+	error = ftruncate(fileno(saveFile), 0);
+	if (error) err(EX_IOERR, "ftruncate");
+
+	atexit(saveExit);
+}
+
 static char *sensitive(char *arg) {
 	char *value = NULL;
 	if (arg[0] == '@') {
@@ -87,14 +115,6 @@ static char *sensitive(char *arg) {
 	memset(arg, '\0', strlen(arg));
 	arg[0] = '*';
 	return value;
-}
-
-static FILE *saveFile;
-static void exitSave(void) {
-	int error = ringSave(saveFile);
-	if (error) warn("fwrite");
-	error = fclose(saveFile);
-	if (error) warn("fclose");
 }
 
 int main(int argc, char *argv[]) {
@@ -158,18 +178,7 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
-	if (save) {
-		umask(0066);
-		saveFile = fopen(save, "a+");
-		if (!saveFile) err(EX_CANTCREAT, "%s", save);
-
-		rewind(saveFile);
-		ringLoad(saveFile);
-
-		int error = ftruncate(fileno(saveFile), 0);
-		if (error) err(EX_IOERR, "ftruncate");
-		atexit(exitSave);
-	}
+	if (save) saveLoad(save);
 
 	listenConfig(certPath, privPath);
 
