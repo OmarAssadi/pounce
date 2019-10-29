@@ -87,6 +87,8 @@ is set by
 Request
 .Ql NAMES
 for each channel when a client connects.
+This allows clients to populate user lists,
+but may just cause noise for some.
 .
 .It Fl P Ar port , Cm bind-port = Ar port
 Bind to
@@ -99,9 +101,9 @@ Quit with message
 when shutting down.
 .
 .It Fl W Ar pass , Cm client-pass = Ar pass
-Require the password
+Require the server password
 .Ar pass
-to connect.
+for clients to connect.
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl = Ar user : Ns Ar pass
 Authenticate as
@@ -111,12 +113,12 @@ with
 using SASL PLAIN.
 .
 .It Fl f Ar path , Cm save = Ar path
-Load the contents of the ring buffer from
+Load the contents of the buffer from
 .Ar path ,
 if it exists,
 and truncate it.
 On shutdown,
-save the contents of the ring buffer to
+save the contents of the buffer to
 .Ar path .
 .
 .It Fl h Ar host , Cm host = Ar host
@@ -143,7 +145,7 @@ Set realname to
 The default realname is the same as the nickname.
 .
 .It Fl u Ar user , Cm user = Ar user
-Set the username to
+Set username to
 .Ar user .
 The default username is the same as the nickname.
 .
@@ -294,3 +296,11 @@ daemon makes no distinction between channels.
 Elevated activity in one channel
 may push messages from a quieter channel
 out of the buffer.
+.
+.Sh BUGS
+Send mail to
+.Aq Mt june@causal.agency
+or join
+.Li #ascii.town
+on
+.Li chat.freenode.net .
