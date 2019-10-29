@@ -98,3 +98,9 @@ bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
 const char *stateEcho(void);
+
+struct option;
+int getopt_config(
+	int argc, char *const *argv,
+	const char *optstring, const struct option *longopts, int *longindex
+);

@@ -9,15 +9,15 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl Nv
-.Op Fl A Ar away
-.Op Fl C Ar cert
+.Op Fl A Ar mesg
+.Op Fl C Ar path
 .Op Fl H Ar host
-.Op Fl K Ar priv
+.Op Fl K Ar path
 .Op Fl P Ar port
-.Op Fl Q Ar quit
+.Op Fl Q Ar mesg
 .Op Fl W Ar pass
 .Op Fl a Ar auth
-.Op Fl f Ar file
+.Op Fl f Ar path
 .Op Fl h Ar host
 .Op Fl j Ar chan
 .Op Fl n Ar nick
@@ -25,6 +25,7 @@
 .Op Fl r Ar real
 .Op Fl u Ar user
 .Op Fl w Ar pass
+.Op Ar config ...
 .
 .Sh DESCRIPTION
 The
@@ -39,17 +40,27 @@ to know when missed messages were received
 and uniquely identify themselves by username.
 .
 .Pp
+Options can be loaded from
+files listed on the command line.
+Each option is placed on a line,
+and lines beginning with
+.Ql #
+are ignored.
+The options are listed below
+following their corresponding flags.
+.
+.Pp
 The arguments are as follows:
 .
-.Bl -tag -width "-W @file"
-.It Fl A Ar away
+.Bl -tag -width Ds
+.It Fl A Ar mesg , Cm away = Ar mesg
 Set away status to
-.Ar away
+.Ar mesg
 when no clients are connected.
 .
-.It Fl C Ar cert
+.It Fl C Ar path , Cm cert = Ar path
 Load TLS certificate from
-.Ar cert .
+.Ar path .
 The default path is
 .Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /fullchain.pem
 where
@@ -57,14 +68,14 @@ where
 is set by
 .Fl H .
 .
-.It Fl H Ar host
-Bind to local
+.It Fl H Ar host , Cm bind-host = Ar host
+Bind to
 .Ar host .
 The default host is localhost.
 .
-.It Fl K Ar priv
+.It Fl K Ar path , Cm key = Ar path
 Load TLS private key from
-.Ar priv .
+.Ar path .
 The default path is
 .Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /privkey.pem
 where
@@ -72,96 +83,80 @@ where
 is set by
 .Fl H .
 .
-.It Fl N
+.It Fl N , Cm names
 Request
 .Ql NAMES
 for each channel when a client connects.
 .
-.It Fl P Ar port
-Bind to local
+.It Fl P Ar port , Cm bind-port = Ar port
+Bind to
 .Ar port .
 The default port is 6697.
 .
-.It Fl Q Ar quit
+.It Fl Q Ar mesg , Cm quit = Ar mesg
 Quit with message
-.Ar quit
+.Ar mesg
 when shutting down.
 .
-.It Fl W Ar pass
+.It Fl W Ar pass , Cm client-pass = Ar pass
 Require the password
 .Ar pass
 to connect.
 .
-.It Fl W Cm @ Ns Ar file
-Set
-.Fl W Ar pass
-to the first line read from
-.Ar file .
+.It Fl a Ar user : Ns Ar pass , Cm sasl = Ar user : Ns Ar pass
+Authenticate as
+.Ar user
+with
+.Ar pass
+using SASL PLAIN.
 .
-.It Fl a Ar auth
-Authenticate with SASL PLAIN.
-.Ar auth
-is a colon-separated username and password.
-.
-.It Fl a Cm @ Ns Ar file
-Set
-.Fl a Ar auth
-to the first line read from
-.Ar file .
-.
-.It Fl f Ar file
+.It Fl f Ar path , Cm save = Ar path
 Load the contents of the ring buffer from
-.Ar file
-if it exists.
-The file is then truncated.
+.Ar path ,
+if it exists,
+and truncate it.
 On shutdown,
 save the contents of the ring buffer to
-.Ar file .
+.Ar path .
 .
-.It Fl h Ar host
+.It Fl h Ar host , Cm host = Ar host
 Connect to
 .Ar host .
 .
-.It Fl j Ar chan
+.It Fl j Ar chan , Cm join = Ar chan
 Join the comma-separated list of
 .Ar chan .
 .
-.It Fl n Ar nick
+.It Fl n Ar nick , Cm nick = Ar nick
 Set nickname to
 .Ar nick .
 The default nickname is the user's name.
 .
-.It Fl p Ar port
+.It Fl p Ar port , Cm port = Ar port
 Connect to
 .Ar port .
 The default port is 6697.
 .
-.It Fl r Ar real
+.It Fl r Ar real , Cm real = Ar real
 Set realname to
 .Ar real .
 The default realname is the same as the nickname.
 .
-.It Fl u Ar user
+.It Fl u Ar user , Cm user = Ar user
 Set the username to
 .Ar user .
 The default username is the same as the nickname.
 .
-.It Fl v
+.It Fl v , Cm verbose
 Write IRC messages to standard error
 in red to the server,
 green from the server,
 yellow from clients
 and blue to clients.
 .
-.It Fl w Ar pass
-Log in with the password
+.It Fl w Ar pass , Cm pass = Ar pass
+Log in with the server password
 .Ar pass .
-.
-.It Fl w Cm @ Ns Ar file
-Set
-.Fl w Ar pass
-to the first line read from
-.Ar file .
 .El
 .
 .Pp
@@ -189,8 +184,17 @@ The default nickname.
 .El
 .
 .Sh EXAMPLES
-.Bd -literal
+Command line:
+.Bd -literal -offset indent
 .Nm Fl H Li pounce.example.org Fl h Li chat.freenode.net Fl j Li '#ascii.town'
+.Ed
+.
+.Pp
+Configuration file:
+.Bd -literal -offset indent
+bind-host = pounce.example.org
+host = chat.freenode.net
+join = #ascii.town
 .Ed
 .
 .Sh STANDARDS

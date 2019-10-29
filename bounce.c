@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <getopt.h>
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
@@ -95,31 +96,9 @@ static void saveLoad(const char *path) {
 	atexit(saveExit);
 }
 
-static char *sensitive(char *arg) {
-	char *value = NULL;
-	if (arg[0] == '@') {
-		FILE *file = fopen(&arg[1], "r");
-		if (!file) err(EX_NOINPUT, "%s", &arg[1]);
-
-		size_t cap = 0;
-		ssize_t len = getline(&value, &cap, file);
-		if (len < 0) err(EX_IOERR, "%s", &arg[1]);
-
-		if (len && value[len - 1] == '\n') value[len - 1] = '\0';
-		fclose(file);
-
-	} else {
-		value = strdup(arg);
-		if (!value) err(EX_OSERR, "strdup");
-	}
-	memset(arg, '\0', strlen(arg));
-	arg[0] = '*';
-	return value;
-}
-
 int main(int argc, char *argv[]) {
-	const char *localHost = "localhost";
-	const char *localPort = "6697";
+	const char *bindHost = "localhost";
+	const char *bindPort = "6697";
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 	const char *save = NULL;
@@ -136,20 +115,43 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
+	const char *Opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:u:vw:";
+	const struct option LongOpts[] = {
+		{ "insecure", no_argument, NULL, '!' },
+		{ "away", required_argument, NULL, 'A' },
+		{ "cert", required_argument, NULL, 'C' },
+		{ "bind-host", required_argument, NULL, 'H' },
+		{ "key", required_argument, NULL, 'K' },
+		{ "names", no_argument, NULL, 'N' },
+		{ "bind-port", required_argument, NULL, 'P' },
+		{ "quit", required_argument, NULL, 'Q' },
+		{ "client-pass", required_argument, NULL, 'W' },
+		{ "sasl", required_argument, NULL, 'a' },
+		{ "save", required_argument, NULL, 'f' },
+		{ "host", required_argument, NULL, 'h' },
+		{ "join", required_argument, NULL, 'j' },
+		{ "nick", required_argument, NULL, 'n' },
+		{ "port", required_argument, NULL, 'p' },
+		{ "real", required_argument, NULL, 'r' },
+		{ "user", required_argument, NULL, 'u' },
+		{ "verbose", no_argument, NULL, 'v' },
+		{ "pass", required_argument, NULL, 'w' },
+		{0},
+	};
+
 	int opt;
-	const char *opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:u:vw:";
-	while (0 < (opt = getopt(argc, argv, opts))) {
+	while (0 < (opt = getopt_config(argc, argv, Opts, LongOpts, NULL))) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'A': away = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
-			break; case 'H': localHost = optarg;
+			break; case 'H': bindHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateJoinNames = true;
-			break; case 'P': localPort = optarg;
+			break; case 'P': bindPort = optarg;
 			break; case 'Q': quit = optarg;
-			break; case 'W': clientPass = sensitive(optarg);
-			break; case 'a': auth = sensitive(optarg);
+			break; case 'W': clientPass = optarg;
+			break; case 'a': auth = optarg;
 			break; case 'f': save = optarg;
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
@@ -158,16 +160,16 @@ int main(int argc, char *argv[]) {
 			break; case 'r': real = optarg;
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
-			break; case 'w': pass = sensitive(optarg);
+			break; case 'w': pass = optarg;
 			break; default:  return EX_USAGE;
 		}
 	}
 
 	if (!certPath[0]) {
-		snprintf(certPath, sizeof(certPath), DEFAULT_CERT_PATH, localHost);
+		snprintf(certPath, sizeof(certPath), DEFAULT_CERT_PATH, bindHost);
 	}
 	if (!privPath[0]) {
-		snprintf(privPath, sizeof(privPath), DEFAULT_PRIV_PATH, localHost);
+		snprintf(privPath, sizeof(privPath), DEFAULT_PRIV_PATH, bindHost);
 	}
 
 	if (!host) errx(EX_USAGE, "no host");
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]) {
 	listenConfig(certPath, privPath);
 
 	int bind[8];
-	size_t binds = listenBind(bind, 8, localHost, localPort);
+	size_t binds = listenBind(bind, 8, bindHost, bindPort);
 
 	int server = serverConnect(insecure, host, port);
 	stateLogin(pass, auth, nick, user, real);
