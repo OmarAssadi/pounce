@@ -123,7 +123,7 @@ static struct {
 	char *welcome;
 	char *yourHost;
 	char *created;
-	char *myInfo[4];
+	char *myInfo[5];
 } intro;
 
 const char *stateEcho(void) {
@@ -176,6 +176,7 @@ static void handleReplyMyInfo(struct Message *msg) {
 	set(&intro.myInfo[1], msg->params[2]);
 	set(&intro.myInfo[2], msg->params[3]);
 	set(&intro.myInfo[3], msg->params[4]);
+	if (msg->params[5]) set(&intro.myInfo[4], msg->params[5]);
 }
 
 static struct {
@@ -343,12 +344,13 @@ void stateSync(struct Client *client) {
 		":%s 001 %s :%s\r\n"
 		":%s 002 %s :%s\r\n"
 		":%s 003 %s :%s\r\n"
-		":%s 004 %s %s %s %s %s\r\n",
+		":%s 004 %s %s %s %s %s%s%s\r\n",
 		intro.origin, self.nick, intro.welcome,
 		intro.origin, self.nick, intro.yourHost,
 		intro.origin, self.nick, intro.created,
 		intro.origin, self.nick,
-		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3]
+		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3],
+		(intro.myInfo[4] ? " " : ""), (intro.myInfo[4] ? intro.myInfo[4] : "")
 	);
 
 	size_t i;
