@@ -87,6 +87,10 @@ size_t ringDiff(size_t consumer) {
 const char *ringPeek(time_t *time, size_t consumer) {
 	if (!ringDiff(consumer)) return NULL;
 	if (ringDiff(consumer) > ring.len) {
+		warnx(
+			"consumer %s dropped %zu messages",
+			consumers.ptr[consumer].name, ringDiff(consumer) - ring.len
+		);
 		consumers.ptr[consumer].pos = producer - ring.len;
 	}
 	size_t i = consumers.ptr[consumer].pos & (ring.len - 1);
