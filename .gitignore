@@ -1,6 +1,7 @@
 *.conf
 *.o
-*.pem
 config.mk
+localhost.crt
+localhost.key
 pounce
 tags

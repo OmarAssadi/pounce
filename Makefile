@@ -39,3 +39,9 @@ install: pounce pounce.1 rc.pounce
 
 uninstall:
 	rm -f ${PREFIX}/bin/pounce ${MANDIR}/man1/pounce.1 ${ETCDIR}/rc.d/pounce
+
+localhost.crt:
+	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \
+		| openssl req -x509 -out localhost.crt -keyout localhost.key \
+		-newkey rsa:2048 -nodes -sha256 \
+		-subj '/CN=localhost' -extensions EXT -config /dev/fd/0
