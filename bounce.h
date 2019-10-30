@@ -59,6 +59,7 @@ static inline struct Message parse(char *line) {
 	return msg;
 }
 
+void ringAlloc(size_t len);
 void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
 size_t ringDiff(size_t consumer);

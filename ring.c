@@ -23,18 +23,25 @@
 
 #include "bounce.h"
 
-enum { RingLen = 4096 };
-static_assert(!(RingLen & (RingLen - 1)), "power of two RingLen");
-
 static struct {
-	char *lines[RingLen];
-	time_t times[RingLen];
+	size_t len;
+	char **lines;
+	time_t *times;
 } ring;
+
+void ringAlloc(size_t len) {
+	if (len & (len - 1)) errx(EX_CONFIG, "ring length must be power of two");
+	ring.lines = calloc(len, sizeof(*ring.lines));
+	if (!ring.lines) err(EX_OSERR, "calloc");
+	ring.times = calloc(len, sizeof(*ring.times));
+	if (!ring.times) err(EX_OSERR, "calloc");
+	ring.len = len;
+}
 
 size_t producer;
 
 void ringProduce(const char *line) {
-	size_t i = producer++ % RingLen;
+	size_t i = producer++ & (ring.len - 1);
 	if (ring.lines[i]) free(ring.lines[i]);
 	ring.times[i] = time(NULL);
 	ring.lines[i] = strdup(line);
@@ -79,17 +86,18 @@ size_t ringDiff(size_t consumer) {
 
 const char *ringPeek(time_t *time, size_t consumer) {
 	if (!ringDiff(consumer)) return NULL;
-	if (ringDiff(consumer) > RingLen) {
-		consumers.ptr[consumer].pos = producer - RingLen;
+	if (ringDiff(consumer) > ring.len) {
+		consumers.ptr[consumer].pos = producer - ring.len;
 	}
-	size_t i = consumers.ptr[consumer].pos % RingLen;
+	size_t i = consumers.ptr[consumer].pos & (ring.len - 1);
 	if (time) *time = ring.times[i];
+	assert(ring.lines[i]);
 	return ring.lines[i];
 }
 
 const char *ringConsume(time_t *time, size_t consumer) {
 	const char *line = ringPeek(time, consumer);
-	consumers.ptr[consumer].pos++;
+	if (line) consumers.ptr[consumer].pos++;
 	return line;
 }
 
@@ -124,10 +132,10 @@ int ringSave(FILE *file) {
 		if (writeString(file, consumers.ptr[i].name)) return -1;
 		if (writeSize(file, consumers.ptr[i].pos)) return -1;
 	}
-	for (size_t i = 0; i < RingLen; ++i) {
+	for (size_t i = 0; i < ring.len; ++i) {
 		if (writeTime(file, ring.times[i])) return -1;
 	}
-	for (size_t i = 0; i < RingLen; ++i) {
+	for (size_t i = 0; i < ring.len; ++i) {
 		if (!ring.lines[i]) break;
 		if (writeString(file, ring.lines[i])) return -1;
 	}
@@ -169,10 +177,10 @@ void ringLoad(FILE *file) {
 		readSize(file, &consumers.ptr[consumer].pos);
 	}
 
-	for (size_t i = 0; i < RingLen; ++i) {
+	for (size_t i = 0; i < ring.len; ++i) {
 		readTime(file, &ring.times[i]);
 	}
-	for (size_t i = 0; i < RingLen; ++i) {
+	for (size_t i = 0; i < ring.len; ++i) {
 		readString(file, &buf, &cap);
 		if (feof(file)) break;
 		ring.lines[i] = strdup(buf);

@@ -180,11 +180,11 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
+	ringAlloc(4096);
 	if (save) saveLoad(save);
 
-	listenConfig(certPath, privPath);
-
 	int bind[8];
+	listenConfig(certPath, privPath);
 	size_t binds = listenBind(bind, 8, bindHost, bindPort);
 
 	int server = serverConnect(insecure, host, port);
