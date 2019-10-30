@@ -259,7 +259,16 @@ static bool originSelf(const char *origin) {
 
 static void handleNick(struct Message *msg) {
 	require(msg, true, 1);
-	if (originSelf(msg->origin)) set(&self.nick, msg->params[0]);
+	if (!originSelf(msg->origin)) return;
+	set(&self.nick, msg->params[0]);
+
+	char *rest = strchr(self.origin, '!');
+	assert(rest);
+	size_t size = strlen(self.nick) + strlen(rest) + 1;
+	char *origin = malloc(size);
+	if (!origin) err(EX_OSERR, "malloc");
+	snprintf(origin, size, "%s%s", self.nick, rest);
+	set(&self.origin, origin);
 }
 
 static void handleJoin(struct Message *msg) {
