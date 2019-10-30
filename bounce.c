@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 	const char *save = NULL;
+	size_t ring = 4096;
 
 	bool insecure = false;
 	const char *host = NULL;
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:u:vw:";
+	const char *Opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:s:u:vw:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
 		{ "nick", required_argument, NULL, 'n' },
 		{ "port", required_argument, NULL, 'p' },
 		{ "real", required_argument, NULL, 'r' },
+		{ "size", required_argument, NULL, 's' },
 		{ "user", required_argument, NULL, 'u' },
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "pass", required_argument, NULL, 'w' },
@@ -158,6 +160,11 @@ int main(int argc, char *argv[]) {
 			break; case 'n': nick = optarg;
 			break; case 'p': port = optarg;
 			break; case 'r': real = optarg;
+			break; case 's': {
+				char *rest;
+				ring = strtoull(optarg, &rest, 0);
+				if (*rest) errx(EX_USAGE, "invalid size: %s", optarg);
+			}
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
@@ -171,7 +178,6 @@ int main(int argc, char *argv[]) {
 	if (!privPath[0]) {
 		snprintf(privPath, sizeof(privPath), DEFAULT_PRIV_PATH, bindHost);
 	}
-
 	if (!host) errx(EX_USAGE, "no host");
 	if (!nick) {
 		nick = getenv("USER");
@@ -180,7 +186,7 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 
-	ringAlloc(4096);
+	ringAlloc(ring);
 	if (save) saveLoad(save);
 
 	int bind[8];

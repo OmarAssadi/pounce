@@ -30,7 +30,9 @@ static struct {
 } ring;
 
 void ringAlloc(size_t len) {
-	if (len & (len - 1)) errx(EX_CONFIG, "ring length must be power of two");
+	if (len & (len - 1)) {
+		errx(EX_CONFIG, "ring length must be power of two: %zu", len);
+	}
 	ring.lines = calloc(len, sizeof(*ring.lines));
 	if (!ring.lines) err(EX_OSERR, "calloc");
 	ring.times = calloc(len, sizeof(*ring.times));
@@ -116,7 +118,10 @@ void ringInfo(void) {
 	}
 }
 
-static const size_t FileVersion = 0x0165636E756F70;
+static const size_t FileVersion[] = {
+	0x0165636E756F70,
+	0x0265636E756F70,
+};
 
 static int writeSize(FILE *file, size_t value) {
 	return (fwrite(&value, sizeof(value), 1, file) ? 0 : -1);
@@ -129,7 +134,8 @@ static int writeString(FILE *file, const char *str) {
 }
 
 int ringSave(FILE *file) {
-	if (writeSize(file, FileVersion)) return -1;
+	if (writeSize(file, FileVersion[1])) return -1;
+	if (writeSize(file, ring.len)) return -1;
 	if (writeSize(file, producer)) return -1;
 	if (writeSize(file, consumers.len)) return -1;
 	for (size_t i = 0; i < consumers.len; ++i) {
@@ -166,8 +172,16 @@ void ringLoad(FILE *file) {
 	fread(&version, sizeof(version), 1, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 	if (feof(file)) return;
+	if (version != FileVersion[0] && version != FileVersion[1]) {
+		errx(EX_DATAERR, "unknown file version %zX", version);
+	}
 
-	if (version != FileVersion) errx(EX_DATAERR, "unknown file version");
+	size_t saveLen = 4096;
+	if (version == FileVersion[1]) readSize(file, &saveLen);
+	if (saveLen > ring.len) {
+		errx(EX_DATAERR, "cannot load save with larger ring");
+	}
+
 	readSize(file, &producer);
 
 	char *buf = NULL;
@@ -181,15 +195,23 @@ void ringLoad(FILE *file) {
 		readSize(file, &consumers.ptr[consumer].pos);
 	}
 
-	for (size_t i = 0; i < ring.len; ++i) {
+	for (size_t i = 0; i < saveLen; ++i) {
 		readTime(file, &ring.times[i]);
 	}
-	for (size_t i = 0; i < ring.len; ++i) {
+	for (size_t i = 0; i < saveLen; ++i) {
 		readString(file, &buf, &cap);
 		if (feof(file)) break;
 		ring.lines[i] = strdup(buf);
 		if (!ring.lines[i]) err(EX_OSERR, "strdup");
 	}
-
 	free(buf);
+
+	if (ring.len > saveLen) {
+		producer %= saveLen;
+		for (size_t i = 0; i < consumers.len; ++i) {
+			struct Consumer *consumer = &consumers.ptr[i];
+			consumer->pos %= saveLen;
+			if (consumer->pos > producer) consumer->pos = 0;
+		}
+	}
 }

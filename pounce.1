@@ -1,4 +1,4 @@
-.Dd October 29, 2019
+.Dd October 30, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -23,6 +23,7 @@
 .Op Fl n Ar nick
 .Op Fl p Ar port
 .Op Fl r Ar real
+.Op Fl s Ar size
 .Op Fl u Ar user
 .Op Fl w Ar pass
 .Op Ar config ...
@@ -143,6 +144,14 @@ The default port is 6697.
 Set realname to
 .Ar real .
 The default realname is the same as the nickname.
+.
+.It Fl s Ar size , Cm size = Ar size
+Set the buffer
+.Ar size .
+This determines the maximum number of messages
+stored in memory.
+The size must be a power of two.
+The default size is 4096.
 .
 .It Fl u Ar user , Cm user = Ar user
 Set username to
