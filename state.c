@@ -268,7 +268,8 @@ static void handleNick(struct Message *msg) {
 	char *origin = malloc(size);
 	if (!origin) err(EX_OSERR, "malloc");
 	snprintf(origin, size, "%s%s", self.nick, rest);
-	set(&self.origin, origin);
+	free(self.origin);
+	self.origin = origin;
 }
 
 static void handleJoin(struct Message *msg) {
