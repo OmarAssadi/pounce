@@ -190,6 +190,7 @@ int main(int argc, char *argv[]) {
 	int server = serverConnect(insecure, host, port);
 	stateLogin(pass, auth, nick, user, real);
 	while (!stateReady()) serverRecv();
+	serverFormat("AWAY :%s\r\n", away);
 	if (join) serverFormat("JOIN :%s\r\n", join);
 
 	for (size_t i = 0; i < binds; ++i) {
