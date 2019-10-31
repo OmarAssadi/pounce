@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "bounce.h"
+
 #include <assert.h>
 #include <err.h>
 #include <netdb.h>
@@ -26,8 +28,6 @@
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
-
-#include "bounce.h"
 
 static struct tls *client;
 

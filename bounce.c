@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_WANT_LIB_EXT1__ 1
+#include "bounce.h"
 
 #include <assert.h>
 #include <err.h>
@@ -26,14 +26,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
-
-#include "bounce.h"
 
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
@@ -197,8 +196,8 @@ int main(int argc, char *argv[]) {
 
 	int server = serverConnect(insecure, host, port);
 	stateLogin(pass, auth, nick, user, real);
-	if (pass) memset_s(pass, strlen(pass), 0, strlen(pass));
-	if (auth) memset_s(auth, strlen(auth), 0, strlen(auth));
+	if (pass) explicit_bzero(pass, strlen(pass));
+	if (auth) explicit_bzero(auth, strlen(auth));
 
 	while (!stateReady()) serverRecv();
 	serverFormat("AWAY :%s\r\n", away);

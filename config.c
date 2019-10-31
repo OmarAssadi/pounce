@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "bounce.h"
+
 #include <err.h>
 #include <getopt.h>
 #include <stdio.h>

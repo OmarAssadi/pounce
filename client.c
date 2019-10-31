@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "bounce.h"
+
 #include <assert.h>
 #include <err.h>
 #include <stdarg.h>
@@ -23,8 +25,6 @@
 #include <string.h>
 #include <sysexits.h>
 #include <tls.h>
-
-#include "bounce.h"
 
 enum Need {
 	NeedNick = 1 << 0,

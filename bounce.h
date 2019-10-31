@@ -14,6 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef __APPLE__
+#define __STDC_WANT_LIB_EXT1__ 1
+#define explicit_bzero(b, len) memset_s((b), (len), 0, (len))
+#endif
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
