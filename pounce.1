@@ -62,11 +62,11 @@ when no clients are connected.
 .It Fl C Ar path , Cm cert = Ar path
 Load TLS certificate from
 .Ar path .
-The default path is
-.Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /fullchain.pem
-where
+The default path is the
+.Xr certbot 8
+path for the
 .Ar host
-is set by
+set by
 .Fl H .
 .
 .It Fl H Ar host , Cm bind-host = Ar host
@@ -77,11 +77,11 @@ The default host is localhost.
 .It Fl K Ar path , Cm key = Ar path
 Load TLS private key from
 .Ar path .
-The default path is
-.Pa /usr/local/etc/letsencrypt/live/ Ns Ar host Ns Pa /privkey.pem
-where
+The default path is the
+.Xr certbot 8
+path for the
 .Ar host
-is set by
+set by
 .Fl H .
 .
 .It Fl N , Cm names
@@ -169,13 +169,6 @@ and blue to clients.
 Log in with the server password
 .Ar pass .
 .El
-.
-.Pp
-When using
-.Xr certbot 8
-to obtain TLS certificates,
-it is sufficient to specify the domain with
-.Fl H .
 .
 .Pp
 Upon receiving the
