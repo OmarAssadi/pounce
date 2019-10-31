@@ -284,7 +284,10 @@ int main(int argc, char *argv[]) {
 	serverFormat("QUIT :%s\r\n", quit);
 	for (size_t i = 0; i < event.len; ++i) {
 		if (event.clients[i]) {
-			clientFormat(event.clients[i], "ERROR :Disconnecting\r\n");
+			clientFormat(
+				event.clients[i], ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",
+				stateEcho(), quit
+			);
 			clientFree(event.clients[i]);
 		}
 		close(event.fds[i].fd);
