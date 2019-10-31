@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (nfds < 0) continue;
-		for (size_t i = 0; i < event.len; ++i) {
+		for (size_t i = event.len - 1; i < event.len; --i) {
 			short revents = event.fds[i].revents;
 			if (!revents) continue;
 
@@ -268,7 +268,6 @@ int main(int argc, char *argv[]) {
 				close(event.fds[i].fd);
 				eventRemove(i);
 				if (!--clients) serverFormat("AWAY :%s\r\n", away);
-				break;
 			}
 		}
 
