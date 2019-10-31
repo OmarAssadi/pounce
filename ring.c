@@ -67,11 +67,11 @@ size_t ringConsumer(const char *name) {
 
 	if (consumers.len == consumers.cap) {
 		consumers.cap = (consumers.cap ? consumers.cap * 2 : 8);
-		// FIXME: Keep old pointer around for saving when exiting for error.
-		consumers.ptr = realloc(
+		void *ptr = realloc(
 			consumers.ptr, sizeof(*consumers.ptr) * consumers.cap
 		);
-		if (!consumers.ptr) err(EX_OSERR, "realloc");
+		if (!ptr) err(EX_OSERR, "realloc");
+		consumers.ptr = ptr;
 	}
 
 	struct Consumer *consumer = &consumers.ptr[consumers.len];
