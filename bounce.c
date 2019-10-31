@@ -241,8 +241,6 @@ int main(int argc, char *argv[]) {
 					close(fd);
 				} else {
 					eventAdd(fd, clientAlloc(tls));
-					// FIXME: This should only be done after a successful
-					// client registration.
 					if (!clients++) serverFormat("AWAY\r\n");
 				}
 				continue;
