@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_WANT_LIB_EXT1__ 1
+
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
@@ -107,8 +109,8 @@ int main(int argc, char *argv[]) {
 	bool insecure = false;
 	const char *host = NULL;
 	const char *port = "6697";
-	const char *pass = NULL;
-	const char *auth = NULL;
+	char *pass = NULL;
+	char *auth = NULL;
 	const char *nick = NULL;
 	const char *user = NULL;
 	const char *real = NULL;
@@ -195,6 +197,9 @@ int main(int argc, char *argv[]) {
 
 	int server = serverConnect(insecure, host, port);
 	stateLogin(pass, auth, nick, user, real);
+	if (pass) memset_s(pass, strlen(pass), 0, strlen(pass));
+	if (auth) memset_s(auth, strlen(auth), 0, strlen(auth));
+
 	while (!stateReady()) serverRecv();
 	serverFormat("AWAY :%s\r\n", away);
 	if (join) serverFormat("JOIN :%s\r\n", join);

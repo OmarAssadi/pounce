@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_WANT_LIB_EXT1__ 1
+
 #include <assert.h>
 #include <err.h>
 #include <stdbool.h>
@@ -99,6 +101,7 @@ static void handleAuthenticate(struct Message *msg) {
 	(void)msg;
 	if (!plainBase64) errx(EX_PROTOCOL, "unsolicited AUTHENTICATE");
 	serverFormat("AUTHENTICATE %s\r\n", plainBase64);
+	memset_s(plainBase64, strlen(plainBase64), 0, strlen(plainBase64));
 	free(plainBase64);
 	plainBase64 = NULL;
 }
