@@ -70,22 +70,68 @@ static void saveLoad(const char *path) {
 	atexit(saveExit);
 }
 
-static char *openParent(int *dir, char *path) {
-	char *file = strrchr(path, '/');
-	if (file) {
-		*file++ = '\0';
-		*dir = open(path, O_DIRECTORY);
+struct SplitPath {
+	int dir;
+	const char *file;
+	int targetDir;
+};
+
+#ifdef __FreeBSD__
+static void splitLimit(struct SplitPath split, const cap_rights_t *rights) {
+	int error = cap_rights_limit(split.dir, rights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
+	if (split.targetDir < 0) return;
+	error = cap_rights_limit(split.targetDir, rights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
+}
+#endif
+
+static struct SplitPath splitPath(char *path) {
+	struct SplitPath split = { .targetDir = -1 };
+	char *base = strrchr(path, '/');
+	if (base) {
+		*base++ = '\0';
+		split.dir = open(path, O_DIRECTORY);
 	} else {
-		file = path;
-		*dir = open(".", O_DIRECTORY);
+		base = path;
+		split.dir = open(".", O_DIRECTORY);
 	}
-	if (*dir < 0) err(EX_NOINPUT, "%s", path);
-	return file;
+	if (split.dir < 0) err(EX_NOINPUT, "%s", path);
+	split.file = base;
+
+	// Capsicum workaround for certbot "live" symlinks to "../../archive".
+	char target[PATH_MAX];
+	ssize_t len = readlinkat(split.dir, split.file, target, sizeof(target) - 1);
+	if (len < 0 && errno == EINVAL) return split;
+	if (len < 0) err(EX_IOERR, "readlinkat");
+	target[len] = '\0';
+
+	base = strrchr(target, '/');
+	if (base) {
+		*base = '\0';
+		split.targetDir = openat(split.dir, target, O_DIRECTORY);
+		if (split.targetDir < 0) err(EX_NOINPUT, "%s", target);
+	}
+	return split;
 }
 
-static FILE *fopenat(int dir, const char *path) {
-	int fd = openat(dir, path, O_RDONLY);
-	if (fd < 0) err(EX_NOINPUT, "%s", path);
+static FILE *splitOpen(struct SplitPath split) {
+	if (split.targetDir >= 0) {
+		char target[PATH_MAX];
+		ssize_t len = readlinkat(
+			split.dir, split.file, target, sizeof(target) - 1
+		);
+		if (len < 0) err(EX_IOERR, "readlinkat");
+		target[len] = '\0';
+
+		split.dir = split.targetDir;
+		split.file = strrchr(target, '/');
+		if (!split.file) errx(EX_CONFIG, "symlink no longer targets directory");
+		split.file++;
+	}
+
+	int fd = openat(split.dir, split.file, O_RDONLY);
+	if (fd < 0) err(EX_NOINPUT, "%s", split.file);
 	FILE *file = fdopen(fd, "r");
 	if (!file) err(EX_IOERR, "fdopen");
 	return file;
@@ -216,11 +262,10 @@ int main(int argc, char *argv[]) {
 	ringAlloc(ring);
 	if (save) saveLoad(save);
 
-	int certDir, privDir;
-	const char *certFile = openParent(&certDir, certPath);
-	const char *privFile = openParent(&privDir, privPath);
-	FILE *cert = fopenat(certDir, certFile);
-	FILE *priv = fopenat(privDir, privFile);
+	struct SplitPath certSplit = splitPath(certPath);
+	struct SplitPath privSplit = splitPath(privPath);
+	FILE *cert = splitOpen(certSplit);
+	FILE *priv = splitOpen(privSplit);
 	listenConfig(cert, priv);
 	fclose(cert);
 	fclose(priv);
@@ -239,10 +284,8 @@ int main(int argc, char *argv[]) {
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
 
-	error = cap_rights_limit(certDir, &fileRights);
-	if (error) err(EX_OSERR, "cap_rights_limit");
-	error = cap_rights_limit(privDir, &fileRights);
-	if (error) err(EX_OSERR, "cap_rights_limit");
+	splitLimit(certSplit, &fileRights);
+	splitLimit(privSplit, &fileRights);
 	for (size_t i = 0; i < binds; ++i) {
 		error = cap_rights_limit(bind[i], &bindRights);
 		if (error) err(EX_OSERR, "cap_rights_limit");
@@ -282,8 +325,8 @@ int main(int argc, char *argv[]) {
 			signals[SIGINFO] = 0;
 		}
 		if (signals[SIGUSR1]) {
-			cert = fopenat(certDir, certFile);
-			priv = fopenat(privDir, privFile);
+			cert = splitOpen(certSplit);
+			priv = splitOpen(privSplit);
 			listenConfig(cert, priv);
 			fclose(cert);
 			fclose(priv);
