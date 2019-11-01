@@ -278,12 +278,15 @@ int main(int argc, char *argv[]) {
 	int error = cap_enter();
 	if (error) err(EX_OSERR, "cap_enter");
 
-	cap_rights_t fileRights, sockRights, bindRights;
+	cap_rights_t saveRights, fileRights, sockRights, bindRights;
+	cap_rights_init(&saveRights, CAP_WRITE);
 	cap_rights_init(&fileRights, CAP_FCNTL, CAP_FSTAT, CAP_LOOKUP, CAP_READ);
 	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
 
+	error = cap_rights_limit(fileno(saveFile), &saveRights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
 	splitLimit(certSplit, &fileRights);
 	splitLimit(privSplit, &fileRights);
 	for (size_t i = 0; i < binds; ++i) {
