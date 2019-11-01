@@ -29,7 +29,7 @@
 
 static struct tls *server;
 
-static byte *reread(size_t *len, FILE *file) {
+static byte *readFile(size_t *len, FILE *file) {
 	struct stat stat;
 	int error = fstat(fileno(file), &stat);
 	if (error) err(EX_IOERR, "fstat");
@@ -37,8 +37,6 @@ static byte *reread(size_t *len, FILE *file) {
 	byte *buf = malloc(stat.st_size);
 	if (!buf) err(EX_OSERR, "malloc");
 
-	fpurge(file);
-	rewind(file);
 	*len = fread(buf, 1, stat.st_size, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 
@@ -54,14 +52,14 @@ void listenConfig(FILE *cert, FILE *priv) {
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
 	size_t len;
-	byte *buf = reread(&len, cert);
+	byte *buf = readFile(&len, cert);
 	int error = tls_config_set_cert_mem(config, buf, len);
 	if (error) {
 		errx(EX_CONFIG, "tls_config_set_cert_mem: %s", tls_config_error(config));
 	}
 	free(buf);
 
-	buf = reread(&len, priv);
+	buf = readFile(&len, priv);
 	error = tls_config_set_key_mem(config, buf, len);
 	if (error) {
 		errx(EX_CONFIG, "tls_config_set_key_mem: %s", tls_config_error(config));

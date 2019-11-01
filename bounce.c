@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
 #include <poll.h>
@@ -42,9 +43,52 @@
 #define SIGINFO SIGUSR2
 #endif
 
-static volatile sig_atomic_t signals[NSIG];
-static void signalHandler(int signal) {
-	signals[signal] = 1;
+static FILE *saveFile;
+
+static void saveExit(void) {
+	int error = ringSave(saveFile);
+	if (error) warn("fwrite");
+	error = fclose(saveFile);
+	if (error) warn("fclose");
+}
+
+static void saveLoad(const char *path) {
+	umask(0066);
+	saveFile = fopen(path, "a+");
+	if (!saveFile) err(EX_CANTCREAT, "%s", path);
+
+	int error = flock(fileno(saveFile), LOCK_EX | LOCK_NB);
+	if (error && errno != EWOULDBLOCK) err(EX_OSERR, "flock");
+	if (error) errx(EX_CANTCREAT, "%s: lock held by other process", path);
+
+	rewind(saveFile);
+	ringLoad(saveFile);
+
+	error = ftruncate(fileno(saveFile), 0);
+	if (error) err(EX_IOERR, "ftruncate");
+
+	atexit(saveExit);
+}
+
+static char *openParent(int *dir, char *path) {
+	char *file = strrchr(path, '/');
+	if (file) {
+		*file++ = '\0';
+		*dir = open(path, O_DIRECTORY);
+	} else {
+		file = path;
+		*dir = open(".", O_DIRECTORY);
+	}
+	if (*dir < 0) err(EX_NOINPUT, "%s", path);
+	return file;
+}
+
+static FILE *fopenat(int dir, const char *path) {
+	int fd = openat(dir, path, O_RDONLY);
+	if (fd < 0) err(EX_NOINPUT, "%s", path);
+	FILE *file = fdopen(fd, "r");
+	if (!file) err(EX_IOERR, "fdopen");
+	return file;
 }
 
 static struct {
@@ -74,31 +118,9 @@ static void eventRemove(size_t i) {
 	event.clients[i] = event.clients[event.len];
 }
 
-static FILE *saveFile;
-
-static void saveExit(void) {
-	int error = ringSave(saveFile);
-	if (error) warn("fwrite");
-	error = fclose(saveFile);
-	if (error) warn("fclose");
-}
-
-static void saveLoad(const char *path) {
-	umask(0066);
-	saveFile = fopen(path, "a+");
-	if (!saveFile) err(EX_CANTCREAT, "%s", path);
-
-	int error = flock(fileno(saveFile), LOCK_EX | LOCK_NB);
-	if (error && errno != EWOULDBLOCK) err(EX_OSERR, "flock");
-	if (error) errx(EX_CANTCREAT, "%s: lock held by other process", path);
-
-	rewind(saveFile);
-	ringLoad(saveFile);
-
-	error = ftruncate(fileno(saveFile), 0);
-	if (error) err(EX_IOERR, "ftruncate");
-
-	atexit(saveExit);
+static volatile sig_atomic_t signals[NSIG];
+static void signalHandler(int signal) {
+	signals[signal] = 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -194,16 +216,17 @@ int main(int argc, char *argv[]) {
 	ringAlloc(ring);
 	if (save) saveLoad(save);
 
-	FILE *cert = fopen(certPath, "r");
-	if (!cert) err(EX_NOINPUT, "%s", certPath);
-	FILE *priv = fopen(privPath, "r");
-	if (!priv) err(EX_NOINPUT, "%s", privPath);
+	int certDir, privDir;
+	const char *certFile = openParent(&certDir, certPath);
+	const char *privFile = openParent(&privDir, privPath);
+	FILE *cert = fopenat(certDir, certFile);
+	FILE *priv = fopenat(privDir, privFile);
 	listenConfig(cert, priv);
+	fclose(cert);
+	fclose(priv);
 
 	int bind[8];
-	listenConfig(certPath, privPath);
 	size_t binds = listenBind(bind, 8, bindHost, bindPort);
-
 	int server = serverConnect(insecure, host, port);
 
 #ifdef __FreeBSD__
@@ -211,13 +234,15 @@ int main(int argc, char *argv[]) {
 	if (error) err(EX_OSERR, "cap_enter");
 
 	cap_rights_t fileRights, sockRights, bindRights;
-	cap_rights_init(&fileRights, CAP_FSTAT, CAP_PREAD);
+	cap_rights_init(&fileRights, CAP_FCNTL, CAP_FSTAT, CAP_LOOKUP, CAP_READ);
 	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
 
-	cap_rights_limit(fileno(cert), &fileRights);
-	cap_rights_limit(fileno(priv), &fileRights);
+	error = cap_rights_limit(certDir, &fileRights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
+	error = cap_rights_limit(privDir, &fileRights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
 	for (size_t i = 0; i < binds; ++i) {
 		error = cap_rights_limit(bind[i], &bindRights);
 		if (error) err(EX_OSERR, "cap_rights_limit");
@@ -257,7 +282,11 @@ int main(int argc, char *argv[]) {
 			signals[SIGINFO] = 0;
 		}
 		if (signals[SIGUSR1]) {
+			cert = fopenat(certDir, certFile);
+			priv = fopenat(privDir, privFile);
 			listenConfig(cert, priv);
+			fclose(cert);
+			fclose(priv);
 			signals[SIGUSR1] = 0;
 		}
 
