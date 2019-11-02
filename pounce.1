@@ -1,4 +1,4 @@
-.Dd November 1, 2019
+.Dd November 2, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -304,6 +304,13 @@ One instance of
 .Nm ,
 and therefore one local port,
 is required for each server connection.
+Alternatively,
+the
+.Xr calico 1
+daemon can be used to dispatch from one local port
+to many instances of
+.Nm
+using Server Name Identification.
 .
 .Pp
 The
