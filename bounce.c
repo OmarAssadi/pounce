@@ -290,8 +290,10 @@ int main(int argc, char *argv[]) {
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
 
-	error = cap_rights_limit(fileno(saveFile), &saveRights);
-	if (error) err(EX_OSERR, "cap_rights_limit");
+	if (saveFile) {
+		error = cap_rights_limit(fileno(saveFile), &saveRights);
+		if (error) err(EX_OSERR, "cap_rights_limit");
+	}
 	splitLimit(certSplit, &fileRights);
 	splitLimit(privSplit, &fileRights);
 	for (size_t i = 0; i < binds; ++i) {
