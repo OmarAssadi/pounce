@@ -14,13 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "bounce.h"
+
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -28,7 +32,9 @@
 #include <tls.h>
 #include <unistd.h>
 
-#include "bounce.h"
+#ifdef __FreeBSD__
+#include <sys/capsicum.h>
+#endif
 
 static struct tls *server;
 
@@ -109,6 +115,13 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 }
 
 static bool unix;
+static int unixDir = -1;
+static char unixFile[PATH_MAX];
+
+static void unixUnlink(void) {
+	int error = unlinkat(unixDir, unixFile, 0);
+	if (error) warn("unlinkat");
+}
 
 size_t listenUnix(int fds[], size_t cap, const char *path) {
 	if (!cap) return 0;
@@ -122,12 +135,28 @@ size_t listenUnix(int fds[], size_t cap, const char *path) {
 	}
 	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
 
-	// FIXME: unlinkat atexit.
-	int error = unlink(path);
-	if (error && errno != ENOENT) err(EX_UNAVAILABLE, "%s", path);
-
-	error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
+	int error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
 	if (error) err(EX_UNAVAILABLE, "%s", path);
+
+	char dir[PATH_MAX] = ".";
+	const char *base = strrchr(path, '/');
+	if (base) {
+		snprintf(dir, sizeof(dir), "%.*s", (int)(base - path), path);
+		base++;
+	} else {
+		base = path;
+	}
+	snprintf(unixFile, sizeof(unixFile), "%s", base);
+
+	unixDir = open(dir, O_DIRECTORY);
+	if (unixDir < 0) err(EX_UNAVAILABLE, "%s", dir);
+	atexit(unixUnlink);
+
+#ifdef __FreeBSD__
+	cap_rights_t rights;
+	error = cap_rights_limit(unixDir, cap_rights_init(&rights, CAP_UNLINKAT));
+	if (error) err(EX_OSERR, "cap_rights_limit");
+#endif
 
 	unix = true;
 	fds[0] = sock;
