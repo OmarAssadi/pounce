@@ -14,7 +14,7 @@ load_rc_config "${name}"
 : ${calico_enable:="NO"}
 
 command='/usr/sbin/daemon'
-child_command='/usr/local/bin/calico'
+procname='/usr/local/bin/calico'
 pidfile="/var/run/${name}.pid"
 
 child_flags=$calico_flags
@@ -22,6 +22,6 @@ child_user=$calico_user
 unset calico_flags calico_user
 command_args="\
 	-p ${pidfile} -T ${name} ${child_user:+-u ${child_user}} \
-	-- ${child_command} ${child_flags}"
+	-- ${procname} ${child_flags}"
 
 run_rc_command "$1"
