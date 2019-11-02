@@ -8,10 +8,11 @@ CFLAGS += -I${LIBRESSL_PREFIX}/include
 LDFLAGS += -L${LIBRESSL_PREFIX}/lib
 LDLIBS = -ltls
 
--include config.mk
-
 BINS = calico pounce
 MANS = ${BINS:=.1}
+RCS = ${BINS:%=rc.d/%}
+
+-include config.mk
 
 OBJS += bounce.o
 OBJS += client.o
@@ -37,16 +38,16 @@ tags: *.c *.h
 clean:
 	rm -f tags ${BINS} ${OBJS} dispatch.o
 
-install: ${BINS} ${MANS} rc.pounce
+install: ${BINS} ${MANS} ${RCS}
 	install -d ${PREFIX}/bin ${MANDIR}/man1 ${ETCDIR}/rc.d
 	install ${BINS} ${PREFIX}/bin
 	install -m 644 ${MANS} ${MANDIR}/man1
-	install rc.pounce ${ETCDIR}/rc.d/pounce
+	install ${RCS} ${ETCDIR}/rc.d
 
 uninstall:
 	rm -f ${BINS:%=${PREFIX}/bin/%}
 	rm -f ${MANS:%=${MANDIR}/man1/%}
-	rm -f ${ETCDIR}/rc.d/pounce
+	rm -f ${RCS:%=${ETCDIR}/%}
 
 localhost.crt:
 	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \

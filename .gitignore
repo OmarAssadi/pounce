@@ -1,8 +1,8 @@
 *.conf
 *.o
-calico
+/calico
+/pounce
 config.mk
 localhost.crt
 localhost.key
-pounce
 tags
