@@ -133,6 +133,16 @@ static char *serverName(void) {
 	return NULL;
 }
 
+static const uint8_t Alert[] = {
+	0x15, 0x03, 0x03, 0x00, 0x02, // TLSPlaintext
+	0x02, 0x70, // Alert fatal unrecognized_name
+};
+
+static void alert(int sock) {
+	ssize_t len = send(sock, Alert, sizeof(Alert), 0);
+	if (len < 0) warn("send");
+}
+
 int main(int argc, char *argv[]) {
 	const char *host = "localhost";
 	const char *port = "6697";
@@ -268,6 +278,7 @@ int main(int argc, char *argv[]) {
 
 			char *name = serverName();
 			if (!name || name[0] == '.' || name[0] == '/') {
+				alert(event.ptr[i].fd);
 				eventRemove(i);
 				continue;
 			}
@@ -288,11 +299,16 @@ int main(int argc, char *argv[]) {
 #else
 			error = connect(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
 #endif
-			if (error) warn("%s", name);
 
-			if (!error) {
+			if (error) {
+				warn("%s", name);
+				alert(event.ptr[i].fd);
+			} else {
 				len = sendfd(sock, event.ptr[i].fd);
-				if (len < 0) warn("%s", name);
+				if (len < 0) {
+					warn("%s", name);
+					alert(event.ptr[i].fd);
+				}
 			}
 
 			close(sock);
