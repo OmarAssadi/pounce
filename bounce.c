@@ -172,6 +172,7 @@ static void signalHandler(int signal) {
 int main(int argc, char *argv[]) {
 	const char *bindHost = "localhost";
 	const char *bindPort = "6697";
+	const char *bindUnix = NULL;
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 	const char *save = NULL;
@@ -189,7 +190,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:W:a:f:h:j:n:p:r:s:u:vw:";
+	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:f:h:j:n:p:r:s:u:vw:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -199,6 +200,7 @@ int main(int argc, char *argv[]) {
 		{ "names", no_argument, NULL, 'N' },
 		{ "bind-port", required_argument, NULL, 'P' },
 		{ "quit", required_argument, NULL, 'Q' },
+		{ "bind-unix", required_argument, NULL, 'U' },
 		{ "client-pass", required_argument, NULL, 'W' },
 		{ "sasl", required_argument, NULL, 'a' },
 		{ "save", required_argument, NULL, 'f' },
@@ -225,6 +227,7 @@ int main(int argc, char *argv[]) {
 			break; case 'N': stateJoinNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': quit = optarg;
+			break; case 'U': bindUnix = optarg;
 			break; case 'W': clientPass = optarg;
 			break; case 'a': auth = optarg;
 			break; case 'f': save = optarg;
@@ -271,7 +274,9 @@ int main(int argc, char *argv[]) {
 	fclose(priv);
 
 	int bind[8];
-	size_t binds = listenBind(bind, 8, bindHost, bindPort);
+	size_t binds = bindUnix
+		? listenUnix(bind, ARRAY_LEN(bind), bindUnix)
+		: listenBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
 	int server = serverConnect(insecure, host, port);
 
 #ifdef __FreeBSD__

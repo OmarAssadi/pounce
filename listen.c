@@ -15,12 +15,15 @@
  */
 
 #include <err.h>
+#include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/un.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -105,9 +108,64 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
 	return len;
 }
 
+static bool unix;
+
+size_t listenUnix(int fds[], size_t cap, const char *path) {
+	if (!cap) return 0;
+
+	int sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (sock < 0) err(EX_OSERR, "socket");
+
+	struct sockaddr_un addr = { .sun_family = AF_UNIX };
+	if (strlen(path) > sizeof(addr.sun_path)) {
+		errx(EX_CONFIG, "path too long: %s", path);
+	}
+	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
+
+	// FIXME: unlinkat atexit.
+	int error = unlink(path);
+	if (error && errno != ENOENT) err(EX_UNAVAILABLE, "%s", path);
+
+	error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
+	if (error) err(EX_UNAVAILABLE, "%s", path);
+
+	unix = true;
+	fds[0] = sock;
+	return 1;
+}
+
+static int recvfd(int sock) {
+	size_t len = CMSG_SPACE(sizeof(int));
+	char buf[len];
+
+	char x;
+	struct iovec iov = { .iov_base = &x, .iov_len = 1 };
+	struct msghdr msg = {
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = buf,
+		.msg_controllen = len,
+	};
+	if (0 > recvmsg(sock, &msg, 0)) return -1;
+
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+	if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
+		errno = ENOMSG;
+		return -1;
+	}
+	return *(int *)CMSG_DATA(cmsg);
+}
+
 struct tls *listenAccept(int *fd, int bind) {
 	*fd = accept(bind, NULL, NULL);
 	if (*fd < 0) err(EX_IOERR, "accept");
+
+	if (unix) {
+		int sent = recvfd(*fd);
+		if (sent < 0) err(EX_IOERR, "recvfd");
+		close(*fd);
+		*fd = sent;
+	}
 
 	int yes = 1;
 	int error = setsockopt(*fd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));

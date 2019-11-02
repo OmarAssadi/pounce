@@ -76,6 +76,7 @@ void ringLoad(FILE *file);
 
 void listenConfig(FILE *cert, FILE *priv);
 size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
+size_t listenUnix(int fds[], size_t cap, const char *path);
 struct tls *listenAccept(int *fd, int bind);
 
 int serverConnect(bool insecure, const char *host, const char *port);
