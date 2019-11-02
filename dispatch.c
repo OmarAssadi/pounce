@@ -28,6 +28,10 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+#ifdef __FreeBSD__
+#include <sys/capsicum.h>
+#endif
+
 static struct {
 	struct pollfd *ptr;
 	size_t len, cap;
@@ -193,6 +197,25 @@ int main(int argc, char *argv[]) {
 	if (!binds) errx(EX_UNAVAILABLE, "could not bind any sockets");
 	freeaddrinfo(head);
 
+#ifdef __FreeBSD__
+	error = cap_enter();
+	if (error) err(EX_OSERR, "cap_enter");
+
+	cap_rights_t dirRights, sockRights, unixRights, bindRights;
+	cap_rights_init(&dirRights, CAP_CONNECTAT);
+	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
+	cap_rights_init(&unixRights, CAP_CONNECT, CAP_SEND);
+	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
+	cap_rights_merge(&bindRights, &sockRights);
+
+	error = cap_rights_limit(dir, &dirRights);
+	if (error) err(EX_OSERR, "cap_rights_limit");
+	for (size_t i = 0; i < binds; ++i) {
+		error = cap_rights_limit(event.ptr[i].fd, &bindRights);
+		if (error) err(EX_OSERR, "cap_rights_limit");
+	}
+#endif
+
 	for (size_t i = 0; i < binds; ++i) {
 		error = listen(event.ptr[i].fd, 1);
 		if (error) err(EX_IOERR, "listen");
@@ -249,12 +272,16 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
+			struct sockaddr_un addr = { .sun_family = AF_UNIX };
+			strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+
 			int sock = socket(PF_UNIX, SOCK_STREAM, 0);
 			if (sock < 0) err(EX_OSERR, "socket");
 
-			struct sockaddr_un addr = { .sun_family = AF_UNIX };
-			strncpy(addr.sun_path, name, sizeof(addr.sun_path));
 #ifdef __FreeBSD__
+			error = cap_rights_limit(sock, &unixRights);
+			if (error) err(EX_OSERR, "cap_rights_limit");
+
 			error = connectat(
 				dir, sock, (struct sockaddr *)&addr, SUN_LEN(&addr)
 			);
