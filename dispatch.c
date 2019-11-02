@@ -263,8 +263,10 @@ int main(int argc, char *argv[]) {
 #endif
 			if (error) warn("%s", name);
 
-			len = sendfd(sock, event.ptr[i].fd);
-			if (len < 0) warn("%s", name);
+			if (!error) {
+				len = sendfd(sock, event.ptr[i].fd);
+				if (len < 0) warn("%s", name);
+			}
 
 			close(sock);
 			eventRemove(i);
