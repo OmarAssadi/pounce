@@ -1,5 +1,6 @@
 *.conf
 *.o
+calico
 config.mk
 localhost.crt
 localhost.key

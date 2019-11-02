@@ -1,0 +1,89 @@
+.Dd November 1, 2019
+.Dt CALICO 1
+.Os
+.
+.Sh NAME
+.Nm calico
+.Nd dispatches cat
+.
+.Sh SYNOPSIS
+.Nm
+.Op Fl H Ar host
+.Op Fl P Ar port
+.Op Fl t Ar timeout
+.Ar directory
+.
+.Sh DESCRIPTION
+The
+.Nm
+daemon
+dispatches incoming TLS connections
+to instances of
+.Xr pounce 1
+by Server Name Identification (SNI).
+\"(TODO: Explain how to configure pounce for this.
+.
+.Pp
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl H Ar host
+Bind to
+.Ar host .
+The default host is localhost.
+.It Fl P Ar port
+Bind to
+.Ar port .
+The default port is 6697.
+.It Fl t Ar timeout
+Set the timeout in milliseconds
+after which a connection will be closed
+if it has not sent the ClientHello message.
+The default timeout is 1000 milliseconds.
+.It Ar directory
+The path to the directory containing
+.Xr pounce 1
+UNIX-domain sockets.
+.El
+.
+.Sh EXAMPLES
+\"(TODO: An example with two pounce instances and a calico.
+.
+.Sh STANDARDS
+The
+.Nm
+daemon implements the following:
+.
+.Bl -item
+.It
+.Rs
+.%A E. Rescorla
+.%Q Mozilla
+.%T The Transport Layer Security (TLS) Protocol Version 1.3
+.%I IETF
+.%N RFC 8446
+.%D August 2018
+.%U https://tools.ietf.org/html/rfc8446
+.Re
+.
+.It
+.Rs
+.%A D. Eastlake 3rd
+.%Q Huawei
+.%T Transport Layer Security (TLS) Extensions: Extension Definitions
+.%I IETF
+.%N RFC 6066
+.%D January 2011
+.%U https://tools.ietf.org/html/rfc6066
+.Re
+.El
+.
+.Sh AUTHORS
+.An June Bug Aq Mt june@causal.agency
+.
+.Sh BUGS
+Send mail to
+.Aq Mt june@causal.agency
+or join
+.Li #ascii.town
+on
+.Li chat.freenode.net .

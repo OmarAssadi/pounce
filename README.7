@@ -1,4 +1,4 @@
-.Dd October 29, 2019
+.Dd November 1, 2019
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -48,7 +48,7 @@ all events can be accurately replayed,
 rather than being limited to messages.
 .
 .Sh FILES
-.Bl -tag -width "rc.pounce" -compact
+.Bl -tag -width "dispatch.c" -compact
 .It Pa bounce.h
 common declarations and default paths
 .It Pa bounce.c
@@ -66,6 +66,8 @@ buffer between server and clients
 .It Pa config.c
 .Xr getopt_long 3 Ns -integrated
 configuration parsing
+.It Pa dispatch.c
+SNI socket dispatcher
 .It Pa rc.pounce
 .Fx
 .Xr rc 8
@@ -73,4 +75,5 @@ script
 .El
 .
 .Sh SEE ALSO
+.Xr calico 1 ,
 .Xr pounce 1
