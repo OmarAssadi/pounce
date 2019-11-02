@@ -21,7 +21,14 @@ dispatches incoming TLS connections
 to instances of
 .Xr pounce 1
 by Server Name Identification (SNI).
-\"(TODO: Explain how to configure pounce for this.
+Instances of
+.Xr pounce 1
+should be configured with
+.Fl U
+to bind to UNIX-domain sockets
+named by the host they wish to accept connections for
+in the directory passed to
+.Nm .
 .
 .Pp
 The arguments are as follows:
@@ -46,7 +53,14 @@ UNIX-domain sockets.
 .El
 .
 .Sh EXAMPLES
-\"(TODO: An example with two pounce instances and a calico.
+.Bd -literal -offset indent
+pounce -U sockets/foo.example.org foo.conf
+pounce -U sockets/bar.example.org bar.conf
+calico -H example.org sockets/
+.Ed
+.
+.Sh SEE ALSO
+.Xr pounce 1
 .
 .Sh STANDARDS
 The

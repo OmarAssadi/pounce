@@ -1,4 +1,4 @@
-.Dd October 30, 2019
+.Dd November 1, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -15,6 +15,7 @@
 .Op Fl K Ar path
 .Op Fl P Ar port
 .Op Fl Q Ar mesg
+.Op Fl U Ar path
 .Op Fl W Ar pass
 .Op Fl a Ar auth
 .Op Fl f Ar path
@@ -100,6 +101,16 @@ The default port is 6697.
 Quit with message
 .Ar mesg
 when shutting down.
+.
+.It Fl U Ar path , Cm bind-unix = Ar path
+Bind to a UNIX-domain socket at
+.Ar path .
+Clients are accepted as sent by
+.Xr calico 1 .
+This option takes precedence over
+.Fl H
+and
+.Fl P .
 .
 .It Fl W Ar pass , Cm client-pass = Ar pass
 Require the server password
@@ -200,6 +211,9 @@ bind-host = pounce.example.org
 host = chat.freenode.net
 join = #ascii.town
 .Ed
+.
+.Sh SEE ALSO
+.Xr calico 1
 .
 .Sh STANDARDS
 The
