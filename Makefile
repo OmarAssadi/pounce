@@ -10,7 +10,8 @@ LDLIBS = -ltls
 
 BINS = calico pounce
 MANS = ${BINS:=.1}
-RCS = ${BINS:%=rc.d/%}
+RCS  = ${BINS:%=rc.d/%}
+DIRS = ${ETCDIR}/pounce /var/run/calico
 
 -include config.mk
 
@@ -43,11 +44,13 @@ install: ${BINS} ${MANS} ${RCS}
 	install ${BINS} ${PREFIX}/bin
 	install -m 644 ${MANS} ${MANDIR}/man1
 	install ${RCS} ${ETCDIR}/rc.d
+	install -d -m 700 ${DIRS}
 
 uninstall:
 	rm -f ${BINS:%=${PREFIX}/bin/%}
 	rm -f ${MANS:%=${MANDIR}/man1/%}
 	rm -f ${RCS:%=${ETCDIR}/%}
+	rmdir ${DIRS}
 
 localhost.crt:
 	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \

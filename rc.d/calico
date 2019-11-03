@@ -11,11 +11,14 @@ rcvar='calico_enable'
 
 load_rc_config "${name}"
 
-: ${calico_enable:="NO"}
+: ${calico_enable:='NO'}
+: ${calico_path:="/var/run/${name}"}
+calico_flags="${calico_flags} ${calico_path}"
 
 command='/usr/sbin/daemon'
 procname='/usr/local/bin/calico'
 pidfile="/var/run/${name}.pid"
+required_dirs=$calico_path
 
 child_flags=$calico_flags
 child_user=$calico_user

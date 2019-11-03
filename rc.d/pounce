@@ -13,11 +13,13 @@ sig_reload='USR1'
 
 load_rc_config "${name}"
 
-: ${pounce_enable:="NO"}
+: ${pounce_enable:='NO'}
+: ${pounce_chdir:="/usr/local/etc/${name}"}
 
 command='/usr/sbin/daemon'
 pidprefix="/var/run/${name}"
 pidfile="${pidprefix}.pid"
+required_dirs=$pounce_chdir
 
 child_command='/usr/local/bin/pounce'
 child_pidfile="${pidprefix}.child.pid"
@@ -29,6 +31,7 @@ if [ -n "$2" ]; then
 		child_pidfile="${pidprefix}.${profile}.child.pid"
 		eval pounce_enable="\${pounce_${profile}_enable:-${pounce_enable}}"
 		eval pounce_flags="\${pounce_${profile}_flags:-${pounce_flags}}"
+		eval pounce_chdir="\${pounce_${profile}_chdir:-${pounce_chdir}}"
 		eval pounce_user="\${pounce_${profile}_user:-${pounce_user}}"
 	else
 		echo "$0: extra argument ignored"
