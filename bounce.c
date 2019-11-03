@@ -172,7 +172,7 @@ static void signalHandler(int signal) {
 int main(int argc, char *argv[]) {
 	const char *bindHost = "localhost";
 	const char *bindPort = "6697";
-	const char *bindUnix = NULL;
+	char bindPath[PATH_MAX] = "";
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 	const char *save = NULL;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 			break; case 'N': stateJoinNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': quit = optarg;
-			break; case 'U': bindUnix = optarg;
+			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
 			break; case 'a': auth = optarg;
 			break; case 'f': save = optarg;
@@ -248,6 +248,15 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	if (bindPath[0]) {
+		struct stat st;
+		int error = stat(bindPath, &st);
+		if (error && errno != ENOENT) err(EX_CANTCREAT, "%s", bindPath);
+		if (S_ISDIR(st.st_mode)) {
+			strlcat(bindPath, "/", sizeof(bindPath));
+			strlcat(bindPath, bindHost, sizeof(bindPath));
+		}
+	}
 	if (!certPath[0]) {
 		snprintf(certPath, sizeof(certPath), DEFAULT_CERT_PATH, bindHost);
 	}
@@ -274,8 +283,8 @@ int main(int argc, char *argv[]) {
 	fclose(priv);
 
 	int bind[8];
-	size_t binds = bindUnix
-		? listenUnix(bind, ARRAY_LEN(bind), bindUnix)
+	size_t binds = bindPath[0]
+		? listenUnix(bind, ARRAY_LEN(bind), bindPath)
 		: listenBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
 	int server = serverConnect(insecure, host, port);
 

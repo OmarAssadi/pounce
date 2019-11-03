@@ -1,4 +1,4 @@
-.Dd November 2, 2019
+.Dd November 3, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -107,6 +107,14 @@ Bind to a UNIX-domain socket at
 .Ar path .
 Clients are accepted as sent by
 .Xr calico 1 .
+If
+.Ar path
+is a directory,
+the
+.Ar host
+set by
+.Fl H
+is appended to it.
 This option takes precedence over
 .Fl H
 and
