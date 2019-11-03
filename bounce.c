@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 		{ "names", no_argument, NULL, 'N' },
 		{ "bind-port", required_argument, NULL, 'P' },
 		{ "quit", required_argument, NULL, 'Q' },
-		{ "bind-unix", required_argument, NULL, 'U' },
+		{ "bind-path", required_argument, NULL, 'U' },
 		{ "client-pass", required_argument, NULL, 'W' },
 		{ "sasl", required_argument, NULL, 'a' },
 		{ "save", required_argument, NULL, 'f' },
