@@ -25,6 +25,7 @@
 #include <string.h>
 #include <sysexits.h>
 #include <tls.h>
+#include <unistd.h>
 
 enum Need {
 	NeedNick = 1 << 0,
@@ -96,7 +97,7 @@ static void passRequired(struct Client *client) {
 	client->error = true;
 }
 
-static void sync(struct Client *client) {
+static void maybeSync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
 	if (!client->need) stateSync(client);
 }
@@ -106,7 +107,7 @@ typedef void Handler(struct Client *client, struct Message *msg);
 static void handleNick(struct Client *client, struct Message *msg) {
 	(void)msg;
 	client->need &= ~NeedNick;
-	sync(client);
+	maybeSync(client);
 }
 
 static void handleUser(struct Client *client, struct Message *msg) {
@@ -119,17 +120,21 @@ static void handleUser(struct Client *client, struct Message *msg) {
 	} else {
 		client->need &= ~NeedUser;
 		client->consumer = ringConsumer(msg->params[0]);
-		sync(client);
+		maybeSync(client);
 	}
 }
 
 static void handlePass(struct Client *client, struct Message *msg) {
 	if (!clientPass) return;
-	if (!msg->params[0] || strcmp(msg->params[0], clientPass)) {
+	if (!msg->params[0]) {
 		passRequired(client);
-	} else {
+		return;
+	}
+	if (!strcmp(crypt(msg->params[0], clientPass), clientPass)) {
 		client->need &= ~NeedPass;
-		sync(client);
+		maybeSync(client);
+	} else {
+		passRequired(client);
 	}
 }
 
@@ -139,7 +144,7 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;
 		client->need &= ~NeedCapEnd;
-		sync(client);
+		maybeSync(client);
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;

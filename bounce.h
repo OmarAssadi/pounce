@@ -116,9 +116,7 @@ static const char Base64[64] = {
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 };
 
-static inline size_t base64Size(size_t len) {
-	return 1 + (len + 2) / 3 * 4;
-}
+#define BASE64_SIZE(len) (1 + ((len) + 2) / 3 * 4)
 
 static inline void base64(char *dst, const byte *src, size_t len) {
 	size_t i = 0;

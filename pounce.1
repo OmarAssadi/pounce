@@ -1,4 +1,4 @@
-.Dd November 3, 2019
+.Dd November 4, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -28,6 +28,7 @@
 .Op Fl u Ar user
 .Op Fl w Ar pass
 .Op Ar config ...
+.Nm Fl x
 .
 .Sh DESCRIPTION
 The
@@ -124,6 +125,11 @@ and
 Require the server password
 .Ar pass
 for clients to connect.
+The
+.Ar pass
+string must be hashed using the
+.Fl x
+flag.
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl = Ar user : Ns Ar pass
 Authenticate as
@@ -187,6 +193,12 @@ and blue to clients.
 .It Fl w Ar pass , Cm pass = Ar pass
 Log in with the server password
 .Ar pass .
+.
+.It Fl x
+Prompt for a password
+and output a hash
+for use with
+.Fl W .
 .El
 .
 .Pp

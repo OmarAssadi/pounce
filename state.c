@@ -49,7 +49,7 @@ void stateLogin(
 		for (size_t i = 0; auth[i]; ++i) {
 			plain[1 + i] = (auth[i] == ':' ? 0 : auth[i]);
 		}
-		plainBase64 = malloc(base64Size(sizeof(plain)));
+		plainBase64 = malloc(BASE64_SIZE(sizeof(plain)));
 		if (!plainBase64) err(EX_OSERR, "malloc");
 		base64(plainBase64, plain, sizeof(plain));
 		serverFormat("CAP REQ :sasl\r\n");

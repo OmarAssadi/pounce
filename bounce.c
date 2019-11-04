@@ -29,6 +29,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/file.h>
+#include <sys/random.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sysexits.h>
@@ -42,6 +43,16 @@
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
+
+static void hashPass(void) {
+	char *pass = getpass("Password: ");
+	byte rand[12];
+	ssize_t len = getrandom(rand, sizeof(rand), 0);
+	if (len < 0) err(EX_OSERR, "getrandom");
+	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
+	base64(&salt[3], rand, sizeof(rand));
+	printf("%s\n", crypt(pass, salt));
+}
 
 static FILE *saveFile;
 
@@ -190,7 +201,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:f:h:j:n:p:r:s:u:vw:";
+	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:f:h:j:n:p:r:s:u:vw:x";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -244,6 +255,7 @@ int main(int argc, char *argv[]) {
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
+			break; case 'x': hashPass(); return EX_OK;
 			break; default:  return EX_USAGE;
 		}
 	}
