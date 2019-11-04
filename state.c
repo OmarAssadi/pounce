@@ -37,37 +37,6 @@ static void require(const struct Message *msg, bool origin, size_t len) {
 	}
 }
 
-static const char Base64[64] = {
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-};
-
-static char *base64(const byte *src, size_t len) {
-	char *dst = malloc(1 + (len + 2) / 3 * 4);
-	if (!dst) err(EX_OSERR, "malloc");
-	size_t i = 0;
-	while (len > 2) {
-		dst[i++] = Base64[0x3F & (src[0] >> 2)];
-		dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
-		dst[i++] = Base64[0x3F & (src[1] << 2 | src[2] >> 6)];
-		dst[i++] = Base64[0x3F & src[2]];
-		src += 3;
-		len -= 3;
-	}
-	if (len) {
-		dst[i++] = Base64[0x3F & (src[0] >> 2)];
-		if (len > 1) {
-			dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
-			dst[i++] = Base64[0x3F & (src[1] << 2)];
-		} else {
-			dst[i++] = Base64[0x3F & (src[0] << 4)];
-			dst[i++] = '=';
-		}
-		dst[i++] = '=';
-	}
-	dst[i] = '\0';
-	return dst;
-}
-
 static char *plainBase64;
 
 void stateLogin(
@@ -80,7 +49,9 @@ void stateLogin(
 		for (size_t i = 0; auth[i]; ++i) {
 			plain[1 + i] = (auth[i] == ':' ? 0 : auth[i]);
 		}
-		plainBase64 = base64(plain, sizeof(plain));
+		plainBase64 = malloc(base64Size(sizeof(plain)));
+		if (!plainBase64) err(EX_OSERR, "malloc");
+		base64(plainBase64, plain, sizeof(plain));
 		serverFormat("CAP REQ :sasl\r\n");
 	}
 	if (pass) serverFormat("PASS :%s\r\n", pass);

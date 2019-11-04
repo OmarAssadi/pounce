@@ -111,3 +111,35 @@ int getopt_config(
 	int argc, char *const *argv,
 	const char *optstring, const struct option *longopts, int *longindex
 );
+
+static const char Base64[64] = {
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+};
+
+static inline size_t base64Size(size_t len) {
+	return 1 + (len + 2) / 3 * 4;
+}
+
+static inline void base64(char *dst, const byte *src, size_t len) {
+	size_t i = 0;
+	while (len > 2) {
+		dst[i++] = Base64[0x3F & (src[0] >> 2)];
+		dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
+		dst[i++] = Base64[0x3F & (src[1] << 2 | src[2] >> 6)];
+		dst[i++] = Base64[0x3F & src[2]];
+		src += 3;
+		len -= 3;
+	}
+	if (len) {
+		dst[i++] = Base64[0x3F & (src[0] >> 2)];
+		if (len > 1) {
+			dst[i++] = Base64[0x3F & (src[0] << 4 | src[1] >> 4)];
+			dst[i++] = Base64[0x3F & (src[1] << 2)];
+		} else {
+			dst[i++] = Base64[0x3F & (src[0] << 4)];
+			dst[i++] = '=';
+		}
+		dst[i++] = '=';
+	}
+	dst[i] = '\0';
+}
