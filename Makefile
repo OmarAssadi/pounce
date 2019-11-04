@@ -44,7 +44,7 @@ install: ${BINS} ${MANS} ${RCS}
 	install ${BINS} ${PREFIX}/bin
 	install -m 644 ${MANS} ${MANDIR}/man1
 	install ${RCS} ${ETCDIR}/rc.d
-	install -d -m 700 ${DIRS}
+	install -d ${DIRS}
 
 uninstall:
 	rm -f ${BINS:%=${PREFIX}/bin/%}
