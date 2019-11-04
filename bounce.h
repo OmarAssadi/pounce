@@ -45,9 +45,9 @@ bool verbose;
 
 enum { ParamCap = 15 };
 struct Message {
-	const char *origin;
-	const char *cmd;
-	const char *params[ParamCap];
+	char *origin;
+	char *cmd;
+	char *params[ParamCap];
 };
 
 static inline struct Message parse(char *line) {

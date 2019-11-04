@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -127,7 +128,7 @@ static void handleUser(struct Client *client, struct Message *msg) {
 static void handlePass(struct Client *client, struct Message *msg) {
 	if (!clientPass) return;
 	if (!msg->params[0]) {
-		passRequired(client);
+		client->error = true;
 		return;
 	}
 	if (!strcmp(crypt(msg->params[0], clientPass), clientPass)) {
@@ -136,6 +137,7 @@ static void handlePass(struct Client *client, struct Message *msg) {
 	} else {
 		passRequired(client);
 	}
+	explicit_bzero(msg->params[0], strlen(msg->params[0]));
 }
 
 static void handleCap(struct Client *client, struct Message *msg) {
