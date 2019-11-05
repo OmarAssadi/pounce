@@ -99,7 +99,7 @@ void clientConsume(struct Client *client);
 
 bool stateJoinNames;
 void stateLogin(
-	const char *pass, const char *auth,
+	const char *pass, bool sasl, const char *plain,
 	const char *nick, const char *user, const char *real
 );
 bool stateReady(void);

@@ -1,4 +1,4 @@
-.Dd November 4, 2019
+.Dd November 5, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl Nv
+.Op Fl Nev
 .Op Fl A Ar mesg
 .Op Fl C Ar path
 .Op Fl H Ar host
@@ -133,7 +133,7 @@ string must be hashed using the
 .Fl x
 flag.
 .
-.It Fl a Ar user : Ns Ar pass , Cm sasl = Ar user : Ns Ar pass
+.It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
 Authenticate as
 .Ar user
 with
@@ -146,6 +146,11 @@ Authenticate using the TLS client certificate at
 If the certificate key is in a separate file,
 set it with
 .Fl k .
+.
+.It Fl e , Cm sasl-external
+Authenticate using SASL EXTERNAL.
+Set the client TLS client certificate path with
+.Fl c .
 .
 .It Fl f Ar path , Cm save = Ar path
 Load the contents of the buffer from

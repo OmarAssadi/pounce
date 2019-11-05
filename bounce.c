@@ -195,7 +195,8 @@ int main(int argc, char *argv[]) {
 	const char *host = NULL;
 	const char *port = "6697";
 	char *pass = NULL;
-	char *auth = NULL;
+	bool sasl = false;
+	char *plain = NULL;
 	const char *nick = NULL;
 	const char *user = NULL;
 	const char *real = NULL;
@@ -203,7 +204,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:f:h:j:k:n:p:r:s:u:vw:x";
+	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:ef:h:j:k:n:p:r:s:u:vw:x";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -215,8 +216,9 @@ int main(int argc, char *argv[]) {
 		{ "quit", required_argument, NULL, 'Q' },
 		{ "bind-path", required_argument, NULL, 'U' },
 		{ "client-pass", required_argument, NULL, 'W' },
-		{ "sasl", required_argument, NULL, 'a' },
+		{ "sasl-plain", required_argument, NULL, 'a' },
 		{ "client-cert", required_argument, NULL, 'c' },
+		{ "sasl-external", no_argument, NULL, 'e' },
 		{ "save", required_argument, NULL, 'f' },
 		{ "host", required_argument, NULL, 'h' },
 		{ "join", required_argument, NULL, 'j' },
@@ -244,8 +246,9 @@ int main(int argc, char *argv[]) {
 			break; case 'Q': quit = optarg;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
-			break; case 'a': auth = optarg;
+			break; case 'a': sasl = true; plain = optarg;
 			break; case 'c': clientCert = optarg;
+			break; case 'e': sasl = true;
 			break; case 'f': save = optarg;
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
@@ -333,9 +336,9 @@ int main(int argc, char *argv[]) {
 	if (error) err(EX_OSERR, "cap_rights_limit");
 #endif
 
-	stateLogin(pass, auth, nick, user, real);
+	stateLogin(pass, sasl, plain, nick, user, real);
 	if (pass) explicit_bzero(pass, strlen(pass));
-	if (auth) explicit_bzero(auth, strlen(auth));
+	if (plain) explicit_bzero(plain, strlen(plain));
 
 	while (!stateReady()) serverRecv();
 	serverFormat("AWAY :%s\r\n", away);
