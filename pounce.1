@@ -18,9 +18,11 @@
 .Op Fl U Ar path
 .Op Fl W Ar pass
 .Op Fl a Ar auth
+.Op Fl c Ar path
 .Op Fl f Ar path
 .Op Fl h Ar host
 .Op Fl j Ar chan
+.Op Fl k Ar path
 .Op Fl n Ar nick
 .Op Fl p Ar port
 .Op Fl r Ar real
@@ -138,6 +140,13 @@ with
 .Ar pass
 using SASL PLAIN.
 .
+.It Fl c Ar path , Cm client-cert = Ar path
+Authenticate using the TLS client certificate at
+.Ar path .
+If the certificate key is in a separate file,
+set it with
+.Fl k .
+.
 .It Fl f Ar path , Cm save = Ar path
 Load the contents of the buffer from
 .Ar path ,
@@ -154,6 +163,10 @@ Connect to
 .It Fl j Ar chan , Cm join = Ar chan
 Join the comma-separated list of
 .Ar chan .
+.
+.It Fl k Ar path , Cm client-key = Ar path
+Authenticate using the TLS client certificate key at
+.Ar path .
 .
 .It Fl n Ar nick , Cm nick = Ar nick
 Set nickname to

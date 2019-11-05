@@ -31,16 +31,39 @@
 
 static struct tls *client;
 
-int serverConnect(bool insecure, const char *host, const char *port) {
-	int error;
-
+void serverConfig(bool insecure, const char *cert, const char *priv) {
 	struct tls_config *config = tls_config_new();
-	error = tls_config_set_ciphers(config, "compat");
-	if (error) errx(EX_SOFTWARE, "tls_config");
+	if (!config) errx(EX_SOFTWARE, "tls_config_new");
+
+	int error = tls_config_set_ciphers(config, "compat");
+	if (error) {
+		errx(EX_SOFTWARE, "tls_config_set_ciphers: %s", tls_config_error(config));
+	}
 
 	if (insecure) {
 		tls_config_insecure_noverifycert(config);
 		tls_config_insecure_noverifyname(config);
+	}
+
+	if (cert) {
+		error = tls_config_set_cert_file(config, cert);
+		if (error) {
+			errx(
+				EX_SOFTWARE, "tls_config_set_cert_file: %s",
+				tls_config_error(config)
+			);
+		}
+	}
+
+	if (cert && !priv) priv = cert;
+	if (priv) {
+		error = tls_config_set_key_file(config, priv);
+		if (error) {
+			errx(
+				EX_SOFTWARE, "tls_config_set_key_file: %s",
+				tls_config_error(config)
+			);
+		}
 	}
 
 	client = tls_client();
@@ -49,6 +72,10 @@ int serverConnect(bool insecure, const char *host, const char *port) {
 	error = tls_configure(client, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(client));
 	tls_config_free(config);
+}
+
+int serverConnect(const char *host, const char *port) {
+	assert(client);
 
 	struct addrinfo *head;
 	struct addrinfo hints = {
@@ -56,7 +83,7 @@ int serverConnect(bool insecure, const char *host, const char *port) {
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,
 	};
-	error = getaddrinfo(host, port, &hints, &head);
+	int error = getaddrinfo(host, port, &hints, &head);
 	if (error) errx(EX_NOHOST, "%s:%s: %s", host, port, gai_strerror(error));
 
 	int sock = -1;

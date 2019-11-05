@@ -190,6 +190,8 @@ int main(int argc, char *argv[]) {
 	size_t ring = 4096;
 
 	bool insecure = false;
+	const char *clientCert = NULL;
+	const char *clientPriv = NULL;
 	const char *host = NULL;
 	const char *port = "6697";
 	char *pass = NULL;
@@ -201,7 +203,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:f:h:j:n:p:r:s:u:vw:x";
+	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:f:h:j:k:n:p:r:s:u:vw:x";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -214,9 +216,11 @@ int main(int argc, char *argv[]) {
 		{ "bind-path", required_argument, NULL, 'U' },
 		{ "client-pass", required_argument, NULL, 'W' },
 		{ "sasl", required_argument, NULL, 'a' },
+		{ "client-cert", required_argument, NULL, 'c' },
 		{ "save", required_argument, NULL, 'f' },
 		{ "host", required_argument, NULL, 'h' },
 		{ "join", required_argument, NULL, 'j' },
+		{ "client-key", required_argument, NULL, 'k' },
 		{ "nick", required_argument, NULL, 'n' },
 		{ "port", required_argument, NULL, 'p' },
 		{ "real", required_argument, NULL, 'r' },
@@ -241,9 +245,11 @@ int main(int argc, char *argv[]) {
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
 			break; case 'a': auth = optarg;
+			break; case 'c': clientCert = optarg;
 			break; case 'f': save = optarg;
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
+			break; case 'k': clientPriv = optarg;
 			break; case 'n': nick = optarg;
 			break; case 'p': port = optarg;
 			break; case 'r': real = optarg;
@@ -298,7 +304,9 @@ int main(int argc, char *argv[]) {
 	size_t binds = bindPath[0]
 		? listenUnix(bind, ARRAY_LEN(bind), bindPath)
 		: listenBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
-	int server = serverConnect(insecure, host, port);
+
+	serverConfig(insecure, clientCert, clientPriv);
+	int server = serverConnect(host, port);
 
 #ifdef __FreeBSD__
 	int error = cap_enter();

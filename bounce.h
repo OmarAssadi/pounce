@@ -79,7 +79,8 @@ size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
 size_t listenUnix(int fds[], size_t cap, const char *path);
 struct tls *listenAccept(int *fd, int bind);
 
-int serverConnect(bool insecure, const char *host, const char *port);
+void serverConfig(bool insecure, const char *cert, const char *priv);
+int serverConnect(const char *host, const char *port);
 void serverRecv(void);
 void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)
