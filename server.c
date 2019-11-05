@@ -46,21 +46,10 @@ void serverConfig(bool insecure, const char *cert, const char *priv) {
 	}
 
 	if (cert) {
-		error = tls_config_set_cert_file(config, cert);
+		error = tls_config_set_keypair_file(config, cert, (priv ? priv : cert));
 		if (error) {
 			errx(
-				EX_SOFTWARE, "tls_config_set_cert_file: %s",
-				tls_config_error(config)
-			);
-		}
-	}
-
-	if (cert && !priv) priv = cert;
-	if (priv) {
-		error = tls_config_set_key_file(config, priv);
-		if (error) {
-			errx(
-				EX_SOFTWARE, "tls_config_set_key_file: %s",
+				EX_SOFTWARE, "tls_config_set_keypair_file: %s",
 				tls_config_error(config)
 			);
 		}
