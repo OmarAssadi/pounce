@@ -14,17 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef __APPLE__
-#define __STDC_WANT_LIB_EXT1__ 1
-#define explicit_bzero(b, len) memset_s((b), (len), 0, (len))
-#endif
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <tls.h>
+
+#include "compat.h"
 
 #ifndef DEFAULT_CERT_PATH
 #define DEFAULT_CERT_PATH "/usr/local/etc/letsencrypt/live/%s/fullchain.pem"

@@ -14,8 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "bounce.h"
-
 #include <assert.h>
 #include <err.h>
 #include <stdbool.h>
@@ -24,6 +22,8 @@
 #include <string.h>
 #include <strings.h>
 #include <sysexits.h>
+
+#include "bounce.h"
 
 typedef void Handler(struct Message *msg);
 

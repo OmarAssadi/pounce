@@ -14,8 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "bounce.h"
-
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -36,6 +34,8 @@
 #ifdef __FreeBSD__
 #include <sys/capsicum.h>
 #endif
+
+#include "bounce.h"
 
 static struct tls *server;
 
