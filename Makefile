@@ -33,6 +33,8 @@ pounce: ${OBJS}
 
 ${OBJS}: bounce.h compat.h
 
+dispatch.o: compat.h
+
 tags: *.c *.h
 	ctags -w *.c *.h
 

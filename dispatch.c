@@ -19,6 +19,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,8 @@
 #ifdef __FreeBSD__
 #include <sys/capsicum.h>
 #endif
+
+#include "compat.h"
 
 static struct {
 	struct pollfd *ptr;
@@ -231,6 +234,7 @@ int main(int argc, char *argv[]) {
 		if (error) err(EX_IOERR, "listen");
 	}
 
+	signal(SIGPIPE, SIG_IGN);
 	for (;;) {
 		int nfds = poll(
 			event.ptr, event.len, (event.len > binds ? timeout : -1)

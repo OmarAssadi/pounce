@@ -372,6 +372,7 @@ int main(int argc, char *argv[]) {
 
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
+	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINFO, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
