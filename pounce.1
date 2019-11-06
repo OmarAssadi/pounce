@@ -1,4 +1,4 @@
-.Dd November 5, 2019
+.Dd November 6, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -129,9 +129,8 @@ Require the server password
 for clients to connect.
 The
 .Ar pass
-string must be hashed using the
-.Fl x
-flag.
+string must be hashed using
+.Fl x .
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
 Authenticate as
@@ -139,17 +138,24 @@ Authenticate as
 with
 .Ar pass
 using SASL PLAIN.
+Since this method requires
+the account password in plaintext,
+it is recommended to use SASL EXTERNAL instead with
+.Fl e .
 .
 .It Fl c Ar path , Cm client-cert = Ar path
-Authenticate using the TLS client certificate at
+Load the TLS client certificate from
 .Ar path .
-If the certificate key is in a separate file,
-set it with
+If the private key is in a separate file,
+it is loaded with
 .Fl k .
+With
+.Fl e ,
+authenticate using SASL EXTERNAL.
 .
 .It Fl e , Cm sasl-external
 Authenticate using SASL EXTERNAL.
-Set the client TLS client certificate path with
+The TLS client certificate is loaded with
 .Fl c .
 .
 .It Fl f Ar path , Cm save = Ar path
@@ -170,7 +176,7 @@ Join the comma-separated list of
 .Ar chan .
 .
 .It Fl k Ar path , Cm client-priv = Ar path
-Authenticate using the TLS client certificate private key at
+Load the TLS client private key from
 .Ar path .
 .
 .It Fl n Ar nick , Cm nick = Ar nick
@@ -189,10 +195,8 @@ Set realname to
 The default realname is the same as the nickname.
 .
 .It Fl s Ar size , Cm size = Ar size
-Set the buffer
+Set the number of messages contained in the buffer to
 .Ar size .
-This determines the maximum number of messages
-stored in memory.
 The size must be a power of two.
 The default size is 4096.
 .
