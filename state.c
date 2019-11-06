@@ -324,7 +324,7 @@ void stateSync(struct Client *client) {
 		client,
 		":%s NOTICE %s :"
 		"pounce is GPLv3 fwee softwawe ^w^  code is avaiwable fwom %s\r\n",
-		Origin, self.nick, SourceURL
+		ORIGIN, self.nick, SOURCE_URL
 	);
 
 	clientFormat(
@@ -373,7 +373,7 @@ void stateSync(struct Client *client) {
 		if (chan->topic) {
 			clientFormat(
 				client, ":%s 332 %s %s :%s\r\n",
-				Origin, self.nick, chan->name, chan->topic
+				ORIGIN, self.nick, chan->name, chan->topic
 			);
 		}
 		if (stateJoinNames) serverFormat("NAMES %s\r\n", chan->name);

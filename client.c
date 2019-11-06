@@ -93,7 +93,7 @@ static void passRequired(struct Client *client) {
 		client,
 		":%s 464 * :Password incorrect\r\n"
 		"ERROR :Password incorrect\r\n",
-		Origin
+		ORIGIN
 	);
 	client->error = true;
 }
@@ -150,25 +150,25 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
-		clientFormat(client, ":%s CAP * LS :server-time\r\n", Origin);
+		clientFormat(client, ":%s CAP * LS :server-time\r\n", ORIGIN);
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
 		if (!strcmp(msg->params[1], "server-time")) {
 			client->serverTime = true;
-			clientFormat(client, ":%s CAP * ACK :server-time\r\n", Origin);
+			clientFormat(client, ":%s CAP * ACK :server-time\r\n", ORIGIN);
 		} else {
-			clientFormat(client, ":%s CAP * NAK :%s\r\n", Origin, msg->params[1]);
+			clientFormat(client, ":%s CAP * NAK :%s\r\n", ORIGIN, msg->params[1]);
 		}
 
 	} else if (!strcmp(msg->params[0], "LIST")) {
 		clientFormat(
 			client, ":%s CAP * LIST :%s\r\n",
-			Origin, (client->serverTime ? "server-time" : "")
+			ORIGIN, (client->serverTime ? "server-time" : "")
 		);
 
 	} else {
-		clientFormat(client, ":%s 410 * :Invalid CAP subcommand\r\n", Origin);
+		clientFormat(client, ":%s 410 * :Invalid CAP subcommand\r\n", ORIGIN);
 	}
 }
 

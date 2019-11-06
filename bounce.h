@@ -27,12 +27,12 @@
 #define CERTBOT_PATH "/usr/local/etc/letsencrypt"
 #endif
 
+#define SOURCE_URL "https://code.causal.agency/june/pounce"
+#define ORIGIN "irc.invalid"
+
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
 typedef unsigned char byte;
-
-static const char *SourceURL = "https://code.causal.agency/june/pounce";
-static const char *Origin = "irc.invalid";
 
 bool verbose;
 
