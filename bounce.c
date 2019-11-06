@@ -29,7 +29,6 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/file.h>
-#include <sys/random.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sysexits.h>
@@ -47,8 +46,7 @@
 static void hashPass(void) {
 	char *pass = getpass("Password: ");
 	byte rand[12];
-	ssize_t len = getrandom(rand, sizeof(rand), 0);
-	if (len < 0) err(EX_OSERR, "getrandom");
+	arc4random_buf(rand, sizeof(rand));
 	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
 	base64(&salt[3], rand, sizeof(rand));
 	printf("%s\n", crypt(pass, salt));
