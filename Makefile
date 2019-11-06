@@ -45,14 +45,15 @@ install: ${BINS} ${MANS} ${RCS}
 	install -d ${PREFIX}/bin ${MANDIR}/man1 ${ETCDIR}/rc.d
 	install ${BINS} ${PREFIX}/bin
 	install -m 644 ${MANS} ${MANDIR}/man1
-	install ${RCS} ${ETCDIR}/rc.d
-	install -d ${DIRS}
+	if [ -n '${RCS}' ]; then install -d ${ETCDIR}/rc.d; fi
+	if [ -n '${RCS}' ]; then install ${RCS} ${ETCDIR}/rc.d; fi
+	if [ -n '${DIRS}' ]; then install -d ${DIRS}; fi
 
 uninstall:
 	rm -f ${BINS:%=${PREFIX}/bin/%}
 	rm -f ${MANS:%=${MANDIR}/man1/%}
-	rm -f ${RCS:%=${ETCDIR}/%}
-	rmdir ${DIRS}
+	if [ -n '${RCS}' ]; then rm -f ${RCS:%=${ETCDIR}/%}; fi
+	if [ -n '${DIRS}' ]; then rmdir ${DIRS}; fi
 
 localhost.crt:
 	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \

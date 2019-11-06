@@ -3,3 +3,8 @@ LDLIBS = -lcrypt -lpthread
 LDLIBS += ${LIBRESSL_PREFIX}/lib/libtls.a
 LDLIBS += ${LIBRESSL_PREFIX}/lib/libssl.a
 LDLIBS += ${LIBRESSL_PREFIX}/lib/libcrypto.a
+
+MANDIR = ${PREFIX}/share/man
+ETCDIR = /etc
+RCS =
+DIRS =
