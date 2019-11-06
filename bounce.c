@@ -50,6 +50,21 @@ static void hashPass(void) {
 	printf("%s\n", crypt(pass, salt));
 }
 
+static void genCert(const char *path) {
+	const char *name = strrchr(path, '/');
+	name = (name ? &name[1] : path);
+	char subj[256];
+	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
+	umask(0066);
+	execlp(
+		"openssl", "openssl", "req",
+		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "1000",
+		"-nodes", "-subj", subj, "-out", path, "-keyout", path,
+		NULL
+	);
+	err(EX_UNAVAILABLE, "openssl");
+}
+
 static size_t parseSize(const char *str) {
 	char *rest;
 	size_t size = strtoull(str, &rest, 0);
@@ -216,7 +231,7 @@ int main(int argc, char *argv[]) {
 	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:ef:h:j:k:n:p:r:s:u:vw:x";
+	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:ef:g:h:j:k:n:p:r:s:u:vw:x";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "away", required_argument, NULL, 'A' },
@@ -262,6 +277,7 @@ int main(int argc, char *argv[]) {
 			break; case 'c': clientCert = optarg;
 			break; case 'e': sasl = true;
 			break; case 'f': savePath = optarg;
+			break; case 'g': genCert(optarg);
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
 			break; case 'k': clientPriv = optarg;

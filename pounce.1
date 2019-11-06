@@ -30,7 +30,12 @@
 .Op Fl u Ar user
 .Op Fl w Ar pass
 .Op Ar config ...
-.Nm Fl x
+.
+.Nm
+.Fl g Ar cert
+.
+.Nm
+.Fl x
 .
 .Sh DESCRIPTION
 The
@@ -152,6 +157,8 @@ it is loaded with
 With
 .Fl e ,
 authenticate using SASL EXTERNAL.
+Certificates can be generated with
+.Fl g .
 .
 .It Fl e , Cm sasl-external
 Authenticate using SASL EXTERNAL.
@@ -165,6 +172,12 @@ if it exists,
 and truncate it.
 On shutdown,
 save the contents of the buffer to
+.Ar path .
+.
+.It Fl g Ar path
+Generate a TLS client certificate using
+.Xr openssl 1
+and write it to
 .Ar path .
 .
 .It Fl h Ar host , Cm host = Ar host
