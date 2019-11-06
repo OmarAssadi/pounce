@@ -78,7 +78,7 @@ Bind to
 .Ar host .
 The default host is localhost.
 .
-.It Fl K Ar path , Cm key = Ar path
+.It Fl K Ar path , Cm priv = Ar path
 Load TLS private key from
 .Ar path .
 The default path is the
@@ -169,8 +169,8 @@ Connect to
 Join the comma-separated list of
 .Ar chan .
 .
-.It Fl k Ar path , Cm client-key = Ar path
-Authenticate using the TLS client certificate key at
+.It Fl k Ar path , Cm client-priv = Ar path
+Authenticate using the TLS client certificate private key at
 .Ar path .
 .
 .It Fl n Ar nick , Cm nick = Ar nick
