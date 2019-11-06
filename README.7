@@ -20,9 +20,11 @@ requires LibreSSL
 .Pq Fl ltls
 and targets
 .Fx .
-It also runs on Darwin
-and doesn't use anything
-particularly BSD-specific.
+It can also be built
+on Darwin or GNU/Linux
+by copying the appropriate file to
+.Pa config.mk
+and modifying as needed.
 .
 .Sh RATIONALE
 As a former
@@ -50,7 +52,7 @@ rather than being limited to messages.
 .Sh FILES
 .Bl -tag -width "dispatch.c" -compact
 .It Pa bounce.h
-common declarations and default paths
+common declarations and general functions
 .It Pa bounce.c
 command line parsing and event loop
 .It Pa listen.c
