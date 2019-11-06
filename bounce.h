@@ -23,12 +23,8 @@
 
 #include "compat.h"
 
-#ifndef DEFAULT_CERT_PATH
-#define DEFAULT_CERT_PATH "/usr/local/etc/letsencrypt/live/%s/fullchain.pem"
-#endif
-
-#ifndef DEFAULT_PRIV_PATH
-#define DEFAULT_PRIV_PATH "/usr/local/etc/letsencrypt/live/%s/privkey.pem"
+#ifndef CERTBOT_PATH
+#define CERTBOT_PATH "/usr/local/etc/letsencrypt"
 #endif
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))

@@ -303,10 +303,16 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	if (!certPath[0]) {
-		snprintf(certPath, sizeof(certPath), DEFAULT_CERT_PATH, bindHost);
+		snprintf(
+			certPath, sizeof(certPath), CERTBOT_PATH "/live/%s/fullchain.pem",
+			bindHost
+		);
 	}
 	if (!privPath[0]) {
-		snprintf(privPath, sizeof(privPath), DEFAULT_PRIV_PATH, bindHost);
+		snprintf(
+			privPath, sizeof(privPath), CERTBOT_PATH "/live/%s/privkey.pem",
+			bindHost
+		);
 	}
 
 	if (!host) errx(EX_USAGE, "host required");
