@@ -247,6 +247,65 @@ specified by
 and
 .Fl K .
 .
+.Ss Service Configuration
+Add the following to
+.Pa /etc/rc.conf
+to enable the
+.Nm
+daemon:
+.Bd -literal -offset indent
+pounce_enable="YES"
+.Ed
+.
+.Pp
+By default,
+the
+.Nm
+daemon is started in the
+.Pa /usr/local/etc/pounce
+directory.
+Configuration files in that location
+can be loaded by setting
+.Ar pounce_flags :
+.Bd -literal -offset indent
+pounce_flags="example.conf"
+.Ed
+.
+.Pp
+The
+.Nm
+service supports profiles
+for running multiple instances.
+Set
+.Ar pounce_profiles
+to a space-separated list of names.
+Flags for each profile will be set from
+.Ar pounce_${profile}_flags .
+For example:
+.Bd -literal -offset indent
+pounce_profiles="example1 example2"
+pounce_example1_flags="example1.conf"
+pounce_example2_flags="example2.conf"
+.Ed
+.
+.Pp
+The commands
+.Cm start , stop ,
+etc.\&
+will operate on the profile given as an additional argument,
+or on all profiles without an additional argument.
+.
+.Pp
+The
+.Cm reload
+command will cause the
+.Nm
+daemon to reload certificate files.
+To reload other configuration,
+use the
+.Cm restart
+command.
+.
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
 .It Ev USER
@@ -254,13 +313,13 @@ The default nickname.
 .El
 .
 .Sh EXAMPLES
-Command line:
+Configuration on the command line:
 .Bd -literal -offset indent
 .Nm Fl H Li pounce.example.org Fl h Li chat.freenode.net Fl j Li '#ascii.town'
 .Ed
 .
 .Pp
-Configuration file:
+Configuration in a file:
 .Bd -literal -offset indent
 bind-host = pounce.example.org
 host = chat.freenode.net
