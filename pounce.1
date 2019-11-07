@@ -164,6 +164,8 @@ Certificates can be generated with
 Authenticate using SASL EXTERNAL.
 The TLS client certificate is loaded with
 .Fl c .
+For more information, see
+.Sx Configuring SASL EXTERNAL .
 .
 .It Fl f Ar path , Cm save = Ar path
 Load the contents of the buffer from
@@ -246,6 +248,36 @@ specified by
 .Fl C
 and
 .Fl K .
+.
+.Ss Configuring SASL EXTERNAL
+.Bl -enum
+.It
+Generate a new TLS client certificate:
+.Bd -literal -offset indent
+pounce -g example.pem
+.Ed
+.It
+Connect to the server using the certificate:
+.Bd -literal -offset indent
+client-cert = example.pem
+# or: pounce -c example.pem
+.Ed
+.It
+Identify with services or use
+.Cm sasl-plain ,
+then add the certificate fingerprint to your account:
+.Bd -literal -offset indent
+/msg NickServ CERT ADD
+.Ed
+.It
+Enable SASL EXTERNAL
+to require successful authentication when connecting:
+.Bd -literal -offset indent
+client-cert = example.pem
+sasl-external
+# or: pounce -e -c example.pem
+.Ed
+.El
 .
 .Ss Service Configuration
 Add the following to
