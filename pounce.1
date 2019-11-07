@@ -298,7 +298,7 @@ daemon is started in the
 directory.
 Configuration files in that location
 can be loaded by setting
-.Ar pounce_flags :
+.Va pounce_flags :
 .Bd -literal -offset indent
 pounce_flags="example.conf"
 .Ed
@@ -309,10 +309,10 @@ The
 service supports profiles
 for running multiple instances.
 Set
-.Ar pounce_profiles
+.Va pounce_profiles
 to a space-separated list of names.
 Flags for each profile will be set from
-.Ar pounce_${profile}_flags .
+.Va pounce_${profile}_flags .
 For example:
 .Bd -literal -offset indent
 pounce_profiles="example1 example2"

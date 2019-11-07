@@ -1,4 +1,4 @@
-.Dd November 1, 2019
+.Dd November 6, 2019
 .Dt CALICO 1
 .Os
 .
@@ -51,6 +51,38 @@ The path to the directory containing
 .Xr pounce 1
 UNIX-domain sockets.
 .El
+.
+.Ss Service Configuration
+Add the following to
+.Pa /etc/rc.conf
+to enable the
+.Nm
+daemon:
+.Bd -literal -offset indent
+calico_enable="YES"
+.Ed
+.
+.Pp
+The default socket directory is
+.Pa /var/run/calico .
+It can be changed by setting
+.Va calico_path .
+The
+.Xr pounce 1
+service can be configured
+to listen in this directory
+with the following:
+.Bd -literal -offset indent
+pounce_flags="-U /var/run/calico"
+.Ed
+.
+.Pp
+The
+.Nm
+and
+.Xr pounce 1
+services can be started and stopped
+completely independently of each other.
 .
 .Sh EXAMPLES
 .Bd -literal -offset indent
