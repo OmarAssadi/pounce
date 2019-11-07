@@ -4,8 +4,8 @@ ETCDIR = ${PREFIX}/etc
 LIBRESSL_PREFIX = /usr/local
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
-CFLAGS += -I${LIBRESSL_PREFIX}/include
-LDFLAGS += -L${LIBRESSL_PREFIX}/lib
+CFLAGS += ${LIBRESSL_PREFIX:%=-I%/include}
+LDFLAGS += ${LIBRESSL_PREFIX:%=-L%/lib}
 LDLIBS = -lcrypt -lcrypto -ltls
 
 BINS = calico pounce
