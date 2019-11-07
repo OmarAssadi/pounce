@@ -429,8 +429,8 @@ int main(int argc, char *argv[]) {
 			}
 
 			struct Client *client = event.clients[i];
-			if (revents & POLLIN) clientRecv(client);
 			if (revents & POLLOUT) clientConsume(client);
+			if (revents & POLLIN) clientRecv(client);
 			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
 				clientFree(client);
 				eventRemove(i);
