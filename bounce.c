@@ -107,7 +107,7 @@ struct SplitPath {
 static bool linkTarget(char *target, size_t cap, int dir, const char *file) {
 	ssize_t len = readlinkat(dir, file, target, cap - 1);
 	if (len < 0 && errno == EINVAL) return false;
-	if (len < 0) err(EX_IOERR, "readlinkat");
+	if (len < 0) err(EX_NOINPUT, "%s", file);
 	target[len] = '\0';
 	return true;
 }
