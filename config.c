@@ -42,7 +42,10 @@ int getopt_config(
 	int argc, char *const *argv,
 	const char *optstring, const struct option *longopts, int *longindex
 ) {
-	int opt = getopt_long(argc, argv, optstring, longopts, longindex);
+	static int opt;
+	if (opt >= 0) {
+		opt = getopt_long(argc, argv, optstring, longopts, longindex);
+	}
 	if (opt >= 0) return opt;
 
 	for (;;) {
