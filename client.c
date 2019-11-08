@@ -28,6 +28,8 @@
 
 #include "bounce.h"
 
+static size_t count;
+
 enum Need {
 	NeedNick = 1 << 0,
 	NeedUser = 1 << 1,
@@ -54,6 +56,9 @@ struct Client *clientAlloc(struct tls *tls) {
 }
 
 void clientFree(struct Client *client) {
+	if (!client->need) {
+		if (!--count) serverFormat("AWAY :%s\r\n", clientAway);
+	}
 	tls_close(client->tls);
 	tls_free(client->tls);
 	free(client);
@@ -100,7 +105,10 @@ static void passRequired(struct Client *client) {
 
 static void maybeSync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
-	if (!client->need) stateSync(client);
+	if (!client->need) {
+		stateSync(client);
+		if (!count++) serverFormat("AWAY\r\n");
+	}
 }
 
 typedef void Handler(struct Client *client, struct Message *msg);

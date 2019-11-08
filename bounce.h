@@ -80,6 +80,7 @@ void serverFormat(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 
 char *clientPass;
+char *clientAway;
 struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
 bool clientError(const struct Client *client);

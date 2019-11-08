@@ -228,7 +228,6 @@ int main(int argc, char *argv[]) {
 	const char *real = NULL;
 
 	const char *join = NULL;
-	const char *away = "pounced :3";
 	const char *quit = "connection reset by purr";
 
 	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:ef:g:h:j:k:n:p:r:s:u:vw:x";
@@ -264,7 +263,7 @@ int main(int argc, char *argv[]) {
 	while (0 < (opt = getopt_config(argc, argv, Opts, LongOpts, NULL))) {
 		switch (opt) {
 			break; case '!': insecure = true;
-			break; case 'A': away = optarg;
+			break; case 'A': clientAway = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': bindHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
@@ -322,6 +321,7 @@ int main(int argc, char *argv[]) {
 	}
 	if (!user) user = nick;
 	if (!real) real = nick;
+	if (!clientAway) clientAway = "pounced :3";
 
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
 	if (plain) explicit_bzero(plain, strlen(plain));
 
 	while (!stateReady()) serverRecv();
-	serverFormat("AWAY :%s\r\n", away);
+	serverFormat("AWAY :%s\r\n", clientAway);
 	if (join) serverFormat("JOIN :%s\r\n", join);
 
 	signal(SIGINT, signalHandler);
@@ -383,7 +383,6 @@ int main(int argc, char *argv[]) {
 	}
 	eventAdd(server, NULL);
 
-	size_t clients = 0;
 	for (;;) {
 		int nfds = poll(event.fds, event.len, -1);
 		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
@@ -423,7 +422,6 @@ int main(int argc, char *argv[]) {
 					close(fd);
 				} else {
 					eventAdd(fd, clientAlloc(tls));
-					if (!clients++) serverFormat("AWAY\r\n");
 				}
 				continue;
 			}
@@ -434,7 +432,6 @@ int main(int argc, char *argv[]) {
 			if (clientError(client) || revents & (POLLHUP | POLLERR)) {
 				clientFree(client);
 				eventRemove(i);
-				if (!--clients) serverFormat("AWAY :%s\r\n", away);
 			}
 		}
 
