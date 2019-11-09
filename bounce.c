@@ -322,6 +322,9 @@ int main(int argc, char *argv[]) {
 	if (!user) user = nick;
 	if (!real) real = nick;
 	if (!clientAway) clientAway = "pounced :3";
+	if (clientPass && clientPass[0] != '$') {
+		errx(EX_CONFIG, "password must be hashed with -x");
+	}
 
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
