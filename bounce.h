@@ -30,7 +30,7 @@
 #define SOURCE_URL "https://code.causal.agency/june/pounce"
 #define ORIGIN "irc.invalid"
 
-#define BIT(x) x##Bit, x = 1 << x##Bit, _##x##Bit = x##Bit
+#define BIT(x) x##Bit, x = 1 << x##Bit, x##Bit_ = x##Bit
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
 typedef unsigned char byte;
