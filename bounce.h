@@ -35,8 +35,6 @@
 
 typedef unsigned char byte;
 
-bool verbose;
-
 enum { ParamCap = 15 };
 struct Message {
 	char *origin;
@@ -57,6 +55,59 @@ static inline struct Message parse(char *line) {
 	}
 	return msg;
 }
+
+#define ENUM_CAP \
+	X("account-notify", CapAccountNotify) \
+	X("away-notify", CapAwayNotify) \
+	X("chghost", CapChghost) \
+	X("extended-join", CapExtendedJoin) \
+	X("invite-notify", CapInviteNotify) \
+	X("server-time", CapServerTime) \
+	X("", CapUnsupported)
+
+enum Cap {
+#define X(name, id) BIT(id),
+	ENUM_CAP
+#undef X
+};
+
+static const char *CapNames[] = {
+#define X(name, id) [id##Bit] = name,
+	ENUM_CAP
+#undef X
+};
+
+static inline enum Cap capParse(const char *list) {
+	enum Cap caps = 0;
+	while (*list) {
+		enum Cap cap = CapUnsupported;
+		size_t len = strcspn(list, " ");
+		for (size_t i = 0; i < ARRAY_LEN(CapNames); ++i) {
+			if (len != strlen(CapNames[i])) continue;
+			if (strncmp(list, CapNames[i], len)) continue;
+			cap = 1 << i;
+			break;
+		}
+		caps |= cap;
+		list += len;
+		if (*list) list++;
+	}
+	return caps;
+}
+
+static inline const char *capList(enum Cap caps) {
+	static char buf[1024];
+	buf[0] = '\0';
+	for (size_t i = 0; i < ARRAY_LEN(CapNames); ++i) {
+		if (caps & (1 << i)) {
+			if (buf[0]) strlcat(buf, " ", sizeof(buf));
+			strlcat(buf, CapNames[i], sizeof(buf));
+		}
+	}
+	return buf;
+}
+
+bool verbose;
 
 void ringAlloc(size_t len);
 void ringProduce(const char *line);

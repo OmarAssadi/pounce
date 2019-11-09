@@ -41,7 +41,7 @@ struct Client {
 	struct tls *tls;
 	enum Need need;
 	size_t consumer;
-	bool serverTime;
+	enum Cap caps;
 	char buf[1024];
 	size_t len;
 	bool error;
@@ -158,13 +158,17 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
-		clientFormat(client, ":%s CAP * LS :server-time\r\n", ORIGIN);
+		clientFormat(
+			client, ":%s CAP * LS :%s\r\n",
+			ORIGIN, capList(CapServerTime)
+		);
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
-		if (!strcmp(msg->params[1], "server-time")) {
-			client->serverTime = true;
-			clientFormat(client, ":%s CAP * ACK :server-time\r\n", ORIGIN);
+		enum Cap caps = capParse(msg->params[1]);
+		if (caps == CapServerTime) {
+			client->caps |= caps;
+			clientFormat(client, ":%s CAP * ACK :%s\r\n", ORIGIN, msg->params[1]);
 		} else {
 			clientFormat(client, ":%s CAP * NAK :%s\r\n", ORIGIN, msg->params[1]);
 		}
@@ -172,7 +176,7 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	} else if (!strcmp(msg->params[0], "LIST")) {
 		clientFormat(
 			client, ":%s CAP * LIST :%s\r\n",
-			ORIGIN, (client->serverTime ? "server-time" : "")
+			ORIGIN, capList(client->caps)
 		);
 
 	} else {
@@ -277,7 +281,7 @@ void clientConsume(struct Client *client) {
 	time_t time;
 	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
-	if (client->serverTime) {
+	if (client->caps & CapServerTime) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
 		struct tm *tm = gmtime(&time);
 		strftime(ts, sizeof(ts), "%FT%T.000Z", tm);
