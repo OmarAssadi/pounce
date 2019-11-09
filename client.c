@@ -31,10 +31,10 @@
 static size_t count;
 
 enum Need {
-	NeedNick = 1 << 0,
-	NeedUser = 1 << 1,
-	NeedPass = 1 << 2,
-	NeedCapEnd = 1 << 3,
+	BIT(NeedNick),
+	BIT(NeedUser),
+	BIT(NeedPass),
+	BIT(NeedCapEnd),
 };
 
 struct Client {
