@@ -275,10 +275,52 @@ size_t clientDiff(const struct Client *client) {
 	return ringDiff(client->consumer);
 }
 
+typedef const char *Filter(const char *line);
+
+static const char *cmd(const char *line) {
+	static char buf[512];
+	if (*line == ':') {
+		line += strcspn(line, " ");
+		if (*line) line++;
+	}
+	snprintf(buf, sizeof(buf), "%.*s", (int)strcspn(line, " "), line);
+	return buf;
+}
+
+static const char *filterAccountNotify(const char *line) {
+	return (strcmp(cmd(line), "ACCOUNT") ? line : NULL);
+}
+
+static const char *filterAwayNotify(const char *line) {
+	return (strcmp(cmd(line), "AWAY") ? line : NULL);
+}
+
+static const char *filterChghost(const char *line) {
+	return (strcmp(cmd(line), "CHGHOST") ? line : NULL);
+}
+
+static Filter *Filters[] = {
+	[CapAccountNotifyBit] = filterAccountNotify,
+	[CapAwayNotifyBit] = filterAwayNotify,
+	[CapChghostBit] = filterChghost,
+};
+
 void clientConsume(struct Client *client) {
 	time_t time;
 	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
+
+	enum Cap diff = client->caps ^ stateCaps;
+	for (size_t i = 0; line && i < ARRAY_LEN(Filters); ++i) {
+		if (!Filters[i]) continue;
+		if (diff & (1 << i)) line = Filters[i](line);
+	}
+	if (!line) {
+		ringConsume(NULL, client->consumer);
+		return;
+	}
+
+	// TODO: Move into a filter?
 	if (client->caps & CapServerTime) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
 		struct tm *tm = gmtime(&time);
