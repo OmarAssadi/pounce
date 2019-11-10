@@ -53,7 +53,7 @@ static byte *readFile(size_t *len, FILE *file) {
 	return buf;
 }
 
-void listenConfig(FILE *cert, FILE *priv) {
+void localConfig(FILE *cert, FILE *priv) {
 	tls_free(server);
 	server = tls_server();
 	if (!server) errx(EX_SOFTWARE, "tls_server");
@@ -81,7 +81,7 @@ void listenConfig(FILE *cert, FILE *priv) {
 	tls_config_free(config);
 }
 
-size_t listenBind(int fds[], size_t cap, const char *host, const char *port) {
+size_t localBind(int fds[], size_t cap, const char *host, const char *port) {
 	struct addrinfo *head;
 	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
@@ -124,7 +124,7 @@ static void unixUnlink(void) {
 	if (error) warn("unlinkat");
 }
 
-size_t listenUnix(int fds[], size_t cap, const char *path) {
+size_t localUnix(int fds[], size_t cap, const char *path) {
 	if (!cap) return 0;
 
 	int sock = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -186,7 +186,7 @@ static int recvfd(int sock) {
 	return *(int *)CMSG_DATA(cmsg);
 }
 
-struct tls *listenAccept(int *fd, int bind) {
+struct tls *localAccept(int *fd, int bind) {
 	*fd = accept(bind, NULL, NULL);
 	if (*fd < 0) err(EX_IOERR, "accept");
 

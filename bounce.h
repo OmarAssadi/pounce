@@ -118,10 +118,10 @@ void ringInfo(void);
 int ringSave(FILE *file);
 void ringLoad(FILE *file);
 
-void listenConfig(FILE *cert, FILE *priv);
-size_t listenBind(int fds[], size_t cap, const char *host, const char *port);
-size_t listenUnix(int fds[], size_t cap, const char *path);
-struct tls *listenAccept(int *fd, int bind);
+void localConfig(FILE *cert, FILE *priv);
+size_t localBind(int fds[], size_t cap, const char *host, const char *port);
+size_t localUnix(int fds[], size_t cap, const char *path);
+struct tls *localAccept(int *fd, int bind);
 
 void serverConfig(bool insecure, const char *cert, const char *priv);
 int serverConnect(const char *host, const char *port);

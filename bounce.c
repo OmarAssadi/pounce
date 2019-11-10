@@ -333,14 +333,14 @@ int main(int argc, char *argv[]) {
 	struct SplitPath privSplit = splitPath(privPath);
 	FILE *cert = splitOpen(certSplit);
 	FILE *priv = splitOpen(privSplit);
-	listenConfig(cert, priv);
+	localConfig(cert, priv);
 	fclose(cert);
 	fclose(priv);
 
 	int bind[8];
 	size_t binds = bindPath[0]
-		? listenUnix(bind, ARRAY_LEN(bind), bindPath)
-		: listenBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
+		? localUnix(bind, ARRAY_LEN(bind), bindPath)
+		: localBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
 
 	serverConfig(insecure, clientCert, clientPriv);
 	int server = serverConnect(host, port);
@@ -399,7 +399,7 @@ int main(int argc, char *argv[]) {
 		if (signals[SIGUSR1]) {
 			cert = splitOpen(certSplit);
 			priv = splitOpen(privSplit);
-			listenConfig(cert, priv);
+			localConfig(cert, priv);
 			fclose(cert);
 			fclose(priv);
 			signals[SIGUSR1] = 0;
@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
 
 			if (!event.clients[i]) {
 				int fd;
-				struct tls *tls = listenAccept(&fd, event.fds[i].fd);
+				struct tls *tls = localAccept(&fd, event.fds[i].fd);
 				int error = tls_handshake(tls);
 				if (error) {
 					warnx("tls_handshake: %s", tls_error(tls));
