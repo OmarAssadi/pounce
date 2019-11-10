@@ -150,6 +150,7 @@ static void handlePass(struct Client *client, struct Message *msg) {
 
 static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
+	enum Cap avail = CapServerTime | (stateCaps & ~CapSASL);
 
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;
@@ -158,15 +159,12 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
-		clientFormat(
-			client, ":%s CAP * LS :%s\r\n",
-			ORIGIN, capList(CapServerTime)
-		);
+		clientFormat(client, ":%s CAP * LS :%s\r\n", ORIGIN, capList(avail));
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
 		enum Cap caps = capParse(msg->params[1]);
-		if (caps == CapServerTime) {
+		if (caps == (avail & caps)) {
 			client->caps |= caps;
 			clientFormat(client, ":%s CAP * ACK :%s\r\n", ORIGIN, msg->params[1]);
 		} else {

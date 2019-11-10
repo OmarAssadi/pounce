@@ -62,6 +62,7 @@ static inline struct Message parse(char *line) {
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
 	X("invite-notify", CapInviteNotify) \
+	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("", CapUnsupported)
 
@@ -144,6 +145,7 @@ size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
 bool stateJoinNames;
+enum Cap stateCaps;
 void stateLogin(
 	const char *pass, bool sasl, const char *plain,
 	const char *nick, const char *user, const char *real
