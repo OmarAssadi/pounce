@@ -43,6 +43,7 @@ void stateLogin(
 	const char *pass, bool sasl, const char *plain,
 	const char *nick, const char *user, const char *real
 ) {
+	serverFormat("CAP LS\r\n");
 	if (pass) serverFormat("PASS :%s\r\n", pass);
 	if (sasl) {
 		serverFormat("CAP REQ :%s\r\n", capList(CapSASL));
@@ -59,19 +60,25 @@ void stateLogin(
 	}
 	serverFormat("NICK %s\r\n", nick);
 	serverFormat("USER %s 0 * :%s\r\n", user, real);
-	serverFormat("CAP LS\r\n");
 }
 
 static void handleCap(struct Message *msg) {
 	require(msg, false, 3);
 	enum Cap caps = capParse(msg->params[2]);
-	if (!strcmp(msg->params[1], "ACK")) {
+
+	if (!strcmp(msg->params[1], "LS")) {
+		caps &= ~(CapSASL | CapServerTime | CapUnsupported);
+		serverFormat("CAP REQ :%s\r\n", capList(caps));
+
+	} else if (!strcmp(msg->params[1], "ACK")) {
 		stateCaps |= caps;
 		if (caps & CapSASL) {
 			serverFormat(
 				"AUTHENTICATE %s\r\n", (plainBase64 ? "PLAIN" : "EXTERNAL")
 			);
 		}
+		if (!(stateCaps & CapSASL)) serverFormat("CAP END\r\n");
+
 	} else if (!strcmp(msg->params[1], "NAK")) {
 		errx(EX_CONFIG, "server does not support %s", msg->params[2]);
 	}
