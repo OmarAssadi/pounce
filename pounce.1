@@ -1,4 +1,4 @@
-.Dd November 6, 2019
+.Dd November 10, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -45,9 +45,14 @@ is a multi-client, TLS-only IRC bouncer.
 It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
 receiving messages that were missed upon reconnection.
-Clients should use the IRCv3.2 server-time extension
+Clients should use the IRCv3.2
+.Sy server-time
+extension
 to know when missed messages were received
 and uniquely identify themselves by username.
+See
+.Sx Client Configuration
+for details.
 .
 .Pp
 Options can be loaded from
@@ -248,6 +253,37 @@ specified by
 .Fl C
 and
 .Fl K .
+.
+.Ss Client Configuration
+Clients should be configured to
+connect to the host and port set by
+.Fl H
+and
+.Fl P ,
+with TLS or SSL enabled.
+If
+.Fl W
+is used,
+clients must send a server password.
+Clients should not attempt SASL.
+.
+.Pp
+Clients should register with unique usernames,
+for example the name of the client software
+or location from which it is connecting.
+New clients with the same username
+are assumed to be reconnections
+and will cause previous connections
+to stop receiving messages.
+The nickname and real name sent by clients
+are ignored.
+.
+.Pp
+Pass-through of the following IRCv3 capabilities
+is supported:
+.Sy account-notify ,
+.Sy away-notify ,
+.Sy chghost .
 .
 .Ss Configuring SASL EXTERNAL
 .Bl -enum
