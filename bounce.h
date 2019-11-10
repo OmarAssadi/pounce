@@ -60,8 +60,6 @@ static inline struct Message parse(char *line) {
 	X("account-notify", CapAccountNotify) \
 	X("away-notify", CapAwayNotify) \
 	X("chghost", CapChghost) \
-	X("extended-join", CapExtendedJoin) \
-	X("invite-notify", CapInviteNotify) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("", CapUnsupported)
