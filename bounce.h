@@ -64,6 +64,7 @@ static inline struct Message parse(char *line) {
 	X("invite-notify", CapInviteNotify) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
+	X("userhost-in-names", CapUserhostInNames) \
 	X("", CapUnsupported)
 
 enum Cap {

@@ -318,12 +318,29 @@ static const char *filterInviteNotify(const char *line) {
 	return (wordcmp(line, 2, stateNick()) ? NULL : line);
 }
 
+static const char *filterUserhostInNames(const char *line) {
+	if (wordcmp(line, 1, "353")) return line;
+	static char buf[512];
+	if (strlen(line) >= sizeof(buf)) return NULL;
+	char *ptr = buf;
+	while (*line) {
+		size_t len = strcspn(line, "!");
+		memcpy(ptr, line, len);
+		ptr += len;
+		line += len;
+		line += strcspn(line, " ");
+	}
+	*ptr = '\0';
+	return buf;
+}
+
 static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,
+	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
 
 void clientConsume(struct Client *client) {
