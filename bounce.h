@@ -61,6 +61,7 @@ static inline struct Message parse(char *line) {
 	X("away-notify", CapAwayNotify) \
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
+	X("invite-notify", CapInviteNotify) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("", CapUnsupported)
@@ -152,6 +153,7 @@ void stateLogin(
 bool stateReady(void);
 void stateParse(char *line);
 void stateSync(struct Client *client);
+const char *stateNick(void);
 const char *stateEcho(void);
 
 struct option;

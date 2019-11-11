@@ -119,10 +119,12 @@ static struct {
 	char *myInfo[5];
 } intro;
 
+const char *stateNick(void) {
+	return (self.nick ? self.nick : "*");
+}
+
 const char *stateEcho(void) {
-	if (self.origin) return self.origin;
-	if (self.nick) return self.nick;
-	return "*";
+	return (self.origin ? self.origin : stateNick());
 }
 
 bool stateReady(void) {
