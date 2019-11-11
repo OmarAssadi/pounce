@@ -11,8 +11,9 @@
 is a multi-client, TLS-only IRC bouncer.
 It takes a simple approach,
 using a multiple-consumer ring buffer
-and the IRCv3.2 server-time extension
-to communicate with clients.
+and the IRCv3.2
+.Sy server-time
+extension to communicate with clients.
 .
 .Pp
 .Nm
@@ -25,6 +26,12 @@ on Darwin or GNU/Linux
 by copying the appropriate file to
 .Pa config.mk
 and modifying as needed.
+On
+.Fx ,
+processes are sandboxed with
+.Xr capsicum 4 .
+On other systems,
+who knows what might happen?
 .
 .Sh RATIONALE
 As a former
@@ -45,7 +52,9 @@ With a multiple-consumer ring buffer,
 each client has its own place in the history
 and can be brought up to date independently.
 Additionally,
-by expecting clients to implement the server-time extension,
+by expecting clients to implement the
+.Sy server-time
+extension,
 all events can be accurately replayed,
 rather than being limited to messages.
 .
