@@ -299,10 +299,23 @@ static const char *filterChghost(const char *line) {
 	return (strcmp(cmd(line), "CHGHOST") ? line : NULL);
 }
 
+static const char *filterExtendedJoin(const char *line) {
+	if (strcmp(cmd(line), "JOIN")) return line;
+	size_t len = 0;
+	for (int i = 0; i < 3; ++i) {
+		len += strcspn(&line[len], " ");
+		if (line[len]) len++;
+	}
+	static char buf[512];
+	snprintf(buf, sizeof(buf), "%.*s", (int)len, line);
+	return buf;
+}
+
 static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
 	[CapChghostBit] = filterChghost,
+	[CapExtendedJoinBit] = filterExtendedJoin,
 };
 
 void clientConsume(struct Client *client) {
