@@ -322,9 +322,16 @@ static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
 	static char buf[512];
 	if (strlen(line) >= sizeof(buf)) return NULL;
-	char *ptr = buf;
+	size_t len = 0;
+	for (int i = 0; i < 5; ++i) {
+		len += strcspn(&line[len], " ");
+		if (line[len]) len++;
+	}
+	memcpy(buf, line, len);
+	line += len;
+	char *ptr = &buf[len];
 	while (*line) {
-		size_t len = strcspn(line, "!");
+		len = strcspn(line, "!");
 		memcpy(ptr, line, len);
 		ptr += len;
 		line += len;
