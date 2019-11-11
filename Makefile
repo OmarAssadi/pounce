@@ -23,7 +23,9 @@ OBJS += ring.o
 OBJS += server.o
 OBJS += state.o
 
-all: tags ${BINS}
+dev: tags all
+
+all: ${BINS}
 
 calico: dispatch.o
 	${CC} ${LDFLAGS} dispatch.o -o $@
