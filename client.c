@@ -277,44 +277,45 @@ size_t clientDiff(const struct Client *client) {
 
 typedef const char *Filter(const char *line);
 
-static const char *word(size_t i, const char *line) {
-	if (*line != ':') i--;
+static int wordcmp(const char *line, size_t i, const char *word) {
 	for (; i; --i) {
 		line += strcspn(line, " ");
 		if (*line) line++;
 	}
-	static char buf[512];
-	snprintf(buf, sizeof(buf), "%.*s", (int)strcspn(line, " "), line);
-	return buf;
+	size_t len = strcspn(line, " ");
+	if (len < strlen(word)) return -1;
+	if (len > strlen(word)) return +1;
+	return strncmp(line, word, len);
 }
 
 static const char *filterAccountNotify(const char *line) {
-	return (strcmp(word(1, line), "ACCOUNT") ? line : NULL);
+	return (wordcmp(line, 1, "ACCOUNT") ? line : NULL);
 }
 
 static const char *filterAwayNotify(const char *line) {
-	return (strcmp(word(1, line), "AWAY") ? line : NULL);
+	return (wordcmp(line, 1, "AWAY") ? line : NULL);
 }
 
 static const char *filterChghost(const char *line) {
-	return (strcmp(word(1, line), "CHGHOST") ? line : NULL);
+	return (wordcmp(line, 1, "CHGHOST") ? line : NULL);
 }
 
 static const char *filterExtendedJoin(const char *line) {
-	if (strcmp(word(1, line), "JOIN")) return line;
+	if (wordcmp(line, 1, "JOIN")) return line;
 	size_t len = 0;
 	for (int i = 0; i < 3; ++i) {
 		len += strcspn(&line[len], " ");
 		if (line[len]) len++;
 	}
 	static char buf[512];
-	snprintf(buf, sizeof(buf), "%.*s", (int)len, line);
+	assert(len < sizeof(buf));
+	strncpy(buf, line, len);
 	return buf;
 }
 
 static const char *filterInviteNotify(const char *line) {
-	if (strcmp(word(1, line), "INVITE")) return line;
-	return (strcmp(word(2, line), stateNick()) ? NULL : line);
+	if (wordcmp(line, 1, "INVITE")) return line;
+	return (wordcmp(line, 2, stateNick()) ? NULL : line);
 }
 
 static Filter *Filters[] = {
