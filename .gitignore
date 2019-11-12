@@ -1,8 +1,10 @@
 *.conf
 *.o
+*.t
 /calico
 /pounce
 config.mk
 localhost.crt
 localhost.key
 tags
+test

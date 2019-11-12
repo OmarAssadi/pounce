@@ -136,3 +136,50 @@ int getopt_config(
 		file = NULL;
 	}
 }
+
+#ifdef TEST
+#include <assert.h>
+#include <sysexits.h>
+
+static const struct option LongOpts[] = {
+	{ "foo", no_argument, NULL, 'f' },
+	{ "bar", required_argument, NULL, 'b' },
+	{0},
+};
+
+static char Test[] = {
+	"\n"
+	WS "\n"
+	"#foo\n"
+	WS "#foo\n"
+	"foo\n"
+	WS "foo\n"
+	"foo" WS "\n"
+	"bar=baz\n"
+	"bar" WS "=baz\n"
+	"bar=" WS "baz\n"
+	"bar" WS "=" WS "baz\n"
+	"bar = # baz \n"
+	"foo"
+};
+
+int main(void) {
+	int argc = 1;
+	char *argv[] = { "test", NULL };
+	file = fmemopen(Test, sizeof(Test) - 1, "r");
+	if (!file) err(EX_OSERR, "fmemopen");
+
+	for (int i = 0; i < 3; ++i) {
+		assert('f' == getopt_config(argc, argv, "", LongOpts, NULL));
+	}
+	for (int i = 0; i < 4; ++i) {
+		assert('b' == getopt_config(argc, argv, "", LongOpts, NULL));
+		assert(!strcmp("baz", optarg));
+	}
+	assert('b' == getopt_config(argc, argv, "", LongOpts, NULL));
+	assert(!strcmp("# baz ", optarg));
+	assert('f' == getopt_config(argc, argv, "", LongOpts, NULL));
+	assert(-1 == getopt_config(argc, argv, "", LongOpts, NULL));
+}
+
+#endif

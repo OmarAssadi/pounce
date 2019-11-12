@@ -23,7 +23,9 @@ OBJS += ring.o
 OBJS += server.o
 OBJS += state.o
 
-dev: tags all
+TESTS += config.t
+
+dev: tags all test
 
 all: ${BINS}
 
@@ -36,6 +38,15 @@ pounce: ${OBJS}
 ${OBJS}: bounce.h compat.h
 
 dispatch.o: compat.h
+
+test: ${TESTS}
+	set -e; ${TESTS:%=./%;}
+	touch test
+
+.SUFFIXES: .t
+
+.c.t:
+	${CC} ${CFLAGS} -DTEST ${LDFLAGS} $< ${LDLIBS} -o $@
 
 tags: *.c *.h
 	ctags -w *.c *.h
