@@ -277,23 +277,13 @@ size_t clientDiff(const struct Client *client) {
 
 typedef const char *Filter(const char *line);
 
-static int wordcmp(const char *line, size_t i, const char *word) {
-	while (i--) {
-		line += strcspn(line, " ");
-		if (*line) line++;
-	}
-	size_t len = strcspn(line, " ");
-	return len == strlen(word)
-		? memcmp(line, word, len)
-		: len - strlen(word);
+static int strncmpn(const char *a, size_t alen, const char *b, size_t blen) {
+	return alen == blen
+		? memcmp(a, b, alen)
+		: alen - blen;
 }
 
-static size_t wordcpy(char *dst, size_t cap, const char *src, size_t count) {
-	size_t len = 0;
-	while (count--) {
-		if (src[len] == ' ') len++;
-		len += strcspn(&src[len], " ");
-	}
+static size_t strlcpyn(char *dst, size_t cap, const char *src, size_t len) {
 	if (len < cap) {
 		memcpy(dst, src, len);
 		dst[len] = '\0';
@@ -302,6 +292,24 @@ static size_t wordcpy(char *dst, size_t cap, const char *src, size_t count) {
 		dst[cap - 1] = '\0';
 	}
 	return len;
+}
+
+static int wordcmp(const char *line, size_t i, const char *word) {
+	while (i--) {
+		line += strcspn(line, " ");
+		if (*line) line++;
+	}
+	size_t len = strcspn(line, " ");
+	return strncmpn(line, len, word, strlen(word));
+}
+
+static size_t wordcpy(char *dst, size_t cap, const char *src, size_t count) {
+	size_t len = 0;
+	while (count--) {
+		if (src[len] == ' ') len++;
+		len += strcspn(&src[len], " ");
+	}
+	return strlcpyn(dst, cap, src, len);
 }
 
 static const char *filterAccountNotify(const char *line) {
@@ -331,23 +339,16 @@ static const char *filterInviteNotify(const char *line) {
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
 	static char buf[512];
-	if (strlen(line) >= sizeof(buf)) return NULL;
-	size_t len = 0;
-	for (int i = 0; i < 5; ++i) {
-		len += strcspn(&line[len], " ");
-		if (line[len]) len++;
-	}
-	memcpy(buf, line, len);
+	size_t len = wordcpy(buf, sizeof(buf), line, 5);
+	if (len >= sizeof(buf)) return NULL;
 	line += len;
-	char *ptr = &buf[len];
 	while (*line) {
-		len = strcspn(line, "!");
-		memcpy(ptr, line, len);
-		ptr += len;
-		line += len;
+		size_t nick = strcspn(line, "!");
+		len += strlcpyn(&buf[len], sizeof(buf) - len, line, nick);
+		if (len >= sizeof(buf)) return NULL;
+		line += nick;
 		line += strcspn(line, " ");
 	}
-	*ptr = '\0';
 	return buf;
 }
 
