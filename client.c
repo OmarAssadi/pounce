@@ -278,14 +278,30 @@ size_t clientDiff(const struct Client *client) {
 typedef const char *Filter(const char *line);
 
 static int wordcmp(const char *line, size_t i, const char *word) {
-	for (; i; --i) {
+	while (i--) {
 		line += strcspn(line, " ");
 		if (*line) line++;
 	}
 	size_t len = strcspn(line, " ");
-	if (len < strlen(word)) return -1;
-	if (len > strlen(word)) return +1;
-	return strncmp(line, word, len);
+	return len == strlen(word)
+		? memcmp(line, word, len)
+		: len - strlen(word);
+}
+
+static size_t wordcpy(char *dst, size_t cap, const char *src, size_t count) {
+	size_t len = 0;
+	while (count--) {
+		if (src[len] == ' ') len++;
+		len += strcspn(&src[len], " ");
+	}
+	if (len < cap) {
+		memcpy(dst, src, len);
+		dst[len] = '\0';
+	} else {
+		memcpy(dst, src, cap - 1);
+		dst[cap - 1] = '\0';
+	}
+	return len;
 }
 
 static const char *filterAccountNotify(const char *line) {
@@ -302,14 +318,8 @@ static const char *filterChghost(const char *line) {
 
 static const char *filterExtendedJoin(const char *line) {
 	if (wordcmp(line, 1, "JOIN")) return line;
-	size_t len = 0;
-	for (int i = 0; i < 3; ++i) {
-		len += strcspn(&line[len], " ");
-		if (line[len]) len++;
-	}
 	static char buf[512];
-	assert(len < sizeof(buf));
-	strncpy(buf, line, len);
+	wordcpy(buf, sizeof(buf), line, 3);
 	return buf;
 }
 
