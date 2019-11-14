@@ -118,15 +118,23 @@ void ringInfo(void) {
 	}
 }
 
-static const size_t FileVersion[] = {
+static const size_t Signatures[] = {
 	0x0165636E756F70, // no ring size
 	0x0265636E756F70, // time_t only
+	0x0365636E756F70,
 };
+
+static size_t signatureVersion(size_t signature) {
+	for (size_t i = 0; i < ARRAY_LEN(Signatures); ++i) {
+		if (signature == Signatures[i]) return i;
+	}
+	errx(EX_DATAERR, "unknown file signature %zX", signature);
+}
 
 static int writeSize(FILE *file, size_t value) {
 	return (fwrite(&value, sizeof(value), 1, file) ? 0 : -1);
 }
-static int writeTime(FILE *file, time_t time) {
+static int writeTime(FILE *file, struct timeval time) {
 	return (fwrite(&time, sizeof(time), 1, file) ? 0 : -1);
 }
 static int writeString(FILE *file, const char *str) {
@@ -134,7 +142,7 @@ static int writeString(FILE *file, const char *str) {
 }
 
 int ringSave(FILE *file) {
-	if (writeSize(file, FileVersion[1])) return -1;
+	if (writeSize(file, Signatures[2])) return -1;
 	if (writeSize(file, ring.len)) return -1;
 	if (writeSize(file, producer)) return -1;
 	if (writeSize(file, consumers.len)) return -1;
@@ -143,7 +151,7 @@ int ringSave(FILE *file) {
 		if (writeSize(file, consumers.ptr[i].pos)) return -1;
 	}
 	for (size_t i = 0; i < ring.len; ++i) {
-		if (writeTime(file, ring.times[i].tv_sec)) return -1;
+		if (writeTime(file, ring.times[i])) return -1;
 	}
 	for (size_t i = 0; i < ring.len; ++i) {
 		if (!ring.lines[i]) break;
@@ -157,7 +165,12 @@ static void readSize(FILE *file, size_t *value) {
 	if (ferror(file)) err(EX_IOERR, "fread");
 	if (feof(file)) err(EX_DATAERR, "unexpected eof");
 }
-static void readTime(FILE *file, time_t *time) {
+static void readTime(FILE *file, struct timeval *time) {
+	fread(time, sizeof(*time), 1, file);
+	if (ferror(file)) err(EX_IOERR, "fread");
+	if (feof(file)) err(EX_DATAERR, "unexpected eof");
+}
+static void readTimeT(FILE *file, time_t *time) {
 	fread(time, sizeof(*time), 1, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 	if (feof(file)) err(EX_DATAERR, "unexpected eof");
@@ -168,16 +181,14 @@ static void readString(FILE *file, char **buf, size_t *cap) {
 }
 
 void ringLoad(FILE *file) {
-	size_t version;
-	fread(&version, sizeof(version), 1, file);
+	size_t signature;
+	fread(&signature, sizeof(signature), 1, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 	if (feof(file)) return;
-	if (version != FileVersion[0] && version != FileVersion[1]) {
-		errx(EX_DATAERR, "unknown file version %zX", version);
-	}
+	size_t version = signatureVersion(signature);
 
 	size_t saveLen = 4096;
-	if (version == FileVersion[1]) readSize(file, &saveLen);
+	if (version > 0) readSize(file, &saveLen);
 	if (saveLen > ring.len) {
 		errx(EX_DATAERR, "cannot load save with larger ring");
 	}
@@ -196,7 +207,11 @@ void ringLoad(FILE *file) {
 	}
 
 	for (size_t i = 0; i < saveLen; ++i) {
-		readTime(file, &ring.times[i].tv_sec);
+		if (version < 2) {
+			readTimeT(file, &ring.times[i].tv_sec);
+		} else {
+			readTime(file, &ring.times[i]);
+		}
 	}
 	for (size_t i = 0; i < saveLen; ++i) {
 		readString(file, &buf, &cap);
