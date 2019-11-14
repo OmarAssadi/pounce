@@ -360,13 +360,13 @@ static const char *filterMultiPrefix(const char *line) {
 		static regex_t regex;
 		return snip(
 			buf, sizeof(buf), line,
-			compile(&regex, "([HG][*]?[~!@%&+])[~!@%&+]+")
+			compile(&regex, "( [HG][*]?[~!@%&+])[~!@%&+]+")
 		);
 	} else if (!wordcmp(line, 1, "353")) {
 		static regex_t regex;
 		return snip(
 			buf, sizeof(buf), line,
-			compile(&regex, "([ :][~!@%&+])[~!@%&+]+")
+			compile(&regex, "( :?[~!@%&+])[~!@%&+]+")
 		);
 	} else {
 		return line;
@@ -379,7 +379,7 @@ static const char *filterUserhostInNames(const char *line) {
 	static char buf[512];
 	return snip(
 		buf, sizeof(buf), line,
-		compile(&regex, "([ :][^!]+)![^@]+@[^ ]+")
+		compile(&regex, "( :?[^!]+)![^ ]+")
 	);
 }
 
