@@ -302,6 +302,7 @@ static size_t strlcpyn(char *dst, const char *src, size_t cap, size_t len) {
 static char *snip(char *dst, size_t cap, const char *src, const regex_t *regex) {
 	size_t len = 0;
 	regmatch_t match[2];
+	assert(regex->re_nsub);
 	for (; *src; src += match[0].rm_eo) {
 		if (regexec(regex, src, 2, match, 0)) break;
 		len += strlcpyn(&dst[len], src, cap - len, match[0].rm_so);
@@ -353,13 +354,32 @@ static const char *filterInviteNotify(const char *line) {
 	return (wordcmp(line, 2, stateNick()) ? NULL : line);
 }
 
+static const char *filterMultiPrefix(const char *line) {
+	static char buf[512];
+	if (!wordcmp(line, 1, "352")) {
+		static regex_t regex;
+		return snip(
+			buf, sizeof(buf), line,
+			compile(&regex, "([HG][*]?[~!@%&+])[~!@%&+]+")
+		);
+	} else if (!wordcmp(line, 1, "353")) {
+		static regex_t regex;
+		return snip(
+			buf, sizeof(buf), line,
+			compile(&regex, "([ :][~!@%&+])[~!@%&+]+")
+		);
+	} else {
+		return line;
+	}
+}
+
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
 	static regex_t regex;
 	static char buf[512];
 	return snip(
 		buf, sizeof(buf), line,
-		compile(&regex, "([ :][^!]+)![^ ]+")
+		compile(&regex, "([ :][^!]+)![^@]+@[^ ]+")
 	);
 }
 
@@ -369,6 +389,7 @@ static Filter *Filters[] = {
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,
+	[CapMultiPrefixBit] = filterMultiPrefix,
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
 

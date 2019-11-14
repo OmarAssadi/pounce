@@ -62,6 +62,7 @@ static inline struct Message parse(char *line) {
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
 	X("invite-notify", CapInviteNotify) \
+	X("multi-prefix", CapMultiPrefix) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("userhost-in-names", CapUserhostInNames) \
