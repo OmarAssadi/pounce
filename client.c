@@ -408,7 +408,6 @@ void clientConsume(struct Client *client) {
 		return;
 	}
 
-	// TODO: Move into a filter?
 	if (client->caps & CapServerTime) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
 		struct tm *tm = gmtime(&time);
