@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <regex.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -275,15 +276,18 @@ size_t clientDiff(const struct Client *client) {
 	return ringDiff(client->consumer);
 }
 
-typedef const char *Filter(const char *line);
-
-static int strncmpn(const char *a, size_t alen, const char *b, size_t blen) {
-	return alen == blen
-		? memcmp(a, b, alen)
-		: alen - blen;
+static int wordcmp(const char *line, size_t i, const char *word) {
+	while (i--) {
+		line += strcspn(line, " ");
+		if (*line) line++;
+	}
+	size_t len = strcspn(line, " ");
+	return len == strlen(word)
+		? strncmp(line, word, len)
+		: len - strlen(word);
 }
 
-static size_t strlcpyn(char *dst, size_t cap, const char *src, size_t len) {
+static size_t strlcpyn(char *dst, const char *src, size_t cap, size_t len) {
 	if (len < cap) {
 		memcpy(dst, src, len);
 		dst[len] = '\0';
@@ -294,23 +298,36 @@ static size_t strlcpyn(char *dst, size_t cap, const char *src, size_t len) {
 	return len;
 }
 
-static int wordcmp(const char *line, size_t i, const char *word) {
-	while (i--) {
-		line += strcspn(line, " ");
-		if (*line) line++;
+// s/..(..)../\1/g
+static char *snip(char *dst, size_t cap, const char *src, const regex_t *regex) {
+	size_t len = 0;
+	regmatch_t match[2];
+	for (; *src; src += match[0].rm_eo) {
+		if (regexec(regex, src, 2, match, 0)) break;
+		len += strlcpyn(&dst[len], src, cap - len, match[0].rm_so);
+		if (len >= cap) return NULL;
+		len += strlcpyn(
+			&dst[len], &src[match[1].rm_so],
+			cap - len, match[1].rm_eo - match[1].rm_so
+		);
+		if (len >= cap) return NULL;
 	}
-	size_t len = strcspn(line, " ");
-	return strncmpn(line, len, word, strlen(word));
+	len += strlcpy(&dst[len], src, cap - len);
+	return (len < cap ? dst : NULL);
 }
 
-static size_t wordcpy(char *dst, size_t cap, const char *src, size_t count) {
-	size_t len = 0;
-	while (count--) {
-		if (src[len] == ' ') len++;
-		len += strcspn(&src[len], " ");
+static regex_t *compile(regex_t *regex, const char *pattern) {
+	if (regex->re_nsub) return regex;
+	int error = regcomp(regex, pattern, REG_EXTENDED);
+	if (error) {
+		char buf[256];
+		regerror(error, regex, buf, sizeof(buf));
+		errx(EX_SOFTWARE, "regcomp: %s: %s", buf, pattern);
 	}
-	return strlcpyn(dst, cap, src, len);
+	return regex;
 }
+
+typedef const char *Filter(const char *line);
 
 static const char *filterAccountNotify(const char *line) {
 	return (wordcmp(line, 1, "ACCOUNT") ? line : NULL);
@@ -326,9 +343,9 @@ static const char *filterChghost(const char *line) {
 
 static const char *filterExtendedJoin(const char *line) {
 	if (wordcmp(line, 1, "JOIN")) return line;
+	static regex_t regex;
 	static char buf[512];
-	wordcpy(buf, sizeof(buf), line, 3);
-	return buf;
+	return snip(buf, sizeof(buf), line, compile(&regex, "(JOIN [^ ]+).+"));
 }
 
 static const char *filterInviteNotify(const char *line) {
@@ -338,18 +355,12 @@ static const char *filterInviteNotify(const char *line) {
 
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
+	static regex_t regex;
 	static char buf[512];
-	size_t len = wordcpy(buf, sizeof(buf), line, 5);
-	if (len >= sizeof(buf)) return NULL;
-	line += len;
-	while (*line) {
-		size_t nick = strcspn(line, "!");
-		len += strlcpyn(&buf[len], sizeof(buf) - len, line, nick);
-		if (len >= sizeof(buf)) return NULL;
-		line += nick;
-		line += strcspn(line, " ");
-	}
-	return buf;
+	return snip(
+		buf, sizeof(buf), line,
+		compile(&regex, "([ :][^!]+)![^ ]+")
+	);
 }
 
 static Filter *Filters[] = {
