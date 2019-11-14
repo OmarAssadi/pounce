@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <tls.h>
 
 #include "compat.h"
@@ -116,8 +116,8 @@ void ringAlloc(size_t len);
 void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
 size_t ringDiff(size_t consumer);
-const char *ringPeek(time_t *time, size_t consumer);
-const char *ringConsume(time_t *time, size_t consumer);
+const char *ringPeek(struct timeval *time, size_t consumer);
+const char *ringConsume(struct timeval *time, size_t consumer);
 void ringInfo(void);
 int ringSave(FILE *file);
 void ringLoad(FILE *file);

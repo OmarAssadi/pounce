@@ -18,15 +18,15 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <sysexits.h>
-#include <time.h>
 
 #include "bounce.h"
 
 static struct {
 	size_t len;
 	char **lines;
-	time_t *times;
+	struct timeval *times;
 } ring;
 
 void ringAlloc(size_t len) {
@@ -45,7 +45,7 @@ size_t producer;
 void ringProduce(const char *line) {
 	size_t i = producer++ & (ring.len - 1);
 	if (ring.lines[i]) free(ring.lines[i]);
-	ring.times[i] = time(NULL);
+	gettimeofday(&ring.times[i], NULL);
 	ring.lines[i] = strdup(line);
 	if (!ring.lines[i]) err(EX_OSERR, "strdup");
 }
@@ -86,7 +86,7 @@ size_t ringDiff(size_t consumer) {
 	return producer - consumers.ptr[consumer].pos;
 }
 
-const char *ringPeek(time_t *time, size_t consumer) {
+const char *ringPeek(struct timeval *time, size_t consumer) {
 	if (!ringDiff(consumer)) return NULL;
 	if (ringDiff(consumer) > ring.len) {
 		warnx(
@@ -101,7 +101,7 @@ const char *ringPeek(time_t *time, size_t consumer) {
 	return ring.lines[i];
 }
 
-const char *ringConsume(time_t *time, size_t consumer) {
+const char *ringConsume(struct timeval *time, size_t consumer) {
 	const char *line = ringPeek(time, consumer);
 	if (line) consumers.ptr[consumer].pos++;
 	return line;
@@ -119,8 +119,8 @@ void ringInfo(void) {
 }
 
 static const size_t FileVersion[] = {
-	0x0165636E756F70,
-	0x0265636E756F70,
+	0x0165636E756F70, // no ring size
+	0x0265636E756F70, // time_t only
 };
 
 static int writeSize(FILE *file, size_t value) {
@@ -143,7 +143,7 @@ int ringSave(FILE *file) {
 		if (writeSize(file, consumers.ptr[i].pos)) return -1;
 	}
 	for (size_t i = 0; i < ring.len; ++i) {
-		if (writeTime(file, ring.times[i])) return -1;
+		if (writeTime(file, ring.times[i].tv_sec)) return -1;
 	}
 	for (size_t i = 0; i < ring.len; ++i) {
 		if (!ring.lines[i]) break;
@@ -196,7 +196,7 @@ void ringLoad(FILE *file) {
 	}
 
 	for (size_t i = 0; i < saveLen; ++i) {
-		readTime(file, &ring.times[i]);
+		readTime(file, &ring.times[i].tv_sec);
 	}
 	for (size_t i = 0; i < saveLen; ++i) {
 		readString(file, &buf, &cap);

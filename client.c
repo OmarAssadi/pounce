@@ -19,6 +19,7 @@
 #include <regex.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -394,7 +395,7 @@ static Filter *Filters[] = {
 };
 
 void clientConsume(struct Client *client) {
-	time_t time;
+	struct timeval time;
 	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
 
@@ -409,10 +410,13 @@ void clientConsume(struct Client *client) {
 	}
 
 	if (client->caps & CapServerTime) {
-		char ts[sizeof("YYYY-MM-DDThh:mm:ss.sssZ")];
-		struct tm *tm = gmtime(&time);
-		strftime(ts, sizeof(ts), "%FT%T.000Z", tm);
-		clientFormat(client, "@time=%s %s\r\n", ts, line);
+		char ts[sizeof("YYYY-MM-DDThh:mm:ss")];
+		struct tm *tm = gmtime(&time.tv_sec);
+		strftime(ts, sizeof(ts), "%FT%T", tm);
+		clientFormat(
+			client, "@time=%s.%03jdZ %s\r\n",
+			ts, (intmax_t)(time.tv_usec / 1000), line
+		);
 	} else {
 		clientFormat(client, "%s\r\n", line);
 	}
