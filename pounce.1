@@ -1,4 +1,4 @@
-.Dd November 14, 2019
+.Dd November 15, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -98,12 +98,13 @@ path for the
 set by
 .Fl H .
 .
-.It Fl N , Cm names
-Request
+.It Fl N , Cm no-names
+Do not request
 .Ql NAMES
 for each channel when a client connects.
-This allows clients to populate user lists,
-but may just cause noise for some.
+This avoids already connected clients
+receiving unsolicited responses
+but prevents new clients from populating user lists.
 .
 .It Fl P Ar port , Cm bind-port = Ar port
 Bind to

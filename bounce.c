@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
 		{ "cert", required_argument, NULL, 'C' },
 		{ "bind-host", required_argument, NULL, 'H' },
 		{ "priv", required_argument, NULL, 'K' },
-		{ "names", no_argument, NULL, 'N' },
+		{ "no-names", no_argument, NULL, 'N' },
 		{ "bind-port", required_argument, NULL, 'P' },
 		{ "quit", required_argument, NULL, 'Q' },
 		{ "bind-path", required_argument, NULL, 'U' },
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': bindHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
-			break; case 'N': stateJoinNames = true;
+			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': quit = optarg;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));

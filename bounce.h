@@ -146,7 +146,7 @@ void clientFormat(struct Client *client, const char *format, ...)
 size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
-bool stateJoinNames;
+bool stateNoNames;
 enum Cap stateCaps;
 void stateLogin(
 	const char *pass, bool sasl, const char *plain,

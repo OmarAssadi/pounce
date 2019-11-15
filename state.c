@@ -393,6 +393,7 @@ void stateSync(struct Client *client) {
 				ORIGIN, self.nick, chan->name, chan->topic
 			);
 		}
-		if (stateJoinNames) serverFormat("NAMES %s\r\n", chan->name);
+		if (stateNoNames) continue;
+		serverFormat("NAMES %s\r\n", chan->name);
 	}
 }
