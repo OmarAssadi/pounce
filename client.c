@@ -30,7 +30,7 @@
 
 #include "bounce.h"
 
-static size_t count;
+static size_t active;
 
 enum Need {
 	BIT(NeedNick),
@@ -43,6 +43,7 @@ struct Client {
 	struct tls *tls;
 	enum Need need;
 	size_t consumer;
+	bool passive;
 	enum Cap caps;
 	char buf[1024];
 	size_t len;
@@ -59,7 +60,9 @@ struct Client *clientAlloc(struct tls *tls) {
 
 void clientFree(struct Client *client) {
 	if (!client->need) {
-		if (!--count) serverFormat("AWAY :%s\r\n", clientAway);
+		if (!client->passive && !--active) {
+			serverFormat("AWAY :%s\r\n", clientAway);
+		}
 	}
 	tls_close(client->tls);
 	tls_free(client->tls);
@@ -109,7 +112,9 @@ static void maybeSync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
 	if (!client->need) {
 		stateSync(client);
-		if (!count++) serverFormat("AWAY\r\n");
+		if (!client->passive && !active++) {
+			serverFormat("AWAY\r\n");
+		}
 	}
 }
 
@@ -131,6 +136,7 @@ static void handleUser(struct Client *client, struct Message *msg) {
 	} else {
 		client->need &= ~NeedUser;
 		client->consumer = ringConsumer(msg->params[0]);
+		client->passive = (msg->params[0][0] == '-');
 		maybeSync(client);
 	}
 }
