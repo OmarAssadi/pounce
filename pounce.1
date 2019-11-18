@@ -1,4 +1,4 @@
-.Dd November 15, 2019
+.Dd November 18, 2019
 .Dt POUNCE 1
 .Os
 .
@@ -518,3 +518,9 @@ or join
 .Li #ascii.town
 on
 .Li chat.freenode.net .
+.
+.Pp
+A client will sometimes receive its own message,
+causing it to be displayed twice.
+This happens when a message is sent
+while responses are not yet consumed.
