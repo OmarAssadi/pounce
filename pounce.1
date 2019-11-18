@@ -245,6 +245,14 @@ for use with
 .El
 .
 .Pp
+Client connections are not accepted
+until successful login to the server.
+If the server connection is lost,
+the
+.Nm
+daemon exits.
+.
+.Pp
 Upon receiving the
 .Dv SIGUSR1
 signal,
