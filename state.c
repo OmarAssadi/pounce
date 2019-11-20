@@ -48,14 +48,20 @@ void stateLogin(
 	if (sasl) {
 		serverFormat("CAP REQ :%s\r\n", capList(CapSASL));
 		if (plain) {
-			byte buf[1 + strlen(plain)];
+			// Maxmimum size that fits in a single
+			// AUTHENTICATE message after base64 encoding.
+			byte buf[299];
+			size_t len = 1 + strlen(plain);
+			if (sizeof(buf) < len) {
+				errx(EX_SOFTWARE, "SASL PLAIN is too long");
+			}
 			buf[0] = 0;
 			for (size_t i = 0; plain[i]; ++i) {
 				buf[1 + i] = (plain[i] == ':' ? 0 : plain[i]);
 			}
-			plainBase64 = malloc(BASE64_SIZE(sizeof(buf)));
+			plainBase64 = malloc(BASE64_SIZE(len));
 			if (!plainBase64) err(EX_OSERR, "malloc");
-			base64(plainBase64, buf, sizeof(buf));
+			base64(plainBase64, buf, len);
 		}
 	}
 	serverFormat("NICK %s\r\n", nick);
