@@ -19,7 +19,6 @@
 #include <regex.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -420,8 +419,8 @@ void clientConsume(struct Client *client) {
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
 		clientFormat(
-			client, "@time=%s.%03jdZ %s\r\n",
-			ts, (intmax_t)(time.tv_usec / 1000), line
+			client, "@time=%s.%03dZ %s\r\n",
+			ts, (int)(time.tv_usec / 1000), line
 		);
 	} else {
 		clientFormat(client, "%s\r\n", line);
