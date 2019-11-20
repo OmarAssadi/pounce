@@ -24,6 +24,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sysexits.h>
+#include <time.h>
 #include <tls.h>
 #include <unistd.h>
 
