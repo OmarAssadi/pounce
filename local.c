@@ -165,8 +165,7 @@ size_t localUnix(int fds[], size_t cap, const char *path) {
 }
 
 static int recvfd(int sock) {
-	size_t len = CMSG_SPACE(sizeof(int));
-	char buf[len];
+	char buf[CMSG_SPACE(sizeof(int))];
 
 	char x;
 	struct iovec iov = { .iov_base = &x, .iov_len = 1 };
@@ -174,7 +173,7 @@ static int recvfd(int sock) {
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 		.msg_control = buf,
-		.msg_controllen = len,
+		.msg_controllen = sizeof(buf),
 	};
 	if (0 > recvmsg(sock, &msg, 0)) return -1;
 

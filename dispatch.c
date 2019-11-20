@@ -58,8 +58,7 @@ static void eventRemove(size_t i) {
 }
 
 static ssize_t sendfd(int sock, int fd) {
-	size_t len = CMSG_SPACE(sizeof(int));
-	char buf[len];
+	char buf[CMSG_SPACE(sizeof(int))];
 
 	char x = 0;
 	struct iovec iov = { .iov_base = &x, .iov_len = 1 };
@@ -67,7 +66,7 @@ static ssize_t sendfd(int sock, int fd) {
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 		.msg_control = buf,
-		.msg_controllen = len,
+		.msg_controllen = sizeof(buf),
 	};
 
 	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
