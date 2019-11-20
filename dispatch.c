@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			struct sockaddr_un addr = { .sun_family = AF_UNIX };
-			strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+			strlcpy(addr.sun_path, name, sizeof(addr.sun_path));
 
 			int sock = socket(PF_UNIX, SOCK_STREAM, 0);
 			if (sock < 0) err(EX_OSERR, "socket");

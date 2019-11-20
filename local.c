@@ -131,10 +131,10 @@ size_t localUnix(int fds[], size_t cap, const char *path) {
 	if (sock < 0) err(EX_OSERR, "socket");
 
 	struct sockaddr_un addr = { .sun_family = AF_UNIX };
-	if (strlen(path) > sizeof(addr.sun_path)) {
+	size_t len = strlcpy(addr.sun_path, path, sizeof(addr.sun_path));
+	if (len >= sizeof(addr.sun_path)) {
 		errx(EX_CONFIG, "path too long: %s", path);
 	}
-	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
 
 	int error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
 	if (error) err(EX_UNAVAILABLE, "%s", path);
