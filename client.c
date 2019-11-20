@@ -294,7 +294,7 @@ static int wordcmp(const char *line, size_t i, const char *word) {
 	size_t len = strcspn(line, " ");
 	return len == strlen(word)
 		? strncmp(line, word, len)
-		: len - strlen(word);
+		: (int)len - (int)strlen(word);
 }
 
 static size_t strlcpyn(char *dst, const char *src, size_t cap, size_t len) {
