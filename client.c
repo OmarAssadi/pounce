@@ -30,6 +30,9 @@
 
 #include "bounce.h"
 
+char *clientPass;
+char *clientAway;
+
 static size_t active;
 
 enum Need {

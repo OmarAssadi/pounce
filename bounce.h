@@ -110,7 +110,7 @@ static inline const char *capList(enum Cap caps) {
 	return buf;
 }
 
-bool verbose;
+extern bool verbose;
 
 void ringAlloc(size_t len);
 void ringProduce(const char *line);
@@ -134,8 +134,8 @@ void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 
-char *clientPass;
-char *clientAway;
+extern char *clientPass;
+extern char *clientAway;
 struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
 bool clientError(const struct Client *client);
@@ -146,8 +146,8 @@ void clientFormat(struct Client *client, const char *format, ...)
 size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
-bool stateNoNames;
-enum Cap stateCaps;
+extern bool stateNoNames;
+extern enum Cap stateCaps;
 void stateLogin(
 	const char *pass, bool sasl, const char *plain,
 	const char *nick, const char *user, const char *real

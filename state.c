@@ -25,6 +25,9 @@
 
 #include "bounce.h"
 
+bool stateNoNames;
+enum Cap stateCaps;
+
 typedef void Handler(struct Message *msg);
 
 static void require(const struct Message *msg, bool origin, size_t len) {

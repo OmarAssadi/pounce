@@ -41,6 +41,8 @@
 
 #include "bounce.h"
 
+bool verbose;
+
 static void hashPass(void) {
 	char *pass = getpass("Password: ");
 	byte rand[12];
