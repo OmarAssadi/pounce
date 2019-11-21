@@ -28,7 +28,7 @@ dev: tags all
 all: ${BINS}
 
 calico: dispatch.o
-	${CC} ${LDFLAGS} dispatch.o -o $@
+	${CC} ${LDFLAGS} dispatch.o ${LDLIBS_calico} -o $@
 
 pounce: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
