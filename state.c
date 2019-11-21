@@ -37,7 +37,9 @@ static void require(const struct Message *msg, bool origin, size_t len) {
 	}
 }
 
-static char *plainBase64;
+// Maximum size of one AUTHENTICATE message.
+enum { AuthLen = 299 };
+static char plainBase64[BASE64_SIZE(AuthLen)];
 
 void stateLogin(
 	const char *pass, bool sasl, const char *plain,
@@ -48,9 +50,7 @@ void stateLogin(
 	if (sasl) {
 		serverFormat("CAP REQ :%s\r\n", capList(CapSASL));
 		if (plain) {
-			// Maxmimum size that fits in a single
-			// AUTHENTICATE message after base64 encoding.
-			byte buf[299];
+			byte buf[AuthLen];
 			size_t len = 1 + strlen(plain);
 			if (sizeof(buf) < len) {
 				errx(EX_SOFTWARE, "SASL PLAIN is too long");
@@ -59,8 +59,6 @@ void stateLogin(
 			for (size_t i = 0; plain[i]; ++i) {
 				buf[1 + i] = (plain[i] == ':' ? 0 : plain[i]);
 			}
-			plainBase64 = malloc(BASE64_SIZE(len));
-			if (!plainBase64) err(EX_OSERR, "malloc");
 			base64(plainBase64, buf, len);
 		}
 	}
@@ -80,7 +78,7 @@ static void handleCap(struct Message *msg) {
 		stateCaps |= caps;
 		if (caps & CapSASL) {
 			serverFormat(
-				"AUTHENTICATE %s\r\n", (plainBase64 ? "PLAIN" : "EXTERNAL")
+				"AUTHENTICATE %s\r\n", (plainBase64[0] ? "PLAIN" : "EXTERNAL")
 			);
 		}
 		if (!(stateCaps & CapSASL)) serverFormat("CAP END\r\n");
@@ -92,11 +90,9 @@ static void handleCap(struct Message *msg) {
 
 static void handleAuthenticate(struct Message *msg) {
 	(void)msg;
-	if (plainBase64) {
+	if (plainBase64[0]) {
 		serverFormat("AUTHENTICATE %s\r\n", plainBase64);
-		explicit_bzero(plainBase64, strlen(plainBase64));
-		free(plainBase64);
-		plainBase64 = NULL;
+		explicit_bzero(plainBase64, sizeof(plainBase64));
 	} else {
 		serverFormat("AUTHENTICATE +\r\n");
 	}
