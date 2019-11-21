@@ -60,6 +60,7 @@ void stateLogin(
 				buf[1 + i] = (plain[i] == ':' ? 0 : plain[i]);
 			}
 			base64(plainBase64, buf, len);
+			explicit_bzero(buf, sizeof(buf));
 		}
 	}
 	serverFormat("NICK %s\r\n", nick);
