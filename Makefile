@@ -44,7 +44,7 @@ clean:
 	rm -f tags ${BINS} ${OBJS} dispatch.o
 
 install: ${BINS} ${MANS} ${RCS}
-	install -d ${PREFIX}/bin ${MANDIR}/man1 ${ETCDIR}/rc.d
+	install -d ${PREFIX}/bin ${MANDIR}/man1
 	install ${BINS} ${PREFIX}/bin
 	install -m 644 ${MANS} ${MANDIR}/man1
 	if [ -n '${RCS}' ]; then install -d ${ETCDIR}/rc.d; fi
