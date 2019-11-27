@@ -2,9 +2,11 @@ PREFIX = /usr/local
 MANDIR = ${PREFIX}/man
 ETCDIR = ${PREFIX}/etc
 LIBRESSL_PREFIX = /usr/local
+LIBRESSL_BIN_PREFIX = ${LIBRESSL_PREFIX:%=%/bin}
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
 CFLAGS += ${LIBRESSL_PREFIX:%=-I%/include}
+CFLAGS += ${LIBRESSL_BIN_PREFIX:%=-D'LIBRESSL_BIN_PREFIX="%/"'}
 LDFLAGS += ${LIBRESSL_PREFIX:%=-L%/lib}
 LDLIBS = -lcrypt -lcrypto -ltls
 

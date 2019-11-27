@@ -27,6 +27,10 @@
 #define CERTBOT_PATH "/usr/local/etc/letsencrypt"
 #endif
 
+#ifndef LIBRESSL_BIN_PREFIX
+#define LIBRESSL_BIN_PREFIX
+#endif
+
 #define SOURCE_URL "https://code.causal.agency/june/pounce"
 #define ORIGIN "irc.invalid"
 

@@ -59,7 +59,7 @@ static void genCert(const char *path) {
 	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
 	umask(0066);
 	execlp(
-		"openssl", "openssl", "req",
+		LIBRESSL_BIN_PREFIX "openssl", "openssl", "req",
 		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "1000",
 		"-nodes", "-subj", subj, "-out", path, "-keyout", path,
 		NULL
