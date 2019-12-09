@@ -209,6 +209,7 @@ static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	size_t diff = ringDiff(client->consumer);
 	ringProduce(line);
 	if (!diff) ringConsume(NULL, client->consumer);
+	if (!strcmp(msg->params[0], stateNick())) return;
 
 	serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
 }
