@@ -413,7 +413,10 @@ int main(int argc, char *argv[]) {
 			if (!revents) continue;
 
 			if (event.fds[i].fd == server) {
-				serverRecv();
+				if (revents & POLLIN) serverRecv();
+				if (revents & (POLLHUP | POLLERR)) {
+					errx(EX_UNAVAILABLE, "server closed connection");
+				}
 				continue;
 			}
 
