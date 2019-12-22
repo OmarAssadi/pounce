@@ -130,6 +130,7 @@ void serverRecv(void) {
 	ssize_t read = tls_read(client, &buf[len], sizeof(buf) - len);
 	if (read == TLS_WANT_POLLIN || read == TLS_WANT_POLLOUT) return;
 	if (read < 0) errx(EX_IOERR, "server tls_read: %s", tls_error(client));
+	if (!read) errx(EX_PROTOCOL, "server closed connection");
 	len += read;
 
 	char *crlf;
