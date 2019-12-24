@@ -31,7 +31,7 @@
 #define LIBRESSL_BIN_PREFIX
 #endif
 
-#define SOURCE_URL "https://code.causal.agency/june/pounce"
+#define SOURCE_URL "https://git.causal.agency/pounce"
 #define ORIGIN "irc.invalid"
 
 #define BIT(x) x##Bit, x = 1 << x##Bit, x##Bit_ = x##Bit
