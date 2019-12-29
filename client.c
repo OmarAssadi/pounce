@@ -242,6 +242,7 @@ static void clientParse(struct Client *client, char *line) {
 
 static bool intercept(const char *line, size_t len) {
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
+	if (len == 4 && !memcmp(line, "QUIT", 4)) return true;
 	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
 	if (len >= 7 && !memcmp(line, "NOTICE ", 7)) return true;
 	if (len >= 8 && !memcmp(line, "PRIVMSG ", 8)) return true;
