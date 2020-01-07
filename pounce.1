@@ -1,4 +1,4 @@
-.Dd December 8, 2019
+.Dd January 7, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -9,12 +9,10 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl Nev
-.Op Fl A Ar away
 .Op Fl C Ar cert
 .Op Fl H Ar host
 .Op Fl K Ar priv
 .Op Fl P Ar port
-.Op Fl Q Ar quit
 .Op Fl U Ar unix
 .Op Fl W Ar pass
 .Op Fl a Ar auth
@@ -25,10 +23,12 @@
 .Op Fl k Ar priv
 .Op Fl n Ar nick
 .Op Fl p Ar port
+.Op Fl q Ar quit
 .Op Fl r Ar real
 .Op Fl s Ar size
 .Op Fl u Ar user
 .Op Fl w Ar pass
+.Op Fl y Ar away
 .Op Ar config ...
 .
 .Nm
@@ -68,11 +68,6 @@ following their corresponding flags.
 The arguments are as follows:
 .
 .Bl -tag -width Ds
-.It Fl A Ar mesg , Cm away = Ar mesg
-Set away status to
-.Ar mesg
-when no clients are connected.
-.
 .It Fl C Ar path , Cm cert = Ar path
 Load TLS certificate from
 .Ar path .
@@ -110,11 +105,6 @@ but prevents new clients from populating user lists.
 Bind to
 .Ar port .
 The default port is 6697.
-.
-.It Fl Q Ar mesg , Cm quit = Ar mesg
-Quit with message
-.Ar mesg
-when shutting down.
 .
 .It Fl U Ar path , Cm bind-path = Ar path
 Bind to a UNIX-domain socket at
@@ -210,6 +200,11 @@ Connect to
 .Ar port .
 The default port is 6697.
 .
+.It Fl q Ar mesg , Cm quit = Ar mesg
+Quit with message
+.Ar mesg
+when shutting down.
+.
 .It Fl r Ar real , Cm real = Ar real
 Set realname to
 .Ar real .
@@ -242,6 +237,11 @@ Prompt for a password
 and output a hash
 for use with
 .Fl W .
+.
+.It Fl y Ar mesg , Cm away = Ar mesg
+Set away status to
+.Ar mesg
+when no clients are connected.
 .El
 .
 .Pp

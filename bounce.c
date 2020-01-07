@@ -232,16 +232,14 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:Q:U:W:a:c:ef:g:h:j:k:n:p:r:s:u:vw:x";
+	const char *Opts = "!C:H:K:NP:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
-		{ "away", required_argument, NULL, 'A' },
 		{ "cert", required_argument, NULL, 'C' },
 		{ "bind-host", required_argument, NULL, 'H' },
 		{ "priv", required_argument, NULL, 'K' },
 		{ "no-names", no_argument, NULL, 'N' },
 		{ "bind-port", required_argument, NULL, 'P' },
-		{ "quit", required_argument, NULL, 'Q' },
 		{ "bind-path", required_argument, NULL, 'U' },
 		{ "client-pass", required_argument, NULL, 'W' },
 		{ "sasl-plain", required_argument, NULL, 'a' },
@@ -253,11 +251,13 @@ int main(int argc, char *argv[]) {
 		{ "client-priv", required_argument, NULL, 'k' },
 		{ "nick", required_argument, NULL, 'n' },
 		{ "port", required_argument, NULL, 'p' },
+		{ "quit", required_argument, NULL, 'q' },
 		{ "real", required_argument, NULL, 'r' },
 		{ "size", required_argument, NULL, 's' },
 		{ "user", required_argument, NULL, 'u' },
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "pass", required_argument, NULL, 'w' },
+		{ "away", required_argument, NULL, 'y' },
 		{0},
 	};
 
@@ -265,13 +265,11 @@ int main(int argc, char *argv[]) {
 	while (0 < (opt = getopt_config(argc, argv, Opts, LongOpts, NULL))) {
 		switch (opt) {
 			break; case '!': insecure = true;
-			break; case 'A': clientAway = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': bindHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
-			break; case 'Q': quit = optarg;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
 			break; case 'a': sasl = true; plain = optarg;
@@ -284,12 +282,14 @@ int main(int argc, char *argv[]) {
 			break; case 'k': clientPriv = optarg;
 			break; case 'n': nick = optarg;
 			break; case 'p': port = optarg;
+			break; case 'q': quit = optarg;
 			break; case 'r': real = optarg;
 			break; case 's': ringSize = parseSize(optarg);
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
 			break; case 'x': hashPass(); return EX_OK;
+			break; case 'y': clientAway = optarg;
 			break; default:  return EX_USAGE;
 		}
 	}
