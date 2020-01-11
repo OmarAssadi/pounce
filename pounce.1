@@ -1,4 +1,4 @@
-.Dd January 7, 2020
+.Dd January 10, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -284,12 +284,17 @@ New clients with the same username
 are assumed to be reconnections
 and will cause previous connections
 to stop receiving messages.
-Clients with usernames beginning with hyphen
+The nickname and real name
+sent by clients are ignored.
+.
+.Pp
+Clients which request the
+.Sy causal.agency/passive
+capability
+or with usernames beginning with hyphen
 .Ql -
 are considered passive
 and do not affect away status.
-The nickname and real name sent by clients
-are ignored.
 .
 .Pp
 Pass-through of the following IRCv3 capabilities

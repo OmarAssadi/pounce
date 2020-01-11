@@ -63,6 +63,7 @@ static inline struct Message parse(char *line) {
 #define ENUM_CAP \
 	X("account-notify", CapAccountNotify) \
 	X("away-notify", CapAwayNotify) \
+	X("causal.agency/passive", CapPassive) \
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
 	X("invite-notify", CapInviteNotify) \

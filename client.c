@@ -46,7 +46,6 @@ struct Client {
 	struct tls *tls;
 	enum Need need;
 	size_t consumer;
-	bool passive;
 	enum Cap caps;
 	char buf[1024];
 	size_t len;
@@ -63,7 +62,7 @@ struct Client *clientAlloc(struct tls *tls) {
 
 void clientFree(struct Client *client) {
 	if (!client->need) {
-		if (!client->passive && !--active) {
+		if (!(client->caps & CapPassive) && !--active) {
 			serverFormat("AWAY :%s\r\n", clientAway);
 		}
 	}
@@ -115,7 +114,7 @@ static void maybeSync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
 	if (!client->need) {
 		stateSync(client);
-		if (!client->passive && !active++) {
+		if (!(client->caps & CapPassive) && !active++) {
 			serverFormat("AWAY\r\n");
 		}
 	}
@@ -139,7 +138,7 @@ static void handleUser(struct Client *client, struct Message *msg) {
 	} else {
 		client->need &= ~NeedUser;
 		client->consumer = ringConsumer(msg->params[0]);
-		client->passive = (msg->params[0][0] == '-');
+		if (msg->params[0][0] == '-') client->caps |= CapPassive;
 		maybeSync(client);
 	}
 }
@@ -161,7 +160,7 @@ static void handlePass(struct Client *client, struct Message *msg) {
 
 static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
-	enum Cap avail = CapServerTime | (stateCaps & ~CapSASL);
+	enum Cap avail = CapServerTime | CapPassive | (stateCaps & ~CapSASL);
 
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;
