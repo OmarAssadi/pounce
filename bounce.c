@@ -236,14 +236,14 @@ int main(int argc, char *argv[]) {
 	const char *Opts = "!A:C:H:K:NP:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
-		{ "client-ca", required_argument, NULL, 'A' },
-		{ "cert", required_argument, NULL, 'C' },
-		{ "bind-host", required_argument, NULL, 'H' },
-		{ "priv", required_argument, NULL, 'K' },
+		{ "local-ca", required_argument, NULL, 'A' },
+		{ "local-cert", required_argument, NULL, 'C' },
+		{ "local-host", required_argument, NULL, 'H' },
+		{ "local-priv", required_argument, NULL, 'K' },
 		{ "no-names", no_argument, NULL, 'N' },
-		{ "bind-port", required_argument, NULL, 'P' },
-		{ "bind-path", required_argument, NULL, 'U' },
-		{ "client-pass", required_argument, NULL, 'W' },
+		{ "local-port", required_argument, NULL, 'P' },
+		{ "local-path", required_argument, NULL, 'U' },
+		{ "local-pass", required_argument, NULL, 'W' },
 		{ "sasl-plain", required_argument, NULL, 'a' },
 		{ "client-cert", required_argument, NULL, 'c' },
 		{ "sasl-external", no_argument, NULL, 'e' },
@@ -260,6 +260,16 @@ int main(int argc, char *argv[]) {
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "pass", required_argument, NULL, 'w' },
 		{ "away", required_argument, NULL, 'y' },
+
+		// Deprecated:
+		{ "client-ca", required_argument, NULL, 'A' },
+		{ "cert", required_argument, NULL, 'C' },
+		{ "bind-host", required_argument, NULL, 'H' },
+		{ "priv", required_argument, NULL, 'K' },
+		{ "bind-port", required_argument, NULL, 'P' },
+		{ "bind-path", required_argument, NULL, 'U' },
+		{ "client-pass", required_argument, NULL, 'W' },
+
 		{0},
 	};
 

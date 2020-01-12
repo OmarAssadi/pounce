@@ -69,7 +69,7 @@ following their corresponding flags.
 The arguments are as follows:
 .
 .Bl -tag -width Ds
-.It Fl A Ar path , Cm client-ca = Ar path
+.It Fl A Ar path , Cm local-ca = Ar path
 Load the TLS client certificate authority (CA) from
 .Ar path .
 If
@@ -83,7 +83,7 @@ is also set,
 clients may either connect using the password
 or a client certificate.
 .
-.It Fl C Ar path , Cm cert = Ar path
+.It Fl C Ar path , Cm local-cert = Ar path
 Load TLS certificate from
 .Ar path .
 The default path is the
@@ -93,12 +93,12 @@ path for the
 set by
 .Fl H .
 .
-.It Fl H Ar host , Cm bind-host = Ar host
+.It Fl H Ar host , Cm local-host = Ar host
 Bind to
 .Ar host .
 The default host is localhost.
 .
-.It Fl K Ar path , Cm priv = Ar path
+.It Fl K Ar path , Cm local-priv = Ar path
 Load TLS private key from
 .Ar path .
 The default path is the
@@ -116,12 +116,12 @@ This avoids already connected clients
 receiving unsolicited responses
 but prevents new clients from populating user lists.
 .
-.It Fl P Ar port , Cm bind-port = Ar port
+.It Fl P Ar port , Cm local-port = Ar port
 Bind to
 .Ar port .
 The default port is 6697.
 .
-.It Fl U Ar path , Cm bind-path = Ar path
+.It Fl U Ar path , Cm local-path = Ar path
 Bind to a UNIX-domain socket at
 .Ar path .
 Clients are accepted as sent by
@@ -139,7 +139,7 @@ This option takes precedence over
 and
 .Fl P .
 .
-.It Fl W Ar pass , Cm client-pass = Ar pass
+.It Fl W Ar pass , Cm local-pass = Ar pass
 Require the server password
 .Ar pass
 for clients to connect.
@@ -437,7 +437,7 @@ pounce -H pounce.example.org -h chat.freenode.net -j '#ascii.town'
 .Pp
 Configuration in a file:
 .Bd -literal -offset indent
-bind-host = pounce.example.org
+local-host = pounce.example.org
 host = chat.freenode.net
 join = #ascii.town
 .Ed
