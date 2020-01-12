@@ -47,13 +47,14 @@ static byte *readFile(size_t *len, FILE *file) {
 	byte *buf = malloc(stat.st_size);
 	if (!buf) err(EX_OSERR, "malloc");
 
+	rewind(file);
 	*len = fread(buf, 1, stat.st_size, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 
 	return buf;
 }
 
-void localConfig(FILE *cert, FILE *priv) {
+void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require) {
 	tls_free(server);
 	server = tls_server();
 	if (!server) errx(EX_SOFTWARE, "tls_server");
@@ -75,6 +76,23 @@ void localConfig(FILE *cert, FILE *priv) {
 		errx(EX_CONFIG, "tls_config_set_key_mem: %s", tls_config_error(config));
 	}
 	free(buf);
+
+	if (ca) {
+		buf = readFile(&len, ca);
+		error = tls_config_set_ca_mem(config, buf, len);
+		if (error) {
+			errx(
+				EX_CONFIG, "tls_config_set_ca_mem: %s",
+				tls_config_error(config)
+			);
+		}
+		free(buf);
+		if (require) {
+			tls_config_verify_client(config);
+		} else {
+			tls_config_verify_client_optional(config);
+		}
+	}
 
 	error = tls_configure(server, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(server));

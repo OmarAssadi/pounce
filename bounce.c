@@ -215,6 +215,7 @@ int main(int argc, char *argv[]) {
 	char bindPath[PATH_MAX] = "";
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
+	const char *caPath = NULL;
 
 	bool insecure = false;
 	const char *clientCert = NULL;
@@ -232,9 +233,10 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!C:H:K:NP:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
+	const char *Opts = "!A:C:H:K:NP:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
+		{ "client-ca", required_argument, NULL, 'A' },
 		{ "cert", required_argument, NULL, 'C' },
 		{ "bind-host", required_argument, NULL, 'H' },
 		{ "priv", required_argument, NULL, 'K' },
@@ -265,6 +267,7 @@ int main(int argc, char *argv[]) {
 	while (0 < (opt = getopt_config(argc, argv, Opts, LongOpts, NULL))) {
 		switch (opt) {
 			break; case '!': insecure = true;
+			break; case 'A': clientCA = true; caPath = optarg;
 			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
 			break; case 'H': bindHost = optarg;
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
@@ -331,11 +334,17 @@ int main(int argc, char *argv[]) {
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
 
+	FILE *localCA = NULL;
+	if (caPath) {
+		localCA = fopen(caPath, "r");
+		if (!localCA) err(EX_NOINPUT, "%s", caPath);
+	}
+
 	struct SplitPath certSplit = splitPath(certPath);
 	struct SplitPath privSplit = splitPath(privPath);
 	FILE *cert = splitOpen(certSplit);
 	FILE *priv = splitOpen(privSplit);
-	localConfig(cert, priv);
+	localConfig(cert, priv, localCA, !clientPass);
 	fclose(cert);
 	fclose(priv);
 
@@ -359,6 +368,7 @@ int main(int argc, char *argv[]) {
 	cap_rights_merge(&bindRights, &sockRights);
 
 	if (saveFile) capLimit(fileno(saveFile), &saveRights);
+	if (localCA) capLimit(fileno(localCA), &fileRights);
 	capLimitSplit(certSplit, &fileRights);
 	capLimitSplit(privSplit, &fileRights);
 	for (size_t i = 0; i < binds; ++i) {
@@ -401,7 +411,7 @@ int main(int argc, char *argv[]) {
 		if (signals[SIGUSR1]) {
 			cert = splitOpen(certSplit);
 			priv = splitOpen(privSplit);
-			localConfig(cert, priv);
+			localConfig(cert, priv, localCA, !clientPass);
 			fclose(cert);
 			fclose(priv);
 			signals[SIGUSR1] = 0;

@@ -30,6 +30,7 @@
 
 #include "bounce.h"
 
+bool clientCA;
 char *clientPass;
 char *clientAway;
 
@@ -57,6 +58,9 @@ struct Client *clientAlloc(struct tls *tls) {
 	if (!client) err(EX_OSERR, "calloc");
 	client->tls = tls;
 	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
+	if (clientCA && tls_peer_cert_provided(tls)) {
+		client->need &= ~NeedPass;
+	}
 	return client;
 }
 
@@ -160,7 +164,9 @@ static void handlePass(struct Client *client, struct Message *msg) {
 
 static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
+
 	enum Cap avail = CapServerTime | CapPassive | (stateCaps & ~CapSASL);
+	if (clientCA) avail |= CapSASL;
 
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;
@@ -192,6 +198,27 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	}
 }
 
+static void handleAuthenticate(struct Client *client, struct Message *msg) {
+	if (!msg->params[0]) msg->params[0] = "";
+	if (!strcmp(msg->params[0], "EXTERNAL")) {
+		clientFormat(client, "AUTHENTICATE +\r\n");
+	} else if (!strcmp(msg->params[0], "+")) {
+		clientFormat(
+			client, ":%s 900 * %s * :You are now logged in as *\r\n",
+			ORIGIN, stateEcho()
+		);
+		clientFormat(
+			client, ":%s 903 * :SASL authentication successful\r\n",
+			ORIGIN
+		);
+	} else {
+		clientFormat(
+			client, ":%s 904 * :SASL authentication failed\r\n",
+			ORIGIN
+		);
+	}
+}
+
 static void handleQuit(struct Client *client, struct Message *msg) {
 	(void)msg;
 	clientFormat(client, "ERROR :Detaching\r\n");
@@ -218,6 +245,7 @@ static const struct {
 	Handler *fn;
 	bool need;
 } Handlers[] = {
+	{ "AUTHENTICATE", handleAuthenticate, false },
 	{ "CAP", handleCap, false },
 	{ "NICK", handleNick, false },
 	{ "NOTICE", handlePrivmsg, true },

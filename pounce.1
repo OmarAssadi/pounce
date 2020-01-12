@@ -1,4 +1,4 @@
-.Dd January 10, 2020
+.Dd January 12, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -9,6 +9,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl Nev
+.Op Fl A Ar cert
 .Op Fl C Ar cert
 .Op Fl H Ar host
 .Op Fl K Ar priv
@@ -68,6 +69,20 @@ following their corresponding flags.
 The arguments are as follows:
 .
 .Bl -tag -width Ds
+.It Fl A Ar path , Cm client-ca = Ar path
+Load the TLS client certificate authority (CA) from
+.Ar path .
+If
+.Fl W
+is unset,
+clients must present a certificate signed by the CA
+to connect.
+If
+.Fl W
+is also set,
+clients may either connect using the password
+or a client certificate.
+.
 .It Fl C Ar path , Cm cert = Ar path
 Load TLS certificate from
 .Ar path .
@@ -132,6 +147,11 @@ The
 .Ar pass
 string must be hashed using
 .Fl x .
+If
+.Fl A
+is also set,
+clients may instead connect
+using a client certificate.
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
 Authenticate as

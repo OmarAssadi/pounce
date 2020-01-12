@@ -127,7 +127,7 @@ void ringInfo(void);
 int ringSave(FILE *file);
 void ringLoad(FILE *file);
 
-void localConfig(FILE *cert, FILE *priv);
+void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require);
 size_t localBind(int fds[], size_t cap, const char *host, const char *port);
 size_t localUnix(int fds[], size_t cap, const char *path);
 struct tls *localAccept(int *fd, int bind);
@@ -139,6 +139,7 @@ void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 
+extern bool clientCA;
 extern char *clientPass;
 extern char *clientAway;
 struct Client *clientAlloc(struct tls *tls);
