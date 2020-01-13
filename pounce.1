@@ -33,6 +33,7 @@
 .Op Ar config ...
 .
 .Nm
+.Op Fl A Ar ca
 .Fl g Ar cert
 .
 .Nm
@@ -194,6 +195,11 @@ Generate a TLS client certificate using
 .Xr openssl 1
 and write it to
 .Ar path .
+The certificate is signed
+by the certificate authority if
+.Fl A
+is set,
+otherwise it is self-signed.
 .
 .It Fl h Ar host , Cm host = Ar host
 Connect to

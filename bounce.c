@@ -52,16 +52,53 @@ static void hashPass(void) {
 	printf("%s\n", crypt(pass, salt));
 }
 
-static void genCert(const char *path) {
+static void genKey(const char *path) {
 	const char *name = strrchr(path, '/');
 	name = (name ? &name[1] : path);
 	char subj[256];
 	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
-	umask(0066);
 	execlp(
 		LIBRESSL_BIN_PREFIX "openssl", "openssl", "req",
 		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "1000",
-		"-nodes", "-subj", subj, "-out", path, "-keyout", path,
+		"-nodes", "-subj", subj, "-keyout", path,
+		NULL
+	);
+	err(EX_UNAVAILABLE, "openssl");
+}
+
+static void redir(int dst, int src) {
+	int fd = dup2(src, dst);
+	if (fd < 0) err(EX_OSERR, "dup2");
+	close(src);
+}
+
+static void genCert(const char *path, const char *ca) {
+	int out = open(path, O_WRONLY | O_APPEND | O_CREAT, 0600);
+	if (out < 0) err(EX_CANTCREAT, "%s", path);
+
+	redir(STDOUT_FILENO, out);
+	if (!ca) {
+		genKey(path);
+		return;
+	}
+
+	int rw[2];
+	int error = pipe(rw);
+	if (error) err(EX_OSERR, "pipe");
+
+	pid_t pid = fork();
+	if (pid < 0) err(EX_OSERR, "fork");
+	if (!pid) {
+		close(rw[0]);
+		redir(STDOUT_FILENO, rw[1]);
+		genKey(path);
+	}
+
+	close(rw[1]);
+	redir(STDIN_FILENO, rw[0]);
+	execlp(
+		LIBRESSL_BIN_PREFIX "openssl", "openssl", "x509",
+		"-CA", ca, "-CAcreateserial", "-days", "1000",
 		NULL
 	);
 	err(EX_UNAVAILABLE, "openssl");
@@ -216,6 +253,7 @@ int main(int argc, char *argv[]) {
 	char certPath[PATH_MAX] = "";
 	char privPath[PATH_MAX] = "";
 	const char *caPath = NULL;
+	const char *genPath = NULL;
 
 	bool insecure = false;
 	const char *clientCert = NULL;
@@ -289,7 +327,7 @@ int main(int argc, char *argv[]) {
 			break; case 'c': clientCert = optarg;
 			break; case 'e': sasl = true;
 			break; case 'f': savePath = optarg;
-			break; case 'g': genCert(optarg);
+			break; case 'g': genPath = optarg;
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
 			break; case 'k': clientPriv = optarg;
@@ -306,6 +344,7 @@ int main(int argc, char *argv[]) {
 			break; default:  return EX_USAGE;
 		}
 	}
+	if (genPath) genCert(genPath, caPath);
 
 	if (bindPath[0]) {
 		struct stat st;
