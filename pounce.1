@@ -70,18 +70,15 @@ The arguments are as follows:
 .
 .Bl -tag -width Ds
 .It Fl A Ar path , Cm local-ca = Ar path
-Load the TLS client certificate authority (CA) from
+Require clients to authenticate
+using a TLS client certificate
+signed by the certificate authority loaded from
 .Ar path .
 If
 .Fl W
-is unset,
-clients must present a certificate signed by the CA
-to connect.
-If
-.Fl W
 is also set,
-clients may either connect using the password
-or a client certificate.
+clients may instead connect
+with a server password.
 .
 .It Fl C Ar path , Cm local-cert = Ar path
 Load TLS certificate from
@@ -151,7 +148,7 @@ If
 .Fl A
 is also set,
 clients may instead connect
-using a client certificate.
+using a TLS client certificate.
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
 Authenticate as
