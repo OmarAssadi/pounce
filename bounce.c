@@ -59,7 +59,7 @@ static void genKey(const char *path) {
 	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
 	execlp(
 		LIBRESSL_BIN_PREFIX "openssl", "openssl", "req",
-		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "1000",
+		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "3650",
 		"-nodes", "-subj", subj, "-keyout", path,
 		NULL
 	);
@@ -98,7 +98,7 @@ static void genCert(const char *path, const char *ca) {
 	redir(STDIN_FILENO, rw[0]);
 	execlp(
 		LIBRESSL_BIN_PREFIX "openssl", "openssl", "x509",
-		"-CA", ca, "-CAcreateserial", "-days", "1000",
+		"-CA", ca, "-CAcreateserial", "-days", "3650",
 		NULL
 	);
 	err(EX_UNAVAILABLE, "openssl");
