@@ -1,4 +1,4 @@
-.Dd January 12, 2020
+.Dd January 17, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -75,6 +75,8 @@ Require clients to authenticate
 using a TLS client certificate
 signed by the certificate authority loaded from
 .Ar path .
+See
+.Sx Generating Client Certificates .
 If
 .Fl W
 is also set,
@@ -297,7 +299,13 @@ If
 .Fl W
 is used,
 clients must send a server password.
-Clients should not attempt SASL.
+If
+.Fl A
+is used,
+clients must connect with a client certificate
+and may request SASL EXTERNAL.
+If both are used,
+clients may authenticate with either method.
 .
 .Pp
 Clients should register with unique usernames,
@@ -335,6 +343,38 @@ Private messages and notices
 sent to the user's own nickname
 are relayed only to other clients,
 not to the server.
+.
+.Ss Generating Client Certificates
+.Bl -enum
+.It
+Generate a self-signed certificate authority (CA):
+.Bd -literal -offset indent
+pounce -g auth.pem
+.Ed
+.It
+Generate and sign client certificates
+using the CA:
+.Bd -literal -offset indent
+pounce -A auth.pem -g client1.pem
+pounce -A auth.pem -g client2.pem
+.Ed
+.It
+Since only the public key is needed
+for certificate verification,
+extract it from the CA:
+.Bd -literal -offset indent
+openssl x509 -in auth.pem -out auth.crt
+.Ed
+.It
+Configure
+.Nm
+to verify client certificates
+against the CA:
+.Bd -literal -offset indent
+local-ca = auth.crt
+# or: pounce -A auth.crt
+.Ed
+.El
 .
 .Ss Configuring SASL EXTERNAL
 .Bl -enum
