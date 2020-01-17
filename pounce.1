@@ -177,11 +177,12 @@ Certificates can be generated with
 .Fl g .
 .
 .It Fl e , Cm sasl-external
-Authenticate using SASL EXTERNAL.
+Authenticate using SASL EXTERNAL,
+also known as CertFP.
 The TLS client certificate is loaded with
 .Fl c .
 For more information, see
-.Sx Configuring SASL EXTERNAL .
+.Sx Configuring CertFP .
 .
 .It Fl f Ar path , Cm save = Ar path
 Load the contents of the buffer from
@@ -376,7 +377,7 @@ local-ca = auth.crt
 .Ed
 .El
 .
-.Ss Configuring SASL EXTERNAL
+.Ss Configuring CertFP
 .Bl -enum
 .It
 Generate a new TLS client certificate:
@@ -392,7 +393,7 @@ client-cert = example.pem
 .It
 Identify with services or use
 .Cm sasl-plain ,
-then add the certificate fingerprint (CertFP) to your account:
+then add the certificate fingerprint to your account:
 .Bd -literal -offset indent
 /msg NickServ CERT ADD
 .Ed
