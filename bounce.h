@@ -133,7 +133,7 @@ size_t localUnix(int fds[], size_t cap, const char *path);
 struct tls *localAccept(int *fd, int bind);
 
 void serverConfig(bool insecure, const char *cert, const char *priv);
-int serverConnect(const char *host, const char *port);
+int serverConnect(const char *bindHost, const char *host, const char *port);
 void serverRecv(void);
 void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)

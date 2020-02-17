@@ -258,6 +258,7 @@ int main(int argc, char *argv[]) {
 	bool insecure = false;
 	const char *clientCert = NULL;
 	const char *clientPriv = NULL;
+	const char *serverBindHost = NULL;
 
 	const char *host = NULL;
 	const char *port = "6697";
@@ -271,7 +272,7 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
+	const char *Opts = "!A:C:H:K:NP:S:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "local-ca", required_argument, NULL, 'A' },
@@ -280,6 +281,7 @@ int main(int argc, char *argv[]) {
 		{ "local-priv", required_argument, NULL, 'K' },
 		{ "no-names", no_argument, NULL, 'N' },
 		{ "local-port", required_argument, NULL, 'P' },
+		{ "bind", required_argument, NULL, 'S' },
 		{ "local-path", required_argument, NULL, 'U' },
 		{ "local-pass", required_argument, NULL, 'W' },
 		{ "sasl-plain", required_argument, NULL, 'a' },
@@ -321,6 +323,7 @@ int main(int argc, char *argv[]) {
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
+			break; case 'S': serverBindHost = optarg;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
 			break; case 'a': sasl = true; plain = optarg;
@@ -403,7 +406,7 @@ int main(int argc, char *argv[]) {
 		: localBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
 
 	serverConfig(insecure, clientCert, clientPriv);
-	int server = serverConnect(host, port);
+	int server = serverConnect(serverBindHost, host, port);
 
 #ifdef __FreeBSD__
 	int error = cap_enter();

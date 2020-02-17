@@ -63,22 +63,47 @@ void serverConfig(bool insecure, const char *cert, const char *priv) {
 	tls_config_free(config);
 }
 
-int serverConnect(const char *host, const char *port) {
+int serverConnect(const char *bindHost, const char *host, const char *port) {
 	assert(client);
 
+	int error;
+	int sock = -1;
 	struct addrinfo *head;
 	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,
 	};
-	int error = getaddrinfo(host, port, &hints, &head);
+
+	if (bindHost) {
+		error = getaddrinfo(bindHost, NULL, &hints, &head);
+		if (error) errx(EX_NOHOST, "%s: %s", bindHost, gai_strerror(error));
+
+		for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
+			sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+			if (sock < 0) err(EX_OSERR, "socket");
+
+			error = bind(sock, ai->ai_addr, ai->ai_addrlen);
+			if (!error) {
+				hints.ai_family = ai->ai_family;
+				break;
+			}
+
+			close(sock);
+			sock = -1;
+		}
+		if (sock < 0) err(EX_UNAVAILABLE, "%s", bindHost);
+		freeaddrinfo(head);
+	}
+
+	error = getaddrinfo(host, port, &hints, &head);
 	if (error) errx(EX_NOHOST, "%s:%s: %s", host, port, gai_strerror(error));
 
-	int sock = -1;
 	for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
-		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (sock < 0) err(EX_OSERR, "socket");
+		if (sock < 0) {
+			sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+			if (sock < 0) err(EX_OSERR, "socket");
+		}
 
 		error = connect(sock, ai->ai_addr, ai->ai_addrlen);
 		if (!error) break;
