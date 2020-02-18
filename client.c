@@ -277,7 +277,6 @@ static bool intercept(const char *line, size_t len) {
 }
 
 void clientRecv(struct Client *client) {
-	assert(client->len < sizeof(client->buf));
 	ssize_t read = tls_read(
 		client->tls,
 		&client->buf[client->len], sizeof(client->buf) - client->len
