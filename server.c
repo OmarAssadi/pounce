@@ -149,7 +149,7 @@ void serverFormat(const char *format, ...) {
 }
 
 void serverRecv(void) {
-	static char buf[4096];
+	static char buf[MessageCap];
 	static size_t len;
 
 	ssize_t read = tls_read(client, &buf[len], sizeof(buf) - len);

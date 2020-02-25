@@ -48,7 +48,7 @@ struct Client {
 	enum Need need;
 	size_t consumer;
 	enum Cap caps;
-	char buf[1024];
+	char buf[MessageCap];
 	size_t len;
 	bool error;
 };
@@ -95,7 +95,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 }
 
 void clientFormat(struct Client *client, const char *format, ...) {
-	char buf[1024];
+	char buf[MessageCap];
 	va_list ap;
 	va_start(ap, format);
 	int len = vsnprintf(buf, sizeof(buf), format, ap);
@@ -383,7 +383,7 @@ static const char *filterChghost(const char *line) {
 static const char *filterExtendedJoin(const char *line) {
 	if (wordcmp(line, 1, "JOIN")) return line;
 	static regex_t regex;
-	static char buf[512];
+	static char buf[MessageCap + 1];
 	return snip(buf, sizeof(buf), line, compile(&regex, "(JOIN [^ ]+).+"));
 }
 
@@ -393,7 +393,7 @@ static const char *filterInviteNotify(const char *line) {
 }
 
 static const char *filterMultiPrefix(const char *line) {
-	static char buf[512];
+	static char buf[MessageCap + 1];
 	if (!wordcmp(line, 1, "352")) {
 		static regex_t regex;
 		return snip(
@@ -414,7 +414,7 @@ static const char *filterMultiPrefix(const char *line) {
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
 	static regex_t regex;
-	static char buf[512];
+	static char buf[MessageCap + 1];
 	return snip(
 		buf, sizeof(buf), line,
 		compile(&regex, "( :?[^!]+)![^ ]+")

@@ -39,6 +39,8 @@
 
 typedef unsigned char byte;
 
+enum { MessageCap = 8191 + 512 };
+
 enum { ParamCap = 15 };
 struct Message {
 	char *origin;
