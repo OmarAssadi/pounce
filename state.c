@@ -75,7 +75,7 @@ static void handleCap(struct Message *msg) {
 	enum Cap caps = capParse(msg->params[2]);
 
 	if (!strcmp(msg->params[1], "LS")) {
-		caps &= ~(CapSASL | CapServerTime | CapUnsupported);
+		caps &= ~(CapSASL | CapUnsupported);
 		serverFormat("CAP REQ :%s\r\n", capList(caps));
 
 	} else if (!strcmp(msg->params[1], "ACK")) {

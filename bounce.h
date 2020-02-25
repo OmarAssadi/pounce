@@ -43,6 +43,7 @@ enum { MessageCap = 8191 + 512 };
 
 enum { ParamCap = 15 };
 struct Message {
+	char *tags;
 	char *origin;
 	char *cmd;
 	char *params[ParamCap];
@@ -50,6 +51,7 @@ struct Message {
 
 static inline struct Message parse(char *line) {
 	struct Message msg = {0};
+	if (line[0] == '@') msg.tags = 1 + strsep(&line, " ");
 	if (line[0] == ':') msg.origin = 1 + strsep(&line, " ");
 	msg.cmd = strsep(&line, " ");
 	for (size_t i = 0; line && i < ParamCap; ++i) {
@@ -79,6 +81,7 @@ enum Cap {
 #define X(name, id) BIT(id),
 	ENUM_CAP
 #undef X
+	TagCaps = CapServerTime,
 };
 
 static const char *CapNames[] = {

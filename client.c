@@ -315,6 +315,10 @@ size_t clientDiff(const struct Client *client) {
 }
 
 static int wordcmp(const char *line, size_t i, const char *word) {
+	if (line[0] == '@') {
+		line += strcspn(line, " ");
+		if (*line) line++;
+	}
 	while (i--) {
 		line += strcspn(line, " ");
 		if (*line) line++;
@@ -421,6 +425,12 @@ static const char *filterUserhostInNames(const char *line) {
 	);
 }
 
+static const char *filterTags(const char *line) {
+	if (line[0] != '@') return line;
+	const char *sp = strchr(line, ' ');
+	return (sp ? sp + 1 : NULL);
+}
+
 static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
@@ -441,18 +451,23 @@ void clientConsume(struct Client *client) {
 		if (!Filters[i]) continue;
 		if (diff & (1 << i)) line = Filters[i](line);
 	}
+	if (stateCaps & TagCaps && !(client->caps & TagCaps)) {
+		if (line) line = filterTags(line);
+	}
 	if (!line) {
 		ringConsume(NULL, client->consumer);
 		return;
 	}
 
-	if (client->caps & CapServerTime) {
+	if (client->caps & CapServerTime && !(stateCaps & CapServerTime)) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss")];
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
 		clientFormat(
-			client, "@time=%s.%03dZ %s\r\n",
-			ts, (int)(time.tv_usec / 1000), line
+			client, "@time=%s.%03dZ%c%s\r\n",
+			ts, (int)(time.tv_usec / 1000),
+			(line[0] == '@' ? ';' : ' '),
+			(line[0] == '@' ? &line[1] : line)
 		);
 	} else {
 		clientFormat(client, "%s\r\n", line);
