@@ -295,12 +295,10 @@ static void clientParse(struct Client *client, char *line) {
 static bool intercept(const char *line, size_t len) {
 	if (line[0] == '@') {
 		const char *sp = memchr(line, ' ', len);
+		if (!sp) return false;
+		sp++;
 		len -= sp - line;
 		line = sp;
-		if (len) {
-			len--;
-			line++;
-		}
 	}
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
 	if (len == 4 && !memcmp(line, "QUIT", 4)) return true;
