@@ -354,6 +354,10 @@ static int wordcmp(const char *line, size_t i, const char *word) {
 		line += strcspn(line, " ");
 		if (*line) line++;
 	}
+	if (line[0] == ':') {
+		line += strcspn(line, " ");
+		if (*line) line++;
+	}
 	while (i--) {
 		line += strcspn(line, " ");
 		if (*line) line++;
@@ -408,42 +412,42 @@ static regex_t *compile(regex_t *regex, const char *pattern) {
 typedef const char *Filter(const char *line);
 
 static const char *filterAccountNotify(const char *line) {
-	return (wordcmp(line, 1, "ACCOUNT") ? line : NULL);
+	return (wordcmp(line, 0, "ACCOUNT") ? line : NULL);
 }
 
 static const char *filterAwayNotify(const char *line) {
-	return (wordcmp(line, 1, "AWAY") ? line : NULL);
+	return (wordcmp(line, 0, "AWAY") ? line : NULL);
 }
 
 static const char *filterChghost(const char *line) {
-	return (wordcmp(line, 1, "CHGHOST") ? line : NULL);
+	return (wordcmp(line, 0, "CHGHOST") ? line : NULL);
 }
 
 static const char *filterExtendedJoin(const char *line) {
-	if (wordcmp(line, 1, "JOIN")) return line;
+	if (wordcmp(line, 0, "JOIN")) return line;
 	static regex_t regex;
 	static char buf[MessageCap];
 	return snip(buf, sizeof(buf), line, compile(&regex, "(JOIN [^ ]+).+"));
 }
 
 static const char *filterInviteNotify(const char *line) {
-	if (wordcmp(line, 1, "INVITE")) return line;
-	return (wordcmp(line, 2, stateNick()) ? NULL : line);
+	if (wordcmp(line, 0, "INVITE")) return line;
+	return (wordcmp(line, 1, stateNick()) ? NULL : line);
 }
 
 static const char *filterMessageTags(const char *line) {
-	return (wordcmp(line, 1, "TAGMSG") ? line : NULL);
+	return (wordcmp(line, 0, "TAGMSG") ? line : NULL);
 }
 
 static const char *filterMultiPrefix(const char *line) {
 	static char buf[MessageCap];
-	if (!wordcmp(line, 1, "352")) {
+	if (!wordcmp(line, 0, "352")) {
 		static regex_t regex;
 		return snip(
 			buf, sizeof(buf), line,
 			compile(&regex, "( [HG][*]?[~!@%&+])[~!@%&+]+")
 		);
-	} else if (!wordcmp(line, 1, "353")) {
+	} else if (!wordcmp(line, 0, "353")) {
 		static regex_t regex;
 		return snip(
 			buf, sizeof(buf), line,
@@ -455,7 +459,7 @@ static const char *filterMultiPrefix(const char *line) {
 }
 
 static const char *filterUserhostInNames(const char *line) {
-	if (wordcmp(line, 1, "353")) return line;
+	if (wordcmp(line, 0, "353")) return line;
 	static regex_t regex;
 	static char buf[MessageCap];
 	return snip(
@@ -496,13 +500,13 @@ void clientConsume(struct Client *client) {
 	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
 
+	if (stateCaps & TagCaps && !(client->caps & TagCaps)) {
+		line = filterTags(line);
+	}
 	enum Cap diff = client->caps ^ stateCaps;
 	for (size_t i = 0; line && i < ARRAY_LEN(Filters); ++i) {
 		if (!Filters[i]) continue;
 		if (diff & (1 << i)) line = Filters[i](line);
-	}
-	if (stateCaps & TagCaps && !(client->caps & TagCaps)) {
-		if (line) line = filterTags(line);
 	}
 	if (!line) {
 		ringConsume(NULL, client->consumer);
