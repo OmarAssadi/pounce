@@ -485,6 +485,16 @@ static Filter *Filters[] = {
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
 
+static bool hasTime(const char *line) {
+	if (!strncmp(line, "@time=", 6)) return true;
+	while (*line && *line != ' ') {
+		line += strcspn(line, "; ");
+		if (!strncmp(line, ";time=", 6)) return true;
+		if (*line == ';') line++;
+	}
+	return false;
+}
+
 void clientConsume(struct Client *client) {
 	struct timeval time;
 	const char *line = ringPeek(&time, client->consumer);
@@ -503,7 +513,7 @@ void clientConsume(struct Client *client) {
 		return;
 	}
 
-	if (client->caps & CapServerTime && !(stateCaps & CapServerTime)) {
+	if (client->caps & CapServerTime && !hasTime(line)) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss")];
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
