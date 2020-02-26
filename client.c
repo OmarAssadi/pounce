@@ -227,17 +227,45 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 
 static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	if (!msg->params[0] || !msg->params[1]) return;
-	char line[1024];
-	snprintf(
-		line, sizeof(line), ":%s %s %s :%s",
-		stateEcho(), msg->cmd, msg->params[0], msg->params[1]
-	);
+	char line[MessageCap];
+	if (msg->tags) {
+		snprintf(
+			line, sizeof(line), "@%s :%s %s %s :%s",
+			msg->tags, stateEcho(), msg->cmd, msg->params[0], msg->params[1]
+		);
+	} else {
+		snprintf(
+			line, sizeof(line), ":%s %s %s :%s",
+			stateEcho(), msg->cmd, msg->params[0], msg->params[1]
+		);
+	}
 	size_t diff = ringDiff(client->consumer);
 	ringProduce(line);
 	if (!diff) ringConsume(NULL, client->consumer);
 	if (!strcmp(msg->params[0], stateNick())) return;
 
-	serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
+	if (msg->tags) {
+		serverFormat(
+			"@%s %s %s :%s\r\n",
+			msg->tags, msg->cmd, msg->params[0], msg->params[1]
+		);
+	} else {
+		serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
+	}
+}
+
+static void handleTagmsg(struct Client *client, struct Message *msg) {
+	if (!msg->tags || !msg->params[0]) return;
+	char line[MessageCap];
+	snprintf(
+		line, sizeof(line), "@%s :%s TAGMSG %s",
+		msg->tags, stateEcho(), msg->params[0]
+	);
+	size_t diff = ringDiff(client->consumer);
+	ringProduce(line);
+	if (!diff) ringConsume(NULL, client->consumer);
+	if (!strcmp(msg->params[0], stateNick())) return;
+	serverFormat("@%s TAGMSG %s\r\n", msg->tags, msg->params[0]);
 }
 
 static const struct {
@@ -252,6 +280,7 @@ static const struct {
 	{ "PASS", handlePass, false },
 	{ "PRIVMSG", handlePrivmsg, true },
 	{ "QUIT", handleQuit, true },
+	{ "TAGMSG", handleTagmsg, true },
 	{ "USER", handleUser, false },
 };
 
@@ -268,10 +297,20 @@ static void clientParse(struct Client *client, char *line) {
 }
 
 static bool intercept(const char *line, size_t len) {
+	if (line[0] == '@') {
+		const char *sp = memchr(line, ' ', len);
+		len -= sp - line;
+		line = sp;
+		if (len) {
+			len--;
+			line++;
+		}
+	}
 	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
 	if (len == 4 && !memcmp(line, "QUIT", 4)) return true;
 	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
 	if (len >= 7 && !memcmp(line, "NOTICE ", 7)) return true;
+	if (len >= 7 && !memcmp(line, "TAGMSG ", 7)) return true;
 	if (len >= 8 && !memcmp(line, "PRIVMSG ", 8)) return true;
 	return false;
 }
@@ -396,6 +435,10 @@ static const char *filterInviteNotify(const char *line) {
 	return (wordcmp(line, 2, stateNick()) ? NULL : line);
 }
 
+static const char *filterMessageTags(const char *line) {
+	return (wordcmp(line, 1, "TAGMSG") ? line : NULL);
+}
+
 static const char *filterMultiPrefix(const char *line) {
 	static char buf[MessageCap + 1];
 	if (!wordcmp(line, 1, "352")) {
@@ -437,6 +480,7 @@ static Filter *Filters[] = {
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,
+	[CapMessageTagsBit] = filterMessageTags,
 	[CapMultiPrefixBit] = filterMultiPrefix,
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };

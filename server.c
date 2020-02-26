@@ -139,7 +139,7 @@ void serverSend(const char *ptr, size_t len) {
 }
 
 void serverFormat(const char *format, ...) {
-	char buf[1024];
+	char buf[MessageCap];
 	va_list ap;
 	va_start(ap, format);
 	int len = vsnprintf(buf, sizeof(buf), format, ap);

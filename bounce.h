@@ -71,6 +71,7 @@ static inline struct Message parse(char *line) {
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
 	X("invite-notify", CapInviteNotify) \
+	X("message-tags", CapMessageTags) \
 	X("multi-prefix", CapMultiPrefix) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
@@ -81,7 +82,7 @@ enum Cap {
 #define X(name, id) BIT(id),
 	ENUM_CAP
 #undef X
-	TagCaps = CapServerTime,
+	TagCaps = CapMessageTags | CapServerTime,
 };
 
 static const char *CapNames[] = {
