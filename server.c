@@ -165,8 +165,13 @@ void serverRecv(void) {
 		if (!crlf) break;
 		crlf[0] = '\0';
 		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
-		if (!strncmp(line, "PING ", 5)) {
-			serverFormat("PONG %s\r\n", &line[5]);
+		const char *ping = line;
+		if (ping[0] == '@') {
+			ping += strcspn(ping, " ");
+			if (*ping) ping++;
+		}
+		if (!strncmp(ping, "PING ", 5)) {
+			serverFormat("PONG %s\r\n", &ping[5]);
 		} else {
 			if (stateReady()) ringProduce(line);
 			stateParse(line);
