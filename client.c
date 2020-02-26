@@ -437,6 +437,10 @@ static const char *filterInviteNotify(const char *line) {
 	return (wordcmp(line, 1, stateNick()) ? NULL : line);
 }
 
+static const char *filterLabeledResponse(const char *line) {
+	return (wordcmp(line, 0, "ACK") ? line : NULL);
+}
+
 static const char *filterMessageTags(const char *line) {
 	return (wordcmp(line, 0, "TAGMSG") ? line : NULL);
 }
@@ -483,6 +487,7 @@ static Filter *Filters[] = {
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,
+	[CapLabeledResponseBit] = filterLabeledResponse,
 	[CapMessageTagsBit] = filterMessageTags,
 	[CapMultiPrefixBit] = filterMultiPrefix,
 	[CapUserhostInNamesBit] = filterUserhostInNames,
