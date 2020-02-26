@@ -426,7 +426,7 @@ static const char *filterChghost(const char *line) {
 static const char *filterExtendedJoin(const char *line) {
 	if (wordcmp(line, 1, "JOIN")) return line;
 	static regex_t regex;
-	static char buf[MessageCap + 1];
+	static char buf[MessageCap];
 	return snip(buf, sizeof(buf), line, compile(&regex, "(JOIN [^ ]+).+"));
 }
 
@@ -440,7 +440,7 @@ static const char *filterMessageTags(const char *line) {
 }
 
 static const char *filterMultiPrefix(const char *line) {
-	static char buf[MessageCap + 1];
+	static char buf[MessageCap];
 	if (!wordcmp(line, 1, "352")) {
 		static regex_t regex;
 		return snip(
@@ -461,7 +461,7 @@ static const char *filterMultiPrefix(const char *line) {
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 1, "353")) return line;
 	static regex_t regex;
-	static char buf[MessageCap + 1];
+	static char buf[MessageCap];
 	return snip(
 		buf, sizeof(buf), line,
 		compile(&regex, "( :?[^!]+)![^ ]+")
