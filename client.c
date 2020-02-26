@@ -464,6 +464,10 @@ static const char *filterMultiPrefix(const char *line) {
 	}
 }
 
+static const char *filterSetname(const char *line) {
+	return (wordcmp(line, 0, "SETNAME") ? line : NULL);
+}
+
 static const char *filterUserhostInNames(const char *line) {
 	if (wordcmp(line, 0, "353")) return line;
 	static regex_t regex;
@@ -490,6 +494,7 @@ static Filter *Filters[] = {
 	[CapLabeledResponseBit] = filterLabeledResponse,
 	[CapMessageTagsBit] = filterMessageTags,
 	[CapMultiPrefixBit] = filterMultiPrefix,
+	[CapSetnameBit] = filterSetname,
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
 

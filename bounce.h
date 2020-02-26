@@ -78,6 +78,7 @@ static inline struct Message parse(char *line) {
 	X("multi-prefix", CapMultiPrefix) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
+	X("setname", CapSetname) \
 	X("userhost-in-names", CapUserhostInNames) \
 	X("", CapUnsupported)
 
