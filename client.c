@@ -417,6 +417,10 @@ static const char *filterAwayNotify(const char *line) {
 	return (wordcmp(line, 0, "AWAY") ? line : NULL);
 }
 
+static const char *filterBatch(const char *line) {
+	return (wordcmp(line, 0, "BATCH") ? line : NULL);
+}
+
 static const char *filterChghost(const char *line) {
 	return (wordcmp(line, 0, "CHGHOST") ? line : NULL);
 }
@@ -475,6 +479,7 @@ static const char *filterTags(const char *line) {
 static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
+	[CapBatchBit] = filterBatch,
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,
