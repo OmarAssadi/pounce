@@ -227,20 +227,16 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 
 static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	if (!msg->params[0] || !msg->params[1]) return;
+
+	int origin;
 	char line[MessageCap];
-	if (msg->tags) {
-		snprintf(
-			line, sizeof(line), "@%s :%s %s %s :%s",
-			msg->tags, stateEcho(), msg->cmd, msg->params[0], msg->params[1]
-		);
-	} else {
-		snprintf(
-			line, sizeof(line), ":%s %s %s :%s",
-			stateEcho(), msg->cmd, msg->params[0], msg->params[1]
-		);
-	}
+	snprintf(
+		line, sizeof(line), "@%s %n:%s %s %s :%s",
+		(msg->tags ? msg->tags : ""), &origin,
+		stateEcho(), msg->cmd, msg->params[0], msg->params[1]
+	);
 	size_t diff = ringDiff(client->consumer);
-	ringProduce(line);
+	ringProduce((msg->tags ? line : &line[origin]));
 	if (!diff) ringConsume(NULL, client->consumer);
 	if (!strcmp(msg->params[0], stateNick())) return;
 
