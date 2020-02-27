@@ -555,14 +555,14 @@ void clientConsume(struct Client *client) {
 		clientFormat(
 			client, "@time=%s.%03dZ;causal.agency/id=%zu%c%s\r\n",
 			ts, (int)(time.tv_usec / 1000),
-			ringPos(client->consumer),
+			ringPos(client->consumer) + 1,
 			(line[0] == '@' ? ';' : ' '),
 			(line[0] == '@' ? &line[1] : line)
 		);
 	} else if (client->caps & CapConsumer) {
 		clientFormat(
 			client, "@causal.agency/id=%zu%c%s\r\n",
-			ringPos(client->consumer),
+			ringPos(client->consumer) + 1,
 			(line[0] == '@' ? ';' : ' '),
 			(line[0] == '@' ? &line[1] : line)
 		);
