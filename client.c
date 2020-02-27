@@ -176,7 +176,9 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
-		if (msg->params[1] && !strcmp(msg->params[1], "302")) {
+		int version = 0;
+		if (msg->params[1]) version = strtol(msg->params[1], NULL, 10);
+		if (version >= 302) {
 			if (avail & CapCapNotify) client->caps |= CapCapNotify;
 			clientFormat(
 				client, ":%s CAP * LS :%s\r\n",
