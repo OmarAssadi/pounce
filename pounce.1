@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl Nev
+.Op Fl NTev
 .Op Fl A Ar cert
 .Op Fl C Ar cert
 .Op Fl H Ar host
@@ -126,6 +126,11 @@ The default port is 6697.
 Bind to source address
 .Ar host
 when connecting to the server.
+.
+.It Fl T
+Do not advertise a
+strict transport security (STS) policy
+to clients.
 .
 .It Fl U Ar path , Cm local-path = Ar path
 Bind to a UNIX-domain socket at
@@ -508,6 +513,14 @@ The
 daemon implements the following:
 .
 .Bl -item
+.It
+.Rs
+.%A Attila Molnar
+.%A James Wheare
+.%T IRCv3 Strict Transport Security
+.%I IRCv3 Working Group
+.%U https://ircv3.net/specs/extensions/sts
+.Re
 .It
 .Rs
 .%A Attila Molnar

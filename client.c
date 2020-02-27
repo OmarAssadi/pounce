@@ -31,6 +31,7 @@
 #include "bounce.h"
 
 bool clientCA;
+bool clientSTS = true;
 char *clientPass;
 char *clientAway;
 
@@ -168,8 +169,13 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
 
 	enum Cap avail = (stateCaps & ~CapSASL)
-		| CapServerTime | CapConsumer | CapPassive | (clientCA ? CapSASL : 0);
-	const char *values[CapBits] = { [CapSASLBit] = "EXTERNAL" };
+		| CapServerTime | CapConsumer | CapPassive
+		| (clientCA ? CapSASL : 0)
+		| (clientSTS ? CapSTS : 0);
+	const char *values[CapBits] = {
+		[CapSASLBit] = "EXTERNAL",
+		[CapSTSBit] = "duration=2147483647",
+	};
 
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;

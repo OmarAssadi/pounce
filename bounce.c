@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:S:U:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
+	const char *Opts = "!A:C:H:K:NP:S:TU:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
 	const struct option LongOpts[] = {
 		{ "insecure", no_argument, NULL, '!' },
 		{ "local-ca", required_argument, NULL, 'A' },
@@ -282,6 +282,7 @@ int main(int argc, char *argv[]) {
 		{ "no-names", no_argument, NULL, 'N' },
 		{ "local-port", required_argument, NULL, 'P' },
 		{ "bind", required_argument, NULL, 'S' },
+		{ "no-sts", no_argument, NULL, 'T' },
 		{ "local-path", required_argument, NULL, 'U' },
 		{ "local-pass", required_argument, NULL, 'W' },
 		{ "sasl-plain", required_argument, NULL, 'a' },
@@ -324,6 +325,7 @@ int main(int argc, char *argv[]) {
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'S': serverBindHost = optarg;
+			break; case 'T': clientSTS = false;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
 			break; case 'a': sasl = true; plain = optarg;

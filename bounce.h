@@ -81,6 +81,7 @@ static inline struct Message parse(char *line) {
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("setname", CapSetname) \
+	X("sts", CapSTS) \
 	X("userhost-in-names", CapUserhostInNames) \
 	X("", CapUnsupported)
 
@@ -166,6 +167,7 @@ void serverFormat(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 
 extern bool clientCA;
+extern bool clientSTS;
 extern char *clientPass;
 extern char *clientAway;
 struct Client *clientAlloc(struct tls *tls);

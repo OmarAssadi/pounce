@@ -80,7 +80,7 @@ static void handleCap(struct Message *msg) {
 	}
 
 	if (!strcmp(msg->params[1], "LS") || !strcmp(msg->params[1], "NEW")) {
-		caps &= ~(CapSASL | CapUnsupported);
+		caps &= ~(CapSASL | CapSTS | CapUnsupported);
 		if (caps) serverFormat("CAP REQ :%s\r\n", capList(caps, NULL));
 
 	} else if (!strcmp(msg->params[1], "ACK")) {
