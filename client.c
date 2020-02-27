@@ -553,7 +553,7 @@ void clientConsume(struct Client *client) {
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
 		clientFormat(
-			client, "@time=%s.%03dZ;causal.agency/id=%zu%c%s\r\n",
+			client, "@time=%s.%03dZ;causal.agency/pos=%zu%c%s\r\n",
 			ts, (int)(time.tv_usec / 1000),
 			ringPos(client->consumer) + 1,
 			(line[0] == '@' ? ';' : ' '),
@@ -561,7 +561,7 @@ void clientConsume(struct Client *client) {
 		);
 	} else if (client->caps & CapConsumer) {
 		clientFormat(
-			client, "@causal.agency/id=%zu%c%s\r\n",
+			client, "@causal.agency/pos=%zu%c%s\r\n",
 			ringPos(client->consumer) + 1,
 			(line[0] == '@' ? ';' : ' '),
 			(line[0] == '@' ? &line[1] : line)
