@@ -568,6 +568,56 @@ daemon implements the following:
 .Re
 .El
 .
+.Ss Extensions
+The
+.Sy causal.agency/consumer
+vendor-specific IRCv3 capability
+enables the
+.Sy causal.agency/pos
+message tag.
+The value of this tag
+is a 64-bit unsigned integer
+indicating the consumer position of the client
+after receiving each message,
+e.g.\&
+.Ql @causal.agency/pos=42069 .
+This capability may be requested
+with the value of the last
+.Sy causal.agency/pos
+tag received by the client,
+e.g.\&
+.Ql CAP REQ causal.agency/consumer=42069 ,
+setting its consumer position.
+By persisting this value across connections,
+a client can ensure no messages are missed,
+even in case of network issues or application crashes.
+.
+.Pp
+.%T IRCv3 Client Capability Negotiation
+specifies that capabilities MAY have values in
+.Ql CAP LS
+or
+.Ql CAP NEW
+responses.
+It does not, however,
+indicate if
+.Ql CAP REQ
+capabilities MUST NOT have values.
+The
+.Nm
+daemon parses
+.Ql CAP REQ
+values in the same way as
+.Ql CAP LS
+values.
+.
+.Pp
+The
+.Sy causal.agency/passive
+vendor-specific IRCv3 capability
+indicates that a client
+should not affect the automatic away status.
+.
 .Sh AUTHORS
 .An June Bug Aq Mt june@causal.agency
 .
