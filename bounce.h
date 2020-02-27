@@ -70,6 +70,7 @@ static inline struct Message parse(char *line) {
 	X("away-notify", CapAwayNotify) \
 	X("batch", CapBatch) \
 	X("cap-notify", CapCapNotify) \
+	X("causal.agency/consumer", CapConsumer) \
 	X("causal.agency/passive", CapPassive) \
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
@@ -91,6 +92,7 @@ enum Cap {
 	TagCaps = 0
 		| CapAccountTag
 		| CapBatch
+		| CapConsumer
 		| CapLabeledResponse
 		| CapMessageTags
 		| CapServerTime,
@@ -142,6 +144,7 @@ extern bool verbose;
 void ringAlloc(size_t len);
 void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
+size_t ringPos(size_t consumer);
 size_t ringDiff(size_t consumer);
 const char *ringPeek(struct timeval *time, size_t consumer);
 const char *ringConsume(struct timeval *time, size_t consumer);

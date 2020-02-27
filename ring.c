@@ -81,6 +81,11 @@ size_t ringConsumer(const char *name) {
 	return consumers.len++;
 }
 
+size_t ringPos(size_t consumer) {
+	assert(consumer < consumers.len);
+	return consumers.ptr[consumer].pos;
+}
+
 size_t ringDiff(size_t consumer) {
 	assert(consumer < consumers.len);
 	return producer - consumers.ptr[consumer].pos;

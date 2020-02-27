@@ -165,9 +165,9 @@ static void handlePass(struct Client *client, struct Message *msg) {
 static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
 
-	enum Cap avail = CapServerTime | CapPassive | (stateCaps & ~CapSASL);
+	enum Cap avail = (stateCaps & ~CapSASL)
+		| CapServerTime | CapConsumer | CapPassive | (clientCA ? CapSASL : 0);
 	const char *values[CapBits] = { [CapSASLBit] = "EXTERNAL" };
-	if (clientCA) avail |= CapSASL;
 
 	if (!strcmp(msg->params[0], "END")) {
 		if (!client->need) return;
@@ -553,8 +553,16 @@ void clientConsume(struct Client *client) {
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
 		clientFormat(
-			client, "@time=%s.%03dZ%c%s\r\n",
+			client, "@time=%s.%03dZ;causal.agency/id=%zu%c%s\r\n",
 			ts, (int)(time.tv_usec / 1000),
+			ringPos(client->consumer),
+			(line[0] == '@' ? ';' : ' '),
+			(line[0] == '@' ? &line[1] : line)
+		);
+	} else if (client->caps & CapConsumer) {
+		clientFormat(
+			client, "@causal.agency/id=%zu%c%s\r\n",
+			ringPos(client->consumer),
 			(line[0] == '@' ? ';' : ' '),
 			(line[0] == '@' ? &line[1] : line)
 		);
