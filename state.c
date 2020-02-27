@@ -74,9 +74,9 @@ static void handleCap(struct Message *msg) {
 	require(msg, false, 3);
 	enum Cap caps = capParse(msg->params[2]);
 
-	if (!strcmp(msg->params[1], "LS")) {
+	if (!strcmp(msg->params[1], "LS") || !strcmp(msg->params[1], "NEW")) {
 		caps &= ~(CapSASL | CapUnsupported);
-		serverFormat("CAP REQ :%s\r\n", capList(caps));
+		if (caps) serverFormat("CAP REQ :%s\r\n", capList(caps));
 
 	} else if (!strcmp(msg->params[1], "ACK")) {
 		stateCaps |= caps;
@@ -86,6 +86,9 @@ static void handleCap(struct Message *msg) {
 			);
 		}
 		if (!(stateCaps & CapSASL)) serverFormat("CAP END\r\n");
+
+	} else if (!strcmp(msg->params[1], "DEL")) {
+		stateCaps &= ~caps;
 
 	} else if (!strcmp(msg->params[1], "NAK")) {
 		errx(EX_CONFIG, "server does not support %s", msg->params[2]);

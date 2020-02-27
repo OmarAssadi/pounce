@@ -421,6 +421,13 @@ static const char *filterBatch(const char *line) {
 	return (wordcmp(line, 0, "BATCH") ? line : NULL);
 }
 
+static const char *filterCapNotify(const char *line) {
+	if (wordcmp(line, 0, "CAP")) return line;
+	if (!wordcmp(line, 1, "NEW")) return NULL;
+	if (!wordcmp(line, 1, "DEL")) return NULL;
+	return line;
+}
+
 static const char *filterChghost(const char *line) {
 	return (wordcmp(line, 0, "CHGHOST") ? line : NULL);
 }
@@ -488,6 +495,7 @@ static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
 	[CapBatchBit] = filterBatch,
+	[CapCapNotifyBit] = filterCapNotify,
 	[CapChghostBit] = filterChghost,
 	[CapExtendedJoinBit] = filterExtendedJoin,
 	[CapInviteNotifyBit] = filterInviteNotify,

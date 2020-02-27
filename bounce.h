@@ -69,6 +69,7 @@ static inline struct Message parse(char *line) {
 	X("account-tag", CapAccountTag) \
 	X("away-notify", CapAwayNotify) \
 	X("batch", CapBatch) \
+	X("cap-notify", CapCapNotify) \
 	X("causal.agency/passive", CapPassive) \
 	X("chghost", CapChghost) \
 	X("extended-join", CapExtendedJoin) \
