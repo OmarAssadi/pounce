@@ -144,6 +144,7 @@ extern bool verbose;
 void ringAlloc(size_t len);
 void ringProduce(const char *line);
 size_t ringConsumer(const char *name);
+void ringSet(size_t consumer, size_t pos);
 size_t ringPos(size_t consumer);
 size_t ringDiff(size_t consumer);
 const char *ringPeek(struct timeval *time, size_t consumer);

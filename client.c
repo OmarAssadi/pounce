@@ -47,6 +47,7 @@ struct Client {
 	struct tls *tls;
 	enum Need need;
 	size_t consumer;
+	size_t setPos;
 	enum Cap caps;
 	char buf[MessageCap];
 	size_t len;
@@ -118,6 +119,7 @@ static void maybeSync(struct Client *client) {
 	if (client->need == NeedPass) passRequired(client);
 	if (!client->need) {
 		stateSync(client);
+		if (client->setPos) ringSet(client->consumer, client->setPos);
 		if (!(client->caps & CapPassive) && !active++) {
 			serverFormat("AWAY\r\n");
 		}
@@ -193,9 +195,12 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
-		enum Cap caps = capParse(msg->params[1], NULL);
+		enum Cap caps = capParse(msg->params[1], values);
 		if (caps == (avail & caps)) {
 			client->caps |= caps;
+			if (caps & CapConsumer && values[CapConsumerBit]) {
+				client->setPos = strtoull(values[CapConsumerBit], NULL, 10);
+			}
 			clientFormat(client, ":%s CAP * ACK :%s\r\n", ORIGIN, msg->params[1]);
 		} else {
 			clientFormat(client, ":%s CAP * NAK :%s\r\n", ORIGIN, msg->params[1]);

@@ -81,6 +81,11 @@ size_t ringConsumer(const char *name) {
 	return consumers.len++;
 }
 
+void ringSet(size_t consumer, size_t pos) {
+	assert(consumer < consumers.len);
+	if (pos <= producer) consumers.ptr[consumer].pos = pos;
+}
+
 size_t ringPos(size_t consumer) {
 	assert(consumer < consumers.len);
 	return consumers.ptr[consumer].pos;
