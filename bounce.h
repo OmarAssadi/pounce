@@ -102,19 +102,20 @@ static const char *CapNames[] = {
 #undef X
 };
 
-static inline enum Cap capParse(const char *list) {
+static inline enum Cap capParse(const char *list, const char *values[CapBits]) {
 	enum Cap caps = 0;
 	while (*list) {
 		enum Cap cap = CapUnsupported;
-		size_t len = strcspn(list, " ");
+		size_t len = strcspn(list, "= ");
 		for (size_t i = 0; i < ARRAY_LEN(CapNames); ++i) {
 			if (len != strlen(CapNames[i])) continue;
 			if (strncmp(list, CapNames[i], len)) continue;
 			cap = 1 << i;
+			if (list[len] == '=' && values) values[i] = &list[len + 1];
 			break;
 		}
 		caps |= cap;
-		list += len;
+		list += strcspn(list, " ");
 		if (*list) list++;
 	}
 	return caps;

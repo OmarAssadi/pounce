@@ -193,7 +193,7 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
-		enum Cap caps = capParse(msg->params[1]);
+		enum Cap caps = capParse(msg->params[1], NULL);
 		if (caps == (avail & caps)) {
 			client->caps |= caps;
 			clientFormat(client, ":%s CAP * ACK :%s\r\n", ORIGIN, msg->params[1]);

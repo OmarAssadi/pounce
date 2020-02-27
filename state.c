@@ -48,7 +48,7 @@ void stateLogin(
 	const char *pass, bool sasl, const char *plain,
 	const char *nick, const char *user, const char *real
 ) {
-	serverFormat("CAP LS\r\n");
+	serverFormat("CAP LS 302\r\n");
 	if (pass) serverFormat("PASS :%s\r\n", pass);
 	if (sasl) {
 		serverFormat("CAP REQ :%s\r\n", capList(CapSASL, NULL));
@@ -72,7 +72,12 @@ void stateLogin(
 
 static void handleCap(struct Message *msg) {
 	require(msg, false, 3);
-	enum Cap caps = capParse(msg->params[2]);
+	enum Cap caps;
+	if (!strcmp(msg->params[2], "*") && msg->params[3]) {
+		caps = capParse(msg->params[3], NULL);
+	} else {
+		caps = capParse(msg->params[2], NULL);
+	}
 
 	if (!strcmp(msg->params[1], "LS") || !strcmp(msg->params[1], "NEW")) {
 		caps &= ~(CapSASL | CapUnsupported);
