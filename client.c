@@ -166,6 +166,7 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
 
 	enum Cap avail = CapServerTime | CapPassive | (stateCaps & ~CapSASL);
+	const char *values[CapBits] = { [CapSASLBit] = "EXTERNAL" };
 	if (clientCA) avail |= CapSASL;
 
 	if (!strcmp(msg->params[0], "END")) {
@@ -175,7 +176,18 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 	} else if (!strcmp(msg->params[0], "LS")) {
 		if (client->need) client->need |= NeedCapEnd;
-		clientFormat(client, ":%s CAP * LS :%s\r\n", ORIGIN, capList(avail));
+		if (msg->params[1] && !strcmp(msg->params[1], "302")) {
+			if (avail & CapCapNotify) client->caps |= CapCapNotify;
+			clientFormat(
+				client, ":%s CAP * LS :%s\r\n",
+				ORIGIN, capList(avail, values)
+			);
+		} else {
+			clientFormat(
+				client, ":%s CAP * LS :%s\r\n",
+				ORIGIN, capList(avail, NULL)
+			);
+		}
 
 	} else if (!strcmp(msg->params[0], "REQ") && msg->params[1]) {
 		if (client->need) client->need |= NeedCapEnd;
@@ -190,7 +202,7 @@ static void handleCap(struct Client *client, struct Message *msg) {
 	} else if (!strcmp(msg->params[0], "LIST")) {
 		clientFormat(
 			client, ":%s CAP * LIST :%s\r\n",
-			ORIGIN, capList(client->caps)
+			ORIGIN, capList(client->caps, NULL)
 		);
 
 	} else {

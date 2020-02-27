@@ -87,7 +87,9 @@ enum Cap {
 #define X(name, id) BIT(id),
 	ENUM_CAP
 #undef X
-	TagCaps = CapAccountTag
+	CapBits,
+	TagCaps = 0
+		| CapAccountTag
 		| CapBatch
 		| CapLabeledResponse
 		| CapMessageTags
@@ -118,13 +120,17 @@ static inline enum Cap capParse(const char *list) {
 	return caps;
 }
 
-static inline const char *capList(enum Cap caps) {
+static inline const char *capList(enum Cap caps, const char *values[CapBits]) {
 	static char buf[1024];
 	buf[0] = '\0';
 	for (size_t i = 0; i < ARRAY_LEN(CapNames); ++i) {
 		if (caps & (1 << i)) {
 			if (buf[0]) strlcat(buf, " ", sizeof(buf));
 			strlcat(buf, CapNames[i], sizeof(buf));
+			if (values && values[i]) {
+				strlcat(buf, "=", sizeof(buf));
+				strlcat(buf, values[i], sizeof(buf));
+			}
 		}
 	}
 	return buf;

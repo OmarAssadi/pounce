@@ -51,7 +51,7 @@ void stateLogin(
 	serverFormat("CAP LS\r\n");
 	if (pass) serverFormat("PASS :%s\r\n", pass);
 	if (sasl) {
-		serverFormat("CAP REQ :%s\r\n", capList(CapSASL));
+		serverFormat("CAP REQ :%s\r\n", capList(CapSASL, NULL));
 		if (plain) {
 			byte buf[AuthLen];
 			size_t len = 1 + strlen(plain);
@@ -76,7 +76,7 @@ static void handleCap(struct Message *msg) {
 
 	if (!strcmp(msg->params[1], "LS") || !strcmp(msg->params[1], "NEW")) {
 		caps &= ~(CapSASL | CapUnsupported);
-		if (caps) serverFormat("CAP REQ :%s\r\n", capList(caps));
+		if (caps) serverFormat("CAP REQ :%s\r\n", capList(caps, NULL));
 
 	} else if (!strcmp(msg->params[1], "ACK")) {
 		stateCaps |= caps;
