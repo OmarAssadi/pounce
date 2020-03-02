@@ -1,14 +1,22 @@
 #!/bin/sh
 set -eu
 
+base='-lcrypt'
+libs='libcrypto libtls'
+
+exec >config.mk
+
 case "$(uname)" in
+	(Darwin)
+		base=''
+		;;
 	(FreeBSD)
 		if ! pkg info -e libressl; then
-			echo 'LibreSSL required'
+			echo 'LibreSSL required' >&2
 			exit 1
 		fi
 		prefix=$(pkg query '%p' libressl)
-		cat >config.mk <<-EOF
+		cat <<-EOF
 		MANDIR = \${PREFIX}/man
 		CFLAGS += -I${prefix}/include
 		CFLAGS += -D'OPENSSL_BIN="${prefix}/bin/openssl"'
@@ -16,28 +24,21 @@ case "$(uname)" in
 		EOF
 		exit
 		;;
-esac
-
-libs='libcrypto libtls'
-pkg-config --print-errors $libs
-
-cat >config.mk <<EOF
-CFLAGS += $(pkg-config --cflags $libs)
-CFLAGS += -D'OPENSSL_BIN="$(pkg-config --variable=prefix openssl)/bin/openssl"'
-LDFLAGS += $(pkg-config --libs-only-L $libs)
-LDLIBS = -lcrypt $(pkg-config --libs-only-l $libs)
-EOF
-
-case "$(uname)" in
-	(Darwin)
-		echo 'LDLIBS := ${LDLIBS:-lcrypt=}' >>config.mk
-		;;
 	(Linux)
-		cat >>config.mk <<-EOF
+		cat <<-EOF
 		CFLAGS += -D_GNU_SOURCE -D'CERTBOT_PATH="/etc/letsencrypt"'
-		LDLIBS_calico = $(pkg-config --libs-only-l libcrypto)
+		LDLIBS_calico = \${LDLIBS}
 		RCS =
 		DIRS =
 		EOF
 		;;
 esac
+
+pkg-config --print-errors $libs
+
+cat <<EOF
+CFLAGS += $(pkg-config --cflags $libs)
+CFLAGS += -D'OPENSSL_BIN="$(pkg-config --variable=prefix openssl)/bin/openssl"'
+LDFLAGS += $(pkg-config --libs-only-L $libs)
+LDLIBS = $base $(pkg-config --libs-only-l $libs)
+EOF
