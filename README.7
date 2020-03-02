@@ -1,4 +1,4 @@
-.Dd January 17, 2020
+.Dd March  1, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -14,24 +14,6 @@ using a multiple-consumer ring buffer
 and the IRCv3.2
 .Sy server-time
 extension to communicate with clients.
-.
-.Pp
-.Nm
-requires LibreSSL
-.Pq Fl ltls
-and targets
-.Fx .
-It can also be built
-on Darwin or GNU/Linux
-by copying the appropriate file to
-.Pa config.mk
-and modifying as needed.
-On
-.Fx ,
-processes are sandboxed with
-.Xr capsicum 4 .
-On other systems,
-who knows what might happen?
 .
 .Sh RATIONALE
 As a former
@@ -57,6 +39,37 @@ by expecting clients to implement the
 extension,
 all events can be accurately replayed,
 rather than being limited to messages.
+.
+.Sh INSTALLING
+.Nm
+requires LibreSSL
+.Pq Fl ltls
+and primarily targets
+.Fx ,
+as well as macOS and Linux.
+On
+.Fx ,
+processes are sandboxed with
+.Xr capsicum 4 .
+On other systems,
+who knows what might happen?
+.
+.Bd -literal -offset indent
+\&./configure
+make all
+sudo make install PREFIX=/usr/local
+.Ed
+.
+.Pp
+If your system installs LibreSSL
+in a non-standard path, set
+.Ev PKG_CONFIG_PATH
+for
+.Nm ./configure .
+For example,
+.Bd -literal -offset indent
+PKG_CONFIG_PATH=/opt/libressl/lib/pkgconfig ./configure
+.Ed
 .
 .Sh FILES
 .Bl -tag -width "dispatch.c" -compact

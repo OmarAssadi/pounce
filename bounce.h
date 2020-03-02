@@ -27,8 +27,8 @@
 #define CERTBOT_PATH "/usr/local/etc/letsencrypt"
 #endif
 
-#ifndef LIBRESSL_BIN_PREFIX
-#define LIBRESSL_BIN_PREFIX
+#ifndef OPENSSL_BIN
+#define OPENSSL_BIN "openssl"
 #endif
 
 #define SOURCE_URL "https://git.causal.agency/pounce"
