@@ -26,7 +26,8 @@ case "$(uname)" in
 		;;
 	(Linux)
 		cat <<-EOF
-		CFLAGS += -D_GNU_SOURCE -D'CERTBOT_PATH="/etc/letsencrypt"'
+		CFLAGS += -D_GNU_SOURCE
+		CFLAGS += -D'CERTBOT_PATH="/etc/letsencrypt"'
 		LDLIBS_calico = \${LDLIBS}
 		RCS =
 		DIRS =
