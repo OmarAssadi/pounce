@@ -397,6 +397,11 @@ void stateSync(struct Client *client) {
 		clientFormat(client, " :are supported by this server\r\n");
 	}
 
+	clientFormat(
+		client, ":%s 422 %s :MOTD File is missing\r\n",
+		ORIGIN, self.nick
+	);
+
 	if (chans.len) assert(self.origin);
 	for (size_t i = 0; i < chans.len; ++i) {
 		const struct Channel *chan = &chans.ptr[i];
