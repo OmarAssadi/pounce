@@ -484,6 +484,11 @@ int main(int argc, char *argv[]) {
 			if (!event.clients[i]) {
 				int fd;
 				struct tls *tls = localAccept(&fd, event.fds[i].fd);
+				if (!tls) {
+					warn("accept");
+					continue;
+				}
+
 				int error = tls_handshake(tls);
 				if (error) {
 					warnx("tls_handshake: %s", tls_error(tls));

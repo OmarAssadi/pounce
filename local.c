@@ -205,7 +205,7 @@ static int recvfd(int sock) {
 
 struct tls *localAccept(int *fd, int bind) {
 	*fd = accept(bind, NULL, NULL);
-	if (*fd < 0) err(EX_IOERR, "accept");
+	if (*fd < 0) return NULL;
 
 	if (unix) {
 		int sent = recvfd(*fd);
