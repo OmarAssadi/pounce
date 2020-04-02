@@ -272,50 +272,55 @@ int main(int argc, char *argv[]) {
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
-	const char *Opts = "!A:C:H:K:NP:S:TU:W:a:c:ef:g:h:j:k:n:p:q:r:s:u:vw:xy:";
-	const struct option LongOpts[] = {
-		{ "insecure", no_argument, NULL, '!' },
-		{ "local-ca", required_argument, NULL, 'A' },
-		{ "local-cert", required_argument, NULL, 'C' },
-		{ "local-host", required_argument, NULL, 'H' },
-		{ "local-priv", required_argument, NULL, 'K' },
-		{ "no-names", no_argument, NULL, 'N' },
-		{ "local-port", required_argument, NULL, 'P' },
-		{ "bind", required_argument, NULL, 'S' },
-		{ "no-sts", no_argument, NULL, 'T' },
-		{ "local-path", required_argument, NULL, 'U' },
-		{ "local-pass", required_argument, NULL, 'W' },
-		{ "sasl-plain", required_argument, NULL, 'a' },
-		{ "client-cert", required_argument, NULL, 'c' },
-		{ "sasl-external", no_argument, NULL, 'e' },
-		{ "save", required_argument, NULL, 'f' },
-		{ "host", required_argument, NULL, 'h' },
-		{ "join", required_argument, NULL, 'j' },
-		{ "client-priv", required_argument, NULL, 'k' },
-		{ "nick", required_argument, NULL, 'n' },
-		{ "port", required_argument, NULL, 'p' },
-		{ "quit", required_argument, NULL, 'q' },
-		{ "real", required_argument, NULL, 'r' },
-		{ "size", required_argument, NULL, 's' },
-		{ "user", required_argument, NULL, 'u' },
-		{ "verbose", no_argument, NULL, 'v' },
-		{ "pass", required_argument, NULL, 'w' },
-		{ "away", required_argument, NULL, 'y' },
+	struct option options[] = {
+		{ .val = '!', .name = "insecure", no_argument },
+		{ .val = 'A', .name = "local-ca", required_argument },
+		{ .val = 'C', .name = "local-cert", required_argument },
+		{ .val = 'H', .name = "local-host", required_argument },
+		{ .val = 'K', .name = "local-priv", required_argument },
+		{ .val = 'N', .name = "no-names", no_argument },
+		{ .val = 'P', .name = "local-port", required_argument },
+		{ .val = 'S', .name = "bind", required_argument },
+		{ .val = 'T', .name = "no-sts", no_argument },
+		{ .val = 'U', .name = "local-path", required_argument },
+		{ .val = 'W', .name = "local-pass", required_argument },
+		{ .val = 'a', .name = "sasl-plain", required_argument },
+		{ .val = 'c', .name = "client-cert", required_argument },
+		{ .val = 'e', .name = "sasl-external", no_argument },
+		{ .val = 'f', .name = "save", required_argument },
+		{ .val = 'g', .name = "generate", required_argument },
+		{ .val = 'h', .name = "host", required_argument },
+		{ .val = 'j', .name = "join", required_argument },
+		{ .val = 'k', .name = "client-priv", required_argument },
+		{ .val = 'n', .name = "nick", required_argument },
+		{ .val = 'p', .name = "port", required_argument },
+		{ .val = 'q', .name = "quit", required_argument },
+		{ .val = 'r', .name = "real", required_argument },
+		{ .val = 's', .name = "size", required_argument },
+		{ .val = 'u', .name = "user", required_argument },
+		{ .val = 'v', .name = "verbose", no_argument },
+		{ .val = 'w', .name = "pass", required_argument },
+		{ .val = 'x', .name = "hash", no_argument },
+		{ .val = 'y', .name = "away", required_argument },
 
-		// Deprecated:
-		{ "client-ca", required_argument, NULL, 'A' },
-		{ "cert", required_argument, NULL, 'C' },
-		{ "bind-host", required_argument, NULL, 'H' },
-		{ "priv", required_argument, NULL, 'K' },
-		{ "bind-port", required_argument, NULL, 'P' },
-		{ "bind-path", required_argument, NULL, 'U' },
-		{ "client-pass", required_argument, NULL, 'W' },
+		// Deprecated names:
+		{ .val = 'A', .name = "client-ca", required_argument },
+		{ .val = 'C', .name = "cert", required_argument },
+		{ .val = 'H', .name = "bind-host", required_argument },
+		{ .val = 'K', .name = "priv", required_argument },
+		{ .val = 'P', .name = "bind-port", required_argument },
+		{ .val = 'U', .name = "bind-path", required_argument },
+		{ .val = 'W', .name = "client-pass", required_argument },
 
 		{0},
 	};
+	char opts[2 * ARRAY_LEN(options)];
+	for (size_t i = 0, j = 0; i < ARRAY_LEN(options); ++i) {
+		opts[j++] = options[i].val;
+		if (options[i].has_arg) opts[j++] = ':';
+	}
 
-	int opt;
-	while (0 < (opt = getopt_config(argc, argv, Opts, LongOpts, NULL))) {
+	for (int opt; 0 < (opt = getopt_config(argc, argv, opts, options, NULL));) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'A': clientCA = true; caPath = optarg;
