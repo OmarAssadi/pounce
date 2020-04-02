@@ -252,7 +252,10 @@ int main(int argc, char *argv[]) {
 
 			if (i < binds) {
 				int sock = accept(event.ptr[i].fd, NULL, NULL);
-				if (sock < 0) err(EX_IOERR, "accept");
+				if (sock < 0) {
+					warn("accept");
+					continue;
+				}
 
 				int yes = 1;
 				error = setsockopt(
