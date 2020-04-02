@@ -151,8 +151,7 @@ int main(int argc, char *argv[]) {
 	const char *path = NULL;
 	int timeout = 1000;
 
-	int opt;
-	while (0 < (opt = getopt(argc, argv, "H:P:t:"))) {
+	for (int opt; 0 < (opt = getopt(argc, argv, "H:P:t:"));) {
 		switch (opt) {
 			break; case 'H': host = optarg;
 			break; case 'P': port = optarg;
