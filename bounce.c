@@ -31,6 +31,7 @@
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sysexits.h>
 #include <tls.h>
 #include <unistd.h>
@@ -109,6 +110,16 @@ static size_t parseSize(const char *str) {
 	size_t size = strtoull(str, &rest, 0);
 	if (*rest) errx(EX_USAGE, "invalid size: %s", str);
 	return size;
+}
+
+static struct timeval parseInterval(const char *str) {
+	char *rest;
+	long ms = strtol(str, &rest, 0);
+	if (*rest) errx(EX_USAGE, "invalid interval: %s", str);
+	return (struct timeval) {
+		.tv_sec = ms / 1000,
+		.tv_usec = 1000 * (ms % 1000),
+	};
 }
 
 static FILE *saveFile;
@@ -280,6 +291,7 @@ int main(int argc, char *argv[]) {
 		{ .val = 'K', .name = "local-priv", required_argument },
 		{ .val = 'N', .name = "no-names", no_argument },
 		{ .val = 'P', .name = "local-port", required_argument },
+		{ .val = 'Q', .name = "queue-interval", required_argument },
 		{ .val = 'S', .name = "bind", required_argument },
 		{ .val = 'T', .name = "no-sts", no_argument },
 		{ .val = 'U', .name = "local-path", required_argument },
@@ -329,6 +341,7 @@ int main(int argc, char *argv[]) {
 			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
+			break; case 'Q': serverQueueInterval = parseInterval(optarg);
 			break; case 'S': serverBindHost = optarg;
 			break; case 'T': clientSTS = false;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
@@ -447,6 +460,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
 	signal(SIGPIPE, SIG_IGN);
+	signal(SIGALRM, signalHandler);
 	signal(SIGINFO, signalHandler);
 	signal(SIGUSR1, signalHandler);
 
@@ -509,18 +523,23 @@ int main(int argc, char *argv[]) {
 
 		if (signals[SIGINT] || signals[SIGTERM]) break;
 
+		if (signals[SIGALRM]) {
+			signals[SIGALRM] = 0;
+			serverDequeue();
+		}
+
 		if (signals[SIGINFO]) {
-			ringInfo();
 			signals[SIGINFO] = 0;
+			ringInfo();
 		}
 
 		if (signals[SIGUSR1]) {
+			signals[SIGUSR1] = 0;
 			cert = splitOpen(certSplit);
 			priv = splitOpen(privSplit);
 			localConfig(cert, priv, localCA, !clientPass);
 			fclose(cert);
 			fclose(priv);
-			signals[SIGUSR1] = 0;
 		}
 	}
 

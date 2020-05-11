@@ -413,6 +413,6 @@ void stateSync(struct Client *client) {
 			);
 		}
 		if (stateNoNames) continue;
-		serverFormat("NAMES %s\r\n", chan->name);
+		serverEnqueue("NAMES %s\r\n", chan->name);
 	}
 }

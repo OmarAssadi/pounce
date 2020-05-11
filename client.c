@@ -69,7 +69,7 @@ struct Client *clientAlloc(struct tls *tls) {
 void clientFree(struct Client *client) {
 	if (!client->need) {
 		if (!(client->caps & CapPassive) && !--active) {
-			serverFormat("AWAY :%s\r\n", clientAway);
+			serverEnqueue("AWAY :%s\r\n", clientAway);
 		}
 	}
 	tls_close(client->tls);
@@ -122,7 +122,7 @@ static void maybeSync(struct Client *client) {
 		stateSync(client);
 		if (client->setPos) ringSet(client->consumer, client->setPos);
 		if (!(client->caps & CapPassive) && !active++) {
-			serverFormat("AWAY\r\n");
+			serverEnqueue("AWAY\r\n");
 		}
 	}
 }

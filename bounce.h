@@ -159,12 +159,16 @@ size_t localBind(int fds[], size_t cap, const char *host, const char *port);
 size_t localUnix(int fds[], size_t cap, const char *path);
 struct tls *localAccept(int *fd, int bind);
 
+extern struct timeval serverQueueInterval;
 void serverConfig(bool insecure, const char *cert, const char *priv);
 int serverConnect(const char *bindHost, const char *host, const char *port);
 void serverRecv(void);
 void serverSend(const char *ptr, size_t len);
 void serverFormat(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
+void serverEnqueue(const char *format, ...)
+	__attribute__((format(printf, 1, 2)));
+void serverDequeue(void);
 
 extern bool clientCA;
 extern bool clientSTS;

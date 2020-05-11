@@ -148,6 +148,46 @@ void serverFormat(const char *format, ...) {
 	serverSend(buf, len);
 }
 
+enum { QueueCap = 256 };
+static struct {
+	size_t enq;
+	size_t deq;
+	char *msgs[QueueCap];
+} queue;
+
+void serverDequeue(void) {
+	if (queue.enq - queue.deq) {
+		char *msg = queue.msgs[queue.deq++ % QueueCap];
+		serverSend(msg, strlen(msg));
+		free(msg);
+	} else {
+		struct itimerval timer = { .it_value = {0} };
+		int error = setitimer(ITIMER_REAL, &timer, NULL);
+		if (error) err(EX_OSERR, "setitimer");
+	}
+}
+
+struct timeval serverQueueInterval = { .tv_usec = 1000 * 200 };
+
+void serverEnqueue(const char *format, ...) {
+	if (queue.enq - queue.deq == QueueCap) {
+		warnx("server send queue full");
+		serverDequeue();
+	} else if (queue.enq == queue.deq) {
+		struct itimerval timer = {
+			.it_interval = serverQueueInterval,
+			.it_value = { .tv_usec = 1 },
+		};
+		int error = setitimer(ITIMER_REAL, &timer, NULL);
+		if (error) err(EX_OSERR, "setitimer");
+	}
+	va_list ap;
+	va_start(ap, format);
+	int len = vasprintf(&queue.msgs[queue.enq++ % QueueCap], format, ap);
+	va_end(ap);
+	if (len < 0) err(EX_OSERR, "vasprintf");
+}
+
 void serverRecv(void) {
 	static char buf[MessageCap];
 	static size_t len;

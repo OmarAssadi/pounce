@@ -1,4 +1,4 @@
-.Dd February 27, 2020
+.Dd May 11, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -14,6 +14,7 @@
 .Op Fl H Ar host
 .Op Fl K Ar priv
 .Op Fl P Ar port
+.Op Fl Q Ar time
 .Op Fl S Ar bind
 .Op Fl U Ar unix
 .Op Fl W Ar pass
@@ -121,6 +122,15 @@ but prevents new clients from populating user lists.
 Bind to
 .Ar port .
 The default port is 6697.
+.
+.It Fl Q Ar ms , Cm queue-interval = Ar ms
+Set the server send queue interval in milliseconds.
+The queue is only used
+for automated messages sent by
+.Nm .
+Messages from clients
+are sent to the server immediately.
+The default interval is 200 milliseconds.
 .
 .It Fl S Ar host , Cm bind = Ar host
 Bind to source address
