@@ -451,7 +451,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGUSR1, signalHandler);
 
 	for (size_t i = 0; i < binds; ++i) {
-		int error = listen(bind[i], 1);
+		int error = listen(bind[i], -1);
 		if (error) err(EX_IOERR, "listen");
 		eventAdd(bind[i], NULL);
 	}

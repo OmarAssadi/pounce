@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	for (size_t i = 0; i < binds; ++i) {
-		error = listen(event.ptr[i].fd, 1);
+		error = listen(event.ptr[i].fd, -1);
 		if (error) err(EX_IOERR, "listen");
 	}
 
