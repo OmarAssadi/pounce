@@ -458,26 +458,19 @@ int main(int argc, char *argv[]) {
 	eventAdd(server, NULL);
 
 	for (;;) {
+		for (size_t i = binds + 1; i < event.len; ++i) {
+			assert(event.clients[i]);
+			if (clientDiff(event.clients[i])) {
+				event.fds[i].events |= POLLOUT;
+			} else {
+				event.fds[i].events &= ~POLLOUT;
+			}
+		}
+
 		int nfds = poll(event.fds, event.len, -1);
 		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
-		if (signals[SIGINT] || signals[SIGTERM]) break;
 
-		if (signals[SIGINFO]) {
-			ringInfo();
-			signals[SIGINFO] = 0;
-		}
-
-		if (signals[SIGUSR1]) {
-			cert = splitOpen(certSplit);
-			priv = splitOpen(privSplit);
-			localConfig(cert, priv, localCA, !clientPass);
-			fclose(cert);
-			fclose(priv);
-			signals[SIGUSR1] = 0;
-		}
-
-		if (nfds < 0) continue;
-		for (size_t i = event.len - 1; i < event.len; --i) {
+		for (size_t i = event.len - 1; nfds > 0 && i < event.len; --i) {
 			short revents = event.fds[i].revents;
 			if (!revents) continue;
 
@@ -514,13 +507,20 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		for (size_t i = binds + 1; i < event.len; ++i) {
-			assert(event.clients[i]);
-			if (clientDiff(event.clients[i])) {
-				event.fds[i].events |= POLLOUT;
-			} else {
-				event.fds[i].events &= ~POLLOUT;
-			}
+		if (signals[SIGINT] || signals[SIGTERM]) break;
+
+		if (signals[SIGINFO]) {
+			ringInfo();
+			signals[SIGINFO] = 0;
+		}
+
+		if (signals[SIGUSR1]) {
+			cert = splitOpen(certSplit);
+			priv = splitOpen(privSplit);
+			localConfig(cert, priv, localCA, !clientPass);
+			fclose(cert);
+			fclose(priv);
+			signals[SIGUSR1] = 0;
 		}
 	}
 
