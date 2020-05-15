@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -216,6 +217,13 @@ struct tls *localAccept(int *fd, int bind) {
 
 	int yes = 1;
 	int error = setsockopt(*fd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
+	if (error) err(EX_OSERR, "setsockopt");
+
+	error = setsockopt(*fd, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+	if (error) err(EX_OSERR, "setsockopt");
+
+	int idle = 15 * 60;
+	error = setsockopt(*fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
 	if (error) err(EX_OSERR, "setsockopt");
 
 	struct tls *client;

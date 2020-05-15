@@ -35,3 +35,7 @@ uint32_t arc4random_uniform(uint32_t upper_bound);
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
+
+#ifdef __APPLE__
+#define TCP_KEEPIDLE TCP_KEEPALIVE
+#endif
