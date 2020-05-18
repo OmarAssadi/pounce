@@ -215,11 +215,8 @@ struct tls *localAccept(int *fd, int bind) {
 		*fd = sent;
 	}
 
-	int yes = 1;
-	int error = setsockopt(*fd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
-	if (error) err(EX_OSERR, "setsockopt");
-
-	error = setsockopt(*fd, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+	int on = 1;
+	int error = setsockopt(*fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
 	if (error) err(EX_OSERR, "setsockopt");
 
 	int idle = 15 * 60;

@@ -114,10 +114,6 @@ int serverConnect(const char *bindHost, const char *host, const char *port) {
 	if (sock < 0) err(EX_UNAVAILABLE, "%s:%s", host, port);
 	freeaddrinfo(head);
 
-	int yes = 1;
-	error = setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
-	if (error) err(EX_OSERR, "setsockopt");
-
 	error = tls_connect_socket(client, sock, host);
 	if (error) errx(EX_PROTOCOL, "tls_connect: %s", tls_error(client));
 

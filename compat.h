@@ -27,11 +27,6 @@ uint32_t arc4random(void);
 void arc4random_buf(void *buf, size_t nbytes);
 uint32_t arc4random_uniform(uint32_t upper_bound);
 
-// The default value of SO_RCVLOWAT is 1 anyway...
-#ifndef SO_NOSIGPIPE
-#define SO_NOSIGPIPE SO_RCVLOWAT
-#endif
-
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif

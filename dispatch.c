@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
 
 	cap_rights_t dirRights, sockRights, unixRights, bindRights;
 	cap_rights_init(&dirRights, CAP_CONNECTAT);
-	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
+	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND);
 	cap_rights_init(&unixRights, CAP_CONNECT, CAP_SEND);
 	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
 	cap_rights_merge(&bindRights, &sockRights);
@@ -255,13 +255,6 @@ int main(int argc, char *argv[]) {
 					warn("accept");
 					continue;
 				}
-
-				int yes = 1;
-				error = setsockopt(
-					sock, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes)
-				);
-				if (error) err(EX_OSERR, "setsockopt");
-
 				eventAdd(sock);
 				continue;
 			}
