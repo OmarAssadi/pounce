@@ -1,10 +1,9 @@
+*.1.gz
 *.conf
 *.o
-/calico
-/pounce
+calico
 config.mk
 localhost.crt
 localhost.key
-rc.d/calico
-rc.d/pounce
+pounce
 tags

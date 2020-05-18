@@ -1,4 +1,4 @@
-.Dd May 18, 2020
+.Dd May 19, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -46,29 +46,28 @@ requires LibreSSL
 .Pq Fl ltls
 and primarily targets
 .Fx ,
-as well as macOS and Linux.
-On
-.Fx ,
-processes are sandboxed with
+where it is sandboxed with
 .Xr capsicum 4 .
-On other systems,
-who knows what might happen?
-.
 .Bd -literal -offset indent
-\&./configure
 make all
 sudo make install PREFIX=/usr/local
 .Ed
 .
 .Pp
-If your system installs LibreSSL
-in a non-standard path, set
+On other systems,
+such as macOS and Linux,
+the build is configured using
+.Xr pkg-config 1 .
+If LibreSSL is installed
+in a non-standard prefix,
+set
 .Ev PKG_CONFIG_PATH
-for
-.Nm ./configure .
-For example,
+appropriately.
+For example:
 .Bd -literal -offset indent
 PKG_CONFIG_PATH=/opt/libressl/lib/pkgconfig ./configure
+make all
+sudo make install PREFIX=/usr/local
 .Ed
 .
 .Sh FILES
@@ -93,7 +92,7 @@ configuration parsing
 .It Pa dispatch.c
 SNI socket dispatch
 .It Pa compat.h
-compatibility with lesser operating systems
+compatibility with other systems
 .It Pa rc.d/
 .Fx
 .Xr rc 8

@@ -1,15 +1,19 @@
-PREFIX = /usr/local
-MANDIR = ${PREFIX}/share/man
-ETCDIR = ${PREFIX}/etc
-RUNDIR = /var/run
+PREFIX ?= /usr/local
+MANDIR ?= ${PREFIX}/share/man
+ETCDIR ?= ${PREFIX}/etc
+RUNDIR ?= /var/run
+
+CFLAGS += -I${PREFIX}/include
+LDFLAGS += -L${PREFIX}/lib
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
-LDLIBS = -lcrypt -lcrypto -ltls
+LDLIBS = -lcrypt -ltls
 
 BINS = calico pounce
-MANS = ${BINS:=.1}
+MANS = ${BINS:=.1.gz}
 RCS  = ${BINS:%=rc.d/%}
 DIRS = ${ETCDIR}/pounce ${RUNDIR}/calico
+INSTALLS = install-rcs install-dirs
 
 -include config.mk
 
@@ -35,7 +39,10 @@ ${OBJS}: bounce.h compat.h
 
 dispatch.o: compat.h
 
-.SUFFIXES: .in
+.SUFFIXES: .1 .1.gz .in
+
+.1.1.gz:
+	gzip -cn $< > $@
 
 .in:
 	sed -e 's|%%PREFIX%%|${PREFIX}|g' $< > $@
@@ -44,21 +51,24 @@ tags: *.c *.h
 	ctags -w *.c *.h
 
 clean:
-	rm -f tags ${BINS} ${RCS} ${OBJS} dispatch.o
+	rm -f tags ${BINS} ${MANS} ${RCS} ${OBJS} dispatch.o
 
-install: ${BINS} ${MANS} ${RCS}
-	install -d ${PREFIX}/bin ${MANDIR}/man1
-	install ${BINS} ${PREFIX}/bin
-	install -m 644 ${MANS} ${MANDIR}/man1
-	if [ -n '${RCS}' ]; then install -d ${ETCDIR}/rc.d; fi
-	if [ -n '${RCS}' ]; then install ${RCS} ${ETCDIR}/rc.d; fi
-	if [ -n '${DIRS}' ]; then install -d ${DIRS}; fi
+install: ${BINS} ${MANS} ${INSTALLS}
+	install -d ${DESTDIR}${PREFIX}/bin ${DESTDIR}${MANDIR}/man1
+	install ${BINS} ${DESTDIR}${PREFIX}/bin
+	install -m 644 ${MANS} ${DESTDIR}${MANDIR}/man1
+
+install-rcs: ${RCS}
+	install -d ${DESTDIR}${ETCDIR}/rc.d
+	install ${RCS} ${DESTDIR}${ETCDIR}/rc.d
+
+install-dirs:
+	install -d ${DIRS:%=${DESTDIR}%}
 
 uninstall:
-	rm -f ${BINS:%=${PREFIX}/bin/%}
-	rm -f ${MANS:%=${MANDIR}/man1/%}
-	if [ -n '${RCS}' ]; then rm -f ${RCS:%=${ETCDIR}/%}; fi
-	if [ -n '${DIRS}' ]; then rmdir ${DIRS}; fi
+	rm -f ${BINS:%=${DESTDIR}${PREFIX}/bin/%}
+	rm -f ${MANS:%=${DESTDIR}${MANDIR}/man1/%}
+	rm -f ${RCS:%=${DESTDIR}${ETCDIR}/%}
 
 localhost.crt:
 	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \
