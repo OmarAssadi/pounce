@@ -1,6 +1,7 @@
 PREFIX = /usr/local
 MANDIR = ${PREFIX}/share/man
 ETCDIR = ${PREFIX}/etc
+RUNDIR = /var/run
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
 LDLIBS = -lcrypt -lcrypto -ltls
@@ -8,7 +9,7 @@ LDLIBS = -lcrypt -lcrypto -ltls
 BINS = calico pounce
 MANS = ${BINS:=.1}
 RCS  = ${BINS:%=rc.d/%}
-DIRS = ${ETCDIR}/pounce /var/run/calico
+DIRS = ${ETCDIR}/pounce ${RUNDIR}/calico
 
 -include config.mk
 
