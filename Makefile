@@ -34,11 +34,16 @@ ${OBJS}: bounce.h compat.h
 
 dispatch.o: compat.h
 
+.SUFFIXES: .in
+
+.in:
+	sed -e 's|%%PREFIX%%|${PREFIX}|g' $< > $@
+
 tags: *.c *.h
 	ctags -w *.c *.h
 
 clean:
-	rm -f tags ${BINS} ${OBJS} dispatch.o
+	rm -f tags ${BINS} ${RCS} ${OBJS} dispatch.o
 
 install: ${BINS} ${MANS} ${RCS}
 	install -d ${PREFIX}/bin ${MANDIR}/man1

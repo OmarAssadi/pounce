@@ -16,7 +16,7 @@ load_rc_config "${name}"
 calico_flags="${calico_flags} ${calico_path}"
 
 command='/usr/sbin/daemon'
-procname='/usr/local/bin/calico'
+procname='%%PREFIX%%/bin/calico'
 pidfile="/var/run/${name}.pid"
 required_dirs=$calico_path
 

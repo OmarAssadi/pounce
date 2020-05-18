@@ -14,14 +14,14 @@ sig_reload='USR1'
 load_rc_config "${name}"
 
 : ${pounce_enable:='NO'}
-: ${pounce_chdir:="/usr/local/etc/${name}"}
+: ${pounce_chdir:="%%PREFIX%%/etc/${name}"}
 
 command='/usr/sbin/daemon'
 pidprefix="/var/run/${name}"
 pidfile="${pidprefix}.pid"
 required_dirs=$pounce_chdir
 
-child_command='/usr/local/bin/pounce'
+child_command='%%PREFIX%%/bin/pounce'
 child_pidfile="${pidprefix}.child.pid"
 
 if [ -n "$2" ]; then
@@ -40,7 +40,7 @@ else
 	if [ -n "${pounce_profiles}" -a -n "$1" ]; then
 		for profile in ${pounce_profiles}; do
 			echo "===> ${name} profile: ${profile}"
-			/usr/local/etc/rc.d/${name} "$1" "${profile}" || exit "$?"
+			%%PREFIX%%/etc/rc.d/${name} "$1" "${profile}" || exit "$?"
 		done
 		exit
 	fi
