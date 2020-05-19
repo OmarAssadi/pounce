@@ -10,7 +10,7 @@ CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
 LDLIBS = -lcrypt -ltls
 
 BINS = calico pounce
-MANS = ${BINS:=.1.gz}
+MANS = ${BINS:=.1}
 RCS  = ${BINS:%=rc.d/%}
 DIRS = ${ETCDIR}/pounce ${RUNDIR}/calico
 INSTALLS = install-rcs install-dirs
@@ -39,10 +39,7 @@ ${OBJS}: bounce.h compat.h
 
 dispatch.o: compat.h
 
-.SUFFIXES: .1 .1.gz .in
-
-.1.1.gz:
-	gzip -cn $< > $@
+.SUFFIXES: .in
 
 .in:
 	sed -e 's|%%PREFIX%%|${PREFIX}|g' $< > $@
@@ -51,7 +48,7 @@ tags: *.c *.h
 	ctags -w *.c *.h
 
 clean:
-	rm -f tags ${BINS} ${MANS} ${RCS} ${OBJS} dispatch.o
+	rm -f tags ${BINS} ${RCS} ${OBJS} dispatch.o
 
 install: ${BINS} ${MANS} ${INSTALLS}
 	install -d ${DESTDIR}${PREFIX}/bin ${DESTDIR}${MANDIR}/man1
