@@ -1,4 +1,4 @@
-.Dd May 18, 2020
+.Dd May 19, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -49,11 +49,39 @@ is a multi-client, TLS-only IRC bouncer.
 It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
 receiving messages that were missed upon reconnection.
-Clients should use the IRCv3.2
+The IRCv3.2
 .Sy server-time
-extension
-to know when missed messages were received
-and uniquely identify themselves by username.
+extension is used to indicate
+when messages were originally received.
+.
+.Pp
+One instance of
+.Nm
+must be configured for each IRC network.
+Instances of
+.Nm
+must either use different local ports with
+.Fl P
+or different local hosts with
+.Fl H
+and
+.Fl U
+to be dispatched from the same port by
+.Xr calico 1 .
+.
+.Pp
+TLS certificates can be automatically loaded from
+.Pa /usr/local/etc/letsencrypt
+(or equivalent)
+based on the local host set by
+.Fl H .
+These certificates can be obtained using
+.Xr certbot 8 .
+.
+.Pp
+Clients must uniquely identify themselves to
+.Nm
+by their IRC username.
 See
 .Sx Client Configuration
 for details.
@@ -82,7 +110,7 @@ See
 If
 .Fl W
 is also set,
-clients may instead connect
+clients may instead authenticate
 with a server password.
 .
 .It Fl C Ar path , Cm local-cert = Ar path
@@ -145,7 +173,7 @@ to clients.
 .It Fl U Ar path , Cm local-path = Ar path
 Bind to a UNIX-domain socket at
 .Ar path .
-Clients are accepted as sent by
+Clients are only accepted as dispatched by
 .Xr calico 1 .
 If
 .Ar path
@@ -171,7 +199,7 @@ string must be hashed using
 If
 .Fl A
 is also set,
-clients may instead connect
+clients may instead authenticate
 using a TLS client certificate.
 .
 .It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
@@ -202,7 +230,7 @@ Authenticate using SASL EXTERNAL,
 also known as CertFP.
 The TLS client certificate is loaded with
 .Fl c .
-For more information, see
+See
 .Sx Configuring CertFP .
 .
 .It Fl f Ar path , Cm save = Ar path
@@ -270,10 +298,24 @@ The default username is the same as the nickname.
 .
 .It Fl v , Cm verbose
 Write IRC messages to standard error
-in red to the server,
-green from the server,
-yellow from clients
-and blue to clients.
+in the following colors:
+.Pp
+.Bl -tag -width Ds -compact
+.It red
+from
+.Nm
+to the server
+.It green
+from the server to
+.Nm
+.It yellow
+from clients to
+.Nm
+.It blue
+from
+.Nm
+to clients
+.El
 .
 .It Fl w Ar pass , Cm pass = Ar pass
 Log in with the server password
@@ -330,7 +372,7 @@ If both are used,
 clients may authenticate with either method.
 .
 .Pp
-Clients should register with unique usernames,
+Clients must register with unique usernames,
 for example the name of the client software
 or location from which it is connecting.
 New clients with the same username
@@ -347,7 +389,7 @@ capability
 or with usernames beginning with hyphen
 .Ql -
 are considered passive
-and do not affect away status.
+and do not affect automatic away status.
 .
 .Pp
 Pass-through of the following IRCv3 capabilities
@@ -501,13 +543,15 @@ The default nickname.
 .El
 .
 .Sh EXAMPLES
-Configuration on the command line:
+Obtain a certificate and start
+.Nm :
 .Bd -literal -offset indent
+certbot certonly -d pounce.example.org
 pounce -H pounce.example.org -h chat.freenode.net -j '#ascii.town'
 .Ed
 .
 .Pp
-Configuration in a file:
+Equivalent configuration file:
 .Bd -literal -offset indent
 local-host = pounce.example.org
 host = chat.freenode.net
@@ -518,11 +562,37 @@ join = #ascii.town
 .Xr calico 1
 .
 .Sh STANDARDS
-The
-.Nm
-daemon implements the following:
-.
 .Bl -item
+.It
+.Rs
+.%R RFC 2812
+.%A C. Kalt
+.%T Internet Relay Chat: Client Protocol
+.%I IETF
+.%D April 2000
+.%U https://tools.ietf.org/html/rfc2812
+.Re
+.
+.It
+.Rs
+.%R RFC 4616
+.%A K. Zeilenga, Ed.
+.%T The PLAIN Simple Authentication and Security Layer (SASL) Mechanism
+.%I IETF
+.%D August 2006
+.%U https://tools.ietf.org/html/rfc4616
+.Re
+.
+.It
+.Rs
+.%A S. Josefsson
+.%T The Base16, Base32, and Base64 Data Encodings
+.%I IETF
+.%R RFC 4648
+.%D October 2006
+.%U https://tools.ietf.org/html/rfc4648
+.Re
+.
 .It
 .Rs
 .%A Attila Molnar
@@ -531,6 +601,7 @@ daemon implements the following:
 .%I IRCv3 Working Group
 .%U https://ircv3.net/specs/extensions/sts
 .Re
+.
 .It
 .Rs
 .%A Attila Molnar
@@ -539,24 +610,7 @@ daemon implements the following:
 .%I IRCv3 Working Group
 .%U https://ircv3.net/specs/extensions/sasl-3.2
 .Re
-.It
-.Rs
-.%A C. Kalt
-.%T Internet Relay Chat: Client Protocol
-.%I IETF
-.%N RFC 2812
-.%D April 2000
-.%U https://tools.ietf.org/html/rfc2812
-.Re
-.It
-.Rs
-.%A K. Zeilenga, Ed.
-.%T The PLAIN Simple Authentication and Security Layer (SASL) Mechanism
-.%I IETF
-.%N RFC 4616
-.%D August 2006
-.%U https://tools.ietf.org/html/rfc4616
-.Re
+.
 .It
 .Rs
 .%A Kevin L. Mitchell
@@ -570,15 +624,7 @@ daemon implements the following:
 .%I IRCv3 Working Group
 .%U https://ircv3.net/specs/core/capability-negotiation
 .Re
-.It
-.Rs
-.%A S. Josefsson
-.%T The Base16, Base32, and Base64 Data Encodings
-.%I IETF
-.%N RFC 4648
-.%D October 2006
-.%U https://tools.ietf.org/html/rfc4648
-.Re
+.
 .It
 .Rs
 .%A St\('ephan Kochen
@@ -646,16 +692,12 @@ should not affect the automatic away status.
 .
 .Sh CAVEATS
 One instance of
-.Nm ,
-and therefore one local port,
-is required for each server connection.
-Alternatively,
-the
-.Xr calico 1
-daemon can be used to dispatch from one local port
-to many instances of
 .Nm
-using Server Name Indication.
+is required for each server connection.
+The
+.Nm
+daemon must be restarted
+if the server connection is lost.
 .
 .Pp
 The

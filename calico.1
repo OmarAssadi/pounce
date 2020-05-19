@@ -1,4 +1,4 @@
-.Dd May 18, 2020
+.Dd May 19, 2020
 .Dt CALICO 1
 .Os
 .
@@ -26,9 +26,17 @@ Instances of
 should be configured with
 .Fl U
 to bind to UNIX-domain sockets
-named by the host they wish to accept connections for
 in the directory passed to
 .Nm .
+.
+.Pp
+Note that
+.Nm
+is not a proxy.
+Incoming connections are passed directly
+to instances of
+.Xr pounce 1 ,
+which handle TLS negotiation.
 .
 .Pp
 The arguments are as follows:
@@ -82,44 +90,50 @@ The
 and
 .Xr pounce 1
 services can be started and stopped
-completely independently of each other.
+independently of each other.
 .
 .Sh EXAMPLES
+Obtain certificates for
+and dispatch to two instances of
+.Xr pounce 1 :
 .Bd -literal -offset indent
-pounce -U sockets/foo.example.org foo.conf
-pounce -U sockets/bar.example.org bar.conf
-calico -H example.org sockets/
+certbot certonly -d oftc.example.org
+certbot certonly -d freenode.example.org
+pounce -U /var/run/calico -H oftc.example.org oftc.conf
+pounce -U /var/run/calico -H freenode.example.org freenode.conf
+calico -H example.org /var/run/calico
 .Ed
+.Pp
+The two instances can be connected to via
+.Li oftc.example.org:6697
+and
+.Li freenode.example.org:6697 ,
+respectively.
 .
 .Sh SEE ALSO
 .Xr pounce 1
 .
 .Sh STANDARDS
-The
-.Nm
-daemon implements the following:
-.
 .Bl -item
 .It
 .Rs
-.%A E. Rescorla
-.%Q Mozilla
-.%T The Transport Layer Security (TLS) Protocol Version 1.3
-.%I IETF
-.%N RFC 8446
-.%D August 2018
-.%U https://tools.ietf.org/html/rfc8446
-.Re
-.
-.It
-.Rs
+.%R RFC 6066
 .%A D. Eastlake 3rd
 .%Q Huawei
 .%T Transport Layer Security (TLS) Extensions: Extension Definitions
 .%I IETF
-.%N RFC 6066
 .%D January 2011
 .%U https://tools.ietf.org/html/rfc6066
+.Re
+.
+.It
+.Rs
+.%R RFC 8446
+.%A E. Rescorla
+.%T The Transport Layer Security (TLS) Protocol Version 1.3
+.%I IETF
+.%D August 2018
+.%U https://tools.ietf.org/html/rfc8446
 .Re
 .El
 .
