@@ -285,8 +285,8 @@ int main(int argc, char *argv[]) {
 	const char *host = NULL;
 	const char *port = "6697";
 	char *pass = NULL;
-	bool sasl = false;
 	char *plain = NULL;
+	enum Cap blindReq = 0;
 	const char *nick = NULL;
 	const char *user = NULL;
 	const char *real = NULL;
@@ -303,6 +303,7 @@ int main(int argc, char *argv[]) {
 		{ .val = 'N', .name = "no-names", no_argument },
 		{ .val = 'P', .name = "local-port", required_argument },
 		{ .val = 'Q', .name = "queue-interval", required_argument },
+		{ .val = 'R', .name = "blind-req", required_argument },
 		{ .val = 'S', .name = "bind", required_argument },
 		{ .val = 'T', .name = "no-sts", no_argument },
 		{ .val = 'U', .name = "local-path", required_argument },
@@ -353,13 +354,14 @@ int main(int argc, char *argv[]) {
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': serverQueueInterval = parseInterval(optarg);
+			break; case 'R': blindReq |= capParse(optarg, NULL);
 			break; case 'S': serverBindHost = optarg;
 			break; case 'T': clientSTS = false;
 			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
 			break; case 'W': clientPass = optarg;
-			break; case 'a': sasl = true; plain = optarg;
+			break; case 'a': blindReq |= CapSASL; plain = optarg;
 			break; case 'c': clientCert = optarg;
-			break; case 'e': sasl = true;
+			break; case 'e': blindReq |= CapSASL;
 			break; case 'f': savePath = optarg;
 			break; case 'g': genPath = optarg;
 			break; case 'h': host = optarg;
@@ -378,6 +380,7 @@ int main(int argc, char *argv[]) {
 			break; default:  return EX_USAGE;
 		}
 	}
+	if (blindReq & CapUnsupported) errx(EX_CONFIG, "unsupported capability");
 	if (genPath) genCert(genPath, caPath);
 
 	if (bindPath[0]) {
@@ -460,7 +463,7 @@ int main(int argc, char *argv[]) {
 	capLimit(server, &sockRights);
 #endif
 
-	stateLogin(pass, sasl, plain, nick, user, real);
+	stateLogin(pass, blindReq, plain, nick, user, real);
 	if (pass) explicit_bzero(pass, strlen(pass));
 	if (plain) explicit_bzero(plain, strlen(plain));
 

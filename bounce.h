@@ -198,7 +198,7 @@ void clientConsume(struct Client *client);
 extern bool stateNoNames;
 extern enum Cap stateCaps;
 void stateLogin(
-	const char *pass, bool sasl, const char *plain,
+	const char *pass, enum Cap blind, const char *plain,
 	const char *nick, const char *user, const char *real
 );
 bool stateReady(void);

@@ -56,26 +56,24 @@ enum { AuthLen = 299 };
 static char plainBase64[BASE64_SIZE(AuthLen)];
 
 void stateLogin(
-	const char *pass, bool sasl, const char *plain,
+	const char *pass, enum Cap blind, const char *plain,
 	const char *nick, const char *user, const char *real
 ) {
 	serverFormat("CAP LS 302\r\n");
 	if (pass) serverFormat("PASS :%s\r\n", pass);
-	if (sasl) {
-		serverFormat("CAP REQ :%s\r\n", capList(CapSASL, NULL));
-		if (plain) {
-			byte buf[AuthLen];
-			size_t len = 1 + strlen(plain);
-			if (sizeof(buf) < len) {
-				errx(EX_SOFTWARE, "SASL PLAIN is too long");
-			}
-			buf[0] = 0;
-			for (size_t i = 0; plain[i]; ++i) {
-				buf[1 + i] = (plain[i] == ':' ? 0 : plain[i]);
-			}
-			base64(plainBase64, buf, len);
-			explicit_bzero(buf, sizeof(buf));
+	if (blind) serverFormat("CAP REQ :%s\r\n", capList(blind, NULL));
+	if (plain) {
+		byte buf[AuthLen];
+		size_t len = 1 + strlen(plain);
+		if (sizeof(buf) < len) {
+			errx(EX_SOFTWARE, "SASL PLAIN is too long");
 		}
+		buf[0] = 0;
+		for (size_t i = 0; plain[i]; ++i) {
+			buf[1 + i] = (plain[i] == ':' ? 0 : plain[i]);
+		}
+		base64(plainBase64, buf, len);
+		explicit_bzero(buf, sizeof(buf));
 	}
 	serverFormat("NICK %s\r\n", nick);
 	serverFormat("USER %s 0 * :%s\r\n", user, real);
