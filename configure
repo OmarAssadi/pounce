@@ -1,26 +1,56 @@
 #!/bin/sh
 set -eu
 
-base='-lcrypt'
-libs='libcrypto libtls'
-[ "$(uname)" = 'Darwin' ] && base=
+cflags() {
+	echo "CFLAGS += $*"
+}
+ldlibs() {
+	echo "LDLIBS ${o:-}= $*"
+	o=+
+}
+config() {
+	pkg-config --print-errors "$@"
+	cflags $(pkg-config --cflags "$@")
+	ldlibs $(pkg-config --libs "$@")
+}
+defstr() {
+	cflags "-D'$1=\"$2\"'"
+}
+defvar() {
+	defstr "$1" "$(pkg-config --variable=$3 $2)${4:-}"
+}
 
 exec >config.mk
 
-pkg-config --print-errors $libs
+for opt; do
+	case "${opt}" in
+		(--prefix=*) echo "PREFIX = ${opt#*=}" ;;
+		(--mandir=*) echo "MANDIR = ${opt#*=}" ;;
+		(*) echo "warning: unsupported option ${opt}" >&2 ;;
+	esac
+done
 
-cat <<EOF
-CFLAGS += $(pkg-config --cflags $libs)
-LDFLAGS += $(pkg-config --libs-only-L $libs)
-LDLIBS = ${base} $(pkg-config --libs-only-l $libs)
-CFLAGS += -D'OPENSSL_BIN="$(pkg-config --variable=exec_prefix openssl)/bin/openssl"'
-CFLAGS += -D'CERTBOT_PATH="/etc/letsencrypt"'
-INSTALLS =
-EOF
-
-if [ "$(uname)" = 'Linux' ]; then
-	cat <<-EOF
-	CFLAGS += -D_GNU_SOURCE
-	LDLIBS.calico = \${LDLIBS}
-	EOF
-fi
+case "$(uname)" in
+	(FreeBSD)
+		ldlibs -lcrypt
+		config libtls
+		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
+		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
+		echo 'INSTALLS = install-rcs install-dirs'
+		;;
+	(Linux)
+		cflags -D_GNU_SOURCE
+		ldlibs -lcrypt
+		config libcrypto libtls
+		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
+		;;
+	(Darwin)
+		config libcrypto libtls
+		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
+		;;
+	(*)
+		ldlibs -lcrypt
+		config libcrypto libtls
+		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
+		;;
+esac

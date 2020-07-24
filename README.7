@@ -1,4 +1,4 @@
-.Dd July  8, 2020
+.Dd July 24, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -48,16 +48,15 @@ and primarily targets
 .Fx ,
 where it is sandboxed with
 .Xr capsicum 4 .
+Linux and macOS
+are also supported.
 .Bd -literal -offset indent
+\&./configure
 make all
-sudo make install PREFIX=/usr/local
+sudo make install
 .Ed
 .
 .Pp
-On other systems,
-such as macOS and Linux,
-the build is configured using
-.Xr pkg-config 1 .
 If LibreSSL is installed
 in a non-standard prefix,
 set
@@ -66,8 +65,6 @@ appropriately.
 For example:
 .Bd -literal -offset indent
 PKG_CONFIG_PATH=/opt/libressl/lib/pkgconfig ./configure
-make all
-sudo make install PREFIX=/usr/local
 .Ed
 .
 .Sh FILES

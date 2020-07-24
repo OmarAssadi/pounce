@@ -3,9 +3,6 @@ MANDIR ?= ${PREFIX}/share/man
 ETCDIR ?= ${PREFIX}/etc
 RUNDIR ?= /var/run
 
-CFLAGS += -I${PREFIX}/include
-LDFLAGS += -L${PREFIX}/lib
-
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
 LDLIBS = -lcrypt -ltls
 
@@ -13,7 +10,6 @@ BINS = calico pounce
 MANS = ${BINS:=.1}
 RCS  = ${BINS:%=rc.d/%}
 DIRS = ${ETCDIR}/pounce ${RUNDIR}/calico
-INSTALLS = install-rcs install-dirs
 
 -include config.mk
 
@@ -30,14 +26,12 @@ dev: tags all
 all: ${BINS}
 
 calico: dispatch.o
-	${CC} ${LDFLAGS} dispatch.o ${LDLIBS.calico} -o $@
+	${CC} ${LDFLAGS} dispatch.o -o $@
 
 pounce: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
 
 ${OBJS}: bounce.h compat.h
-
-dispatch.o: compat.h
 
 .SUFFIXES: .in
 

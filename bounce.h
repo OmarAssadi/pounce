@@ -35,7 +35,7 @@
 #include "compat.h"
 
 #ifndef CERTBOT_PATH
-#define CERTBOT_PATH "/usr/local/etc/letsencrypt"
+#define CERTBOT_PATH "/etc/letsencrypt"
 #endif
 
 #ifndef OPENSSL_BIN
