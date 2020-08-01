@@ -30,8 +30,7 @@
 
 // libcrypto defines these functions if libc doesn't.
 void explicit_bzero(void *b, size_t len);
-#ifndef strlcpy
-size_t strlcpy(char *restrict dst, const char *restrict src, size_t dstsize);
+#ifndef strlcat
 size_t strlcat(char *restrict dst, const char *restrict src, size_t dstsize);
 #endif
 

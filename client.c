@@ -428,7 +428,7 @@ static char *snip(char *dst, size_t cap, const char *src, const regex_t *regex) 
 		);
 		if (len >= cap) return NULL;
 	}
-	len += strlcpy(&dst[len], src, cap - len);
+	len += snprintf(&dst[len], cap - len, "%s", src);
 	return (len < cap ? dst : NULL);
 }
 

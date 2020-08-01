@@ -352,16 +352,16 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'A': clientCA = true; caPath = optarg;
-			break; case 'C': strlcpy(certPath, optarg, sizeof(certPath));
+			break; case 'C': snprintf(certPath, sizeof(certPath), "%s", optarg);
 			break; case 'H': bindHost = optarg;
-			break; case 'K': strlcpy(privPath, optarg, sizeof(privPath));
+			break; case 'K': snprintf(privPath, sizeof(privPath), "%s", optarg);
 			break; case 'N': stateNoNames = true;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': serverQueueInterval = parseInterval(optarg);
 			break; case 'R': blindReq |= capParse(optarg, NULL);
 			break; case 'S': serverBindHost = optarg;
 			break; case 'T': clientSTS = false;
-			break; case 'U': strlcpy(bindPath, optarg, sizeof(bindPath));
+			break; case 'U': snprintf(bindPath, sizeof(bindPath), "%s", optarg);
 			break; case 'W': clientPass = optarg;
 			break; case 'a': blindReq |= CapSASL; plain = optarg;
 			break; case 'c': clientCert = optarg;
