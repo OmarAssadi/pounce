@@ -72,15 +72,15 @@ static void hashPass(void) {
 	printf("%s\n", crypt(pass, salt));
 }
 
-static void genKey(const char *path) {
+static void genReq(const char *path) {
 	const char *name = strrchr(path, '/');
 	name = (name ? &name[1] : path);
 	char subj[256];
 	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
 	execlp(
 		OPENSSL_BIN, "openssl", "req",
-		"-x509", "-new", "-newkey", "rsa:4096", "-sha256", "-days", "3650",
-		"-nodes", "-subj", subj, "-keyout", path,
+		"-new", "-newkey", "rsa:4096", "-sha256", "-nodes",
+		"-subj", subj, "-keyout", path,
 		NULL
 	);
 	err(EX_UNAVAILABLE, "openssl");
@@ -96,12 +96,6 @@ static void genCert(const char *path, const char *ca) {
 	int out = open(path, O_WRONLY | O_APPEND | O_CREAT, 0600);
 	if (out < 0) err(EX_CANTCREAT, "%s", path);
 
-	redir(STDOUT_FILENO, out);
-	if (!ca) {
-		genKey(path);
-		return;
-	}
-
 	int rw[2];
 	int error = pipe(rw);
 	if (error) err(EX_OSERR, "pipe");
@@ -111,14 +105,16 @@ static void genCert(const char *path, const char *ca) {
 	if (!pid) {
 		close(rw[0]);
 		redir(STDOUT_FILENO, rw[1]);
-		genKey(path);
+		genReq(path);
 	}
 
 	close(rw[1]);
 	redir(STDIN_FILENO, rw[0]);
+	redir(STDOUT_FILENO, out);
 	execlp(
 		OPENSSL_BIN, "openssl", "x509",
-		"-CA", ca, "-CAcreateserial", "-days", "3650",
+		"-req", "-days", "3650", "-CAcreateserial",
+		(ca ? "-CA" : "-signkey"), (ca ? ca : path),
 		NULL
 	);
 	err(EX_UNAVAILABLE, "openssl");
