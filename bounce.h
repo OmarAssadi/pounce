@@ -32,8 +32,6 @@
 #include <sys/time.h>
 #include <tls.h>
 
-#include "compat.h"
-
 #ifndef CERTBOT_PATH
 #define CERTBOT_PATH "/etc/letsencrypt"
 #endif

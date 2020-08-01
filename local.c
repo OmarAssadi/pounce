@@ -49,6 +49,10 @@
 
 #include "bounce.h"
 
+#ifdef __APPLE__
+#define TCP_KEEPIDLE TCP_KEEPALIVE
+#endif
+
 static struct tls *server;
 
 static byte *readFile(size_t *len, FILE *file) {

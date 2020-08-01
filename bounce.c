@@ -52,6 +52,10 @@
 #include <sys/capsicum.h>
 #endif
 
+#ifndef SIGINFO
+#define SIGINFO SIGUSR2
+#endif
+
 #include "bounce.h"
 
 bool verbose;

@@ -31,7 +31,7 @@ calico: dispatch.o
 pounce: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
 
-${OBJS}: bounce.h compat.h
+${OBJS}: bounce.h
 
 .SUFFIXES: .in
 

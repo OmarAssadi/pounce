@@ -44,8 +44,6 @@
 #include <sys/capsicum.h>
 #endif
 
-#include "compat.h"
-
 static struct {
 	struct pollfd *ptr;
 	size_t len, cap;
