@@ -28,9 +28,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-// libcrypto defines these functions if libc doesn't.
-void explicit_bzero(void *b, size_t len);
-
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
