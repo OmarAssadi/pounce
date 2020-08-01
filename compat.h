@@ -34,9 +34,6 @@ void explicit_bzero(void *b, size_t len);
 size_t strlcpy(char *restrict dst, const char *restrict src, size_t dstsize);
 size_t strlcat(char *restrict dst, const char *restrict src, size_t dstsize);
 #endif
-uint32_t arc4random(void);
-void arc4random_buf(void *buf, size_t nbytes);
-uint32_t arc4random_uniform(uint32_t upper_bound);
 
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2

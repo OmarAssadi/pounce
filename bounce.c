@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
+#include <openssl/rand.h>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -56,11 +57,14 @@
 bool verbose;
 
 static void hashPass(void) {
-	char *pass = getpass("Password: ");
 	byte rand[12];
-	arc4random_buf(rand, sizeof(rand));
+	int n = RAND_bytes(rand, sizeof(rand));
+	if (n < 1) errx(EX_OSERR, "RAND_bytes failure");
+
 	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
 	base64(&salt[3], rand, sizeof(rand));
+
+	char *pass = getpass("Password: ");
 	printf("%s\n", crypt(pass, salt));
 }
 
