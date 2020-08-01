@@ -1,4 +1,4 @@
-.Dd July  6, 2020
+.Dd August  1, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -427,7 +427,36 @@ not to the server.
 .Ss Generating Client Certificates
 .Bl -enum
 .It
-Generate a self-signed certificate authority (CA):
+Generate self-signed client certificates and private keys:
+.Bd -literal -offset indent
+pounce -g client1.pem
+pounce -g client2.pem
+.Ed
+.It
+Concatenate the certificate public keys into a CA file:
+.Bd -literal -offset indent
+openssl x509 -subject -in client1.pem >> auth.pem
+openssl x509 -subject -in client2.pem >> auth.pem
+.Ed
+.It
+Configure
+.Nm
+to verify client certificates
+against the CA file:
+.Bd -literal -offset indent
+local-ca = auth.pem
+# or: pounce -A auth.pem
+.Ed
+.El
+.
+.Pp
+Alternatively,
+client certificates can be signed
+by a generated certificate authority:
+.
+.Bl -enum
+.It
+Generate a self-signed certificate authority:
 .Bd -literal -offset indent
 pounce -g auth.pem
 .Ed
