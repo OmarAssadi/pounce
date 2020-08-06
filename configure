@@ -32,9 +32,9 @@ done
 
 case "$(uname)" in
 	(FreeBSD)
-		ldlibs -lcrypt
-		config libcrypto libtls
-		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
+		ldlibs -lcrypt -lcrypto
+		config libtls
+		defstr OPENSSL_BIN /usr/bin/openssl
 		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
 		echo 'INSTALLS = install-rcs install-dirs'
 		;;
