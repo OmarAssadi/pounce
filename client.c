@@ -358,21 +358,22 @@ void clientRecv(struct Client *client) {
 	}
 	client->len += read;
 
-	char *crlf;
+	char *lf;
 	char *line = client->buf;
 	for (;;) {
-		crlf = memmem(line, &client->buf[client->len] - line, "\r\n", 2);
-		if (!crlf) break;
+		lf = memchr(line, '\n', &client->buf[client->len] - line);
+		if (!lf) break;
 		if (verbose) {
-			fprintf(stderr, "\x1B[33m%.*s\x1B[m\n", (int)(crlf - line), line);
+			fprintf(stderr, "\x1B[33m%.*s\x1B[m\n", (int)(lf - line), line);
 		}
-		if (client->need || intercept(line, crlf - line)) {
-			crlf[0] = '\0';
+		if (client->need || intercept(line, lf - line)) {
+			lf[0] = '\0';
+			if (lf - line && lf[-1] == '\r') lf[-1] = '\0';
 			clientParse(client, line);
 		} else {
-			serverSend(line, crlf + 2 - line);
+			serverSend(line, lf + 1 - line);
 		}
-		line = crlf + 2;
+		line = lf + 1;
 	}
 	client->len -= line - client->buf;
 	memmove(client->buf, line, client->len);
