@@ -1,4 +1,4 @@
-.Dd August  1, 2020
+.Dd August  6, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -42,9 +42,13 @@ rather than being limited to messages.
 .
 .Sh INSTALLING
 .Nm
-requires LibreSSL
-.Pq Fl ltls
-and primarily targets
+requires
+.Sy libtls ,
+provided by either
+.Lk https://git.causal.agency/libretls/about LibreTLS
+(for OpenSSL)
+or by LibreSSL.
+It primarily targets
 .Fx ,
 where it is sandboxed with
 .Xr capsicum 4 .
@@ -57,14 +61,27 @@ sudo make install
 .Ed
 .
 .Pp
-If LibreSSL is installed
-in a non-standard prefix,
-set
+If installing
+.Sy libtls
+manually to
+.Pa /usr/local ,
+for example,
+make sure
+.Pa /usr/local/lib
+appears in
+.Pa /etc/ld.so.conf
+or
+.Pa /etc/ld.so.conf.d/*
+and be sure to run
+.Xr ldconfig 8
+once the library is installed.
+Set
 .Ev PKG_CONFIG_PATH
-appropriately.
-For example:
+for
+.Nm ./configure
+to find it.
 .Bd -literal -offset indent
-PKG_CONFIG_PATH=/opt/libressl/lib/pkgconfig ./configure
+PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 .Ed
 .
 .Sh FILES
