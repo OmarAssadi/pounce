@@ -332,12 +332,12 @@ static bool intercept(const char *line, size_t len) {
 		len -= sp - line;
 		line = sp;
 	}
-	if (len >= 4 && !memcmp(line, "CAP ", 4)) return true;
-	if (len == 4 && !memcmp(line, "QUIT", 4)) return true;
-	if (len >= 5 && !memcmp(line, "QUIT ", 5)) return true;
-	if (len >= 7 && !memcmp(line, "NOTICE ", 7)) return true;
-	if (len >= 7 && !memcmp(line, "TAGMSG ", 7)) return true;
-	if (len >= 8 && !memcmp(line, "PRIVMSG ", 8)) return true;
+	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
+		size_t n = strlen(Handlers[i].cmd);
+		if (len < n) continue;
+		if (memcmp(line, Handlers[i].cmd, n)) continue;
+		if (len == n || line[n] == ' ' || line[n] == '\r') return true;
+	}
 	return false;
 }
 
