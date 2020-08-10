@@ -296,6 +296,27 @@ static void handleTagmsg(struct Client *client, struct Message *msg) {
 	serverFormat("@%s TAGMSG %s\r\n", msg->tags, msg->params[0]);
 }
 
+static void handlePalaver(struct Client *client, struct Message *msg) {
+	if (client->need & NeedPass || !msg->params[0]) return;
+	char line[MessageCap];
+	if (msg->params[3]) {
+		snprintf(
+			line, sizeof(line), "PALAVER %s %s %s %s",
+			msg->params[0], msg->params[1], msg->params[2], msg->params[3]
+		);
+	} else if (msg->params[2]) {
+		snprintf(
+			line, sizeof(line), "PALAVER %s %s %s",
+			msg->params[0], msg->params[1], msg->params[2]
+		);
+	} else {
+		snprintf(line, sizeof(line), "PALAVER %s", msg->params[0]);
+	}
+	size_t diff = ringDiff(client->consumer);
+	ringProduce(line);
+	if (!diff) ringConsume(NULL, client->consumer);
+}
+
 static const struct {
 	const char *cmd;
 	Handler *fn;
@@ -305,6 +326,7 @@ static const struct {
 	{ "CAP", handleCap, false },
 	{ "NICK", handleNick, false },
 	{ "NOTICE", handlePrivmsg, true },
+	{ "PALAVER", handlePalaver, false },
 	{ "PASS", handlePass, false },
 	{ "PRIVMSG", handlePrivmsg, true },
 	{ "QUIT", handleQuit, true },
@@ -504,6 +526,10 @@ static const char *filterMultiPrefix(const char *line) {
 	}
 }
 
+static const char *filterPalaverApp(const char *line) {
+	return (wordcmp(line, 0, "PALAVER") ? line : NULL);
+}
+
 static const char *filterSetname(const char *line) {
 	return (wordcmp(line, 0, "SETNAME") ? line : NULL);
 }
@@ -535,6 +561,7 @@ static Filter *Filters[] = {
 	[CapLabeledResponseBit] = filterLabeledResponse,
 	[CapMessageTagsBit] = filterMessageTags,
 	[CapMultiPrefixBit] = filterMultiPrefix,
+	[CapPalaverAppBit] = filterPalaverApp,
 	[CapSetnameBit] = filterSetname,
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
@@ -557,7 +584,7 @@ void clientConsume(struct Client *client) {
 	if (stateCaps & TagCaps && !(client->caps & TagCaps)) {
 		line = filterTags(line);
 	}
-	enum Cap diff = client->caps ^ stateCaps;
+	enum Cap diff = client->caps ^ (clientCaps | stateCaps);
 	for (size_t i = 0; line && i < ARRAY_LEN(Filters); ++i) {
 		if (!Filters[i]) continue;
 		if (diff & (1 << i)) line = Filters[i](line);

@@ -304,6 +304,7 @@ int main(int argc, char *argv[]) {
 		{ .val = 'C', .name = "local-cert", required_argument },
 		{ .val = 'H', .name = "local-host", required_argument },
 		{ .val = 'K', .name = "local-priv", required_argument },
+		{ .val = 'L', .name = "palaver", no_argument },
 		{ .val = 'N', .name = "no-names", no_argument },
 		{ .val = 'P', .name = "local-port", required_argument },
 		{ .val = 'Q', .name = "queue-interval", required_argument },
@@ -356,6 +357,7 @@ int main(int argc, char *argv[]) {
 			break; case 'H': bindHost = optarg;
 			break; case 'K': snprintf(privPath, sizeof(privPath), "%s", optarg);
 			break; case 'N': stateNoNames = true;
+			break; case 'L': clientCaps |= CapPalaverApp;
 			break; case 'P': bindPort = optarg;
 			break; case 'Q': serverQueueInterval = parseInterval(optarg);
 			break; case 'R': blindReq |= capParse(optarg, NULL);

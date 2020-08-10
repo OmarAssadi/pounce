@@ -87,6 +87,7 @@ static inline struct Message parse(char *line) {
 	X("labeled-response", CapLabeledResponse) \
 	X("message-tags", CapMessageTags) \
 	X("multi-prefix", CapMultiPrefix) \
+	X("palaverapp.com", CapPalaverApp) \
 	X("sasl", CapSASL) \
 	X("server-time", CapServerTime) \
 	X("setname", CapSetname) \
