@@ -41,8 +41,7 @@
 
 #include "bounce.h"
 
-bool clientCA;
-bool clientSTS = true;
+enum Cap clientCaps = CapServerTime | CapConsumer | CapPassive | CapSTS;
 char *clientPass;
 char *clientAway;
 
@@ -71,7 +70,7 @@ struct Client *clientAlloc(struct tls *tls) {
 	if (!client) err(EX_OSERR, "calloc");
 	client->tls = tls;
 	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
-	if (clientCA && tls_peer_cert_provided(tls)) {
+	if ((clientCaps & CapSASL) && tls_peer_cert_provided(tls)) {
 		client->need &= ~NeedPass;
 	}
 	return client;
@@ -179,10 +178,7 @@ static void handlePass(struct Client *client, struct Message *msg) {
 static void handleCap(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
 
-	enum Cap avail = (stateCaps & ~CapSASL)
-		| CapServerTime | CapConsumer | CapPassive
-		| (clientCA ? CapSASL : 0)
-		| (clientSTS ? CapSTS : 0);
+	enum Cap avail = clientCaps | (stateCaps & ~CapSASL);
 	const char *values[CapBits] = {
 		[CapSASLBit] = "EXTERNAL",
 		[CapSTSBit] = "duration=2147483647",

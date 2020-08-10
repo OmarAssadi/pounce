@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
 	for (int opt; 0 < (opt = getopt_config(argc, argv, opts, options, NULL));) {
 		switch (opt) {
 			break; case '!': insecure = true;
-			break; case 'A': clientCA = true; caPath = optarg;
+			break; case 'A': caPath = optarg; clientCaps |= CapSASL;
 			break; case 'C': snprintf(certPath, sizeof(certPath), "%s", optarg);
 			break; case 'H': bindHost = optarg;
 			break; case 'K': snprintf(privPath, sizeof(privPath), "%s", optarg);
@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
 			break; case 'Q': serverQueueInterval = parseInterval(optarg);
 			break; case 'R': blindReq |= capParse(optarg, NULL);
 			break; case 'S': serverBindHost = optarg;
-			break; case 'T': clientSTS = false;
+			break; case 'T': clientCaps &= ~CapSTS;
 			break; case 'U': snprintf(bindPath, sizeof(bindPath), "%s", optarg);
 			break; case 'W': clientPass = optarg;
 			break; case 'a': blindReq |= CapSASL; plain = optarg;

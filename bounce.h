@@ -182,8 +182,7 @@ void serverEnqueue(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 void serverDequeue(void);
 
-extern bool clientCA;
-extern bool clientSTS;
+extern enum Cap clientCaps;
 extern char *clientPass;
 extern char *clientAway;
 struct Client *clientAlloc(struct tls *tls);
