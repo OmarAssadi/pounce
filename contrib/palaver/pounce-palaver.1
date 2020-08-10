@@ -1,0 +1,98 @@
+.Dd August 10, 2020
+.Dt POUNCE-PALAVER 1
+.Os
+.
+.Sh NAME
+.Nm pounce-palaver
+.Nd Palaver push notifications for pounce
+.
+.Sh SYNOPSIS
+.Nm
+.Op Fl v
+.Op Fl c Ar cert
+.Op Fl d Ar path
+.Op Fl k Ar priv
+.Op Fl p Ar port
+.Op Fl u Ar user
+.Op Fl w Ar pass
+.Ar host
+.
+.Sh DESCRIPTION
+The
+.Nm
+daemon provides push notifications
+for the Palaver IRC app via the
+.Xr pounce 1
+IRC bouncer.
+The
+.Cm palaver
+option must be enabled in
+.Xr pounce 1 .
+.
+.Pp
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl c Ar cert
+Load the TLS client certificate from
+.Ar path .
+If the private key is in a separate file,
+it is loaded with
+.Fl k .
+.It Fl d Ar path
+Set the path to the database file
+used to store notification preferences.
+The default path is documented in
+.Sx FILES .
+.It Fl k Ar priv
+Load the TLS client private key from
+.Ar path .
+.It Fl p Ar port
+Connect to
+.Ar port .
+The default port is 6697.
+.It Fl u Ar user
+Set the username to
+.Ar user .
+The default username is
+.Dq pounce-palaver .
+.It Fl v
+Log IRC protocol, SQL and HTTP to standard error.
+.It Fl w Ar pass
+Log in with the server password
+.Ar pass .
+.It Ar host
+Connect to
+.Ar host .
+.El
+.
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa $XDG_DATA_DIRS/pounce-palaver/preferences.sqlite
+The database file is searched for first in
+.Ev $XDG_DATA_HOME ,
+usually
+.Pa ~/.local/share ,
+followed by the colon-separated list of paths
+.Ev $XDG_DATA_DIRS ,
+usually
+.Pa /usr/local/share:/usr/share .
+.It Pa ~/.local/share/pounce-palaver/preferences.sqlite
+The most likely default path to the database file.
+.El
+.
+.Sh SEE ALSO
+.Xr pounce 1
+.
+.Sh STANDARDS
+.Lk https://github.com/cocodelabs/palaver-irc-capability "Palaver IRC Capability"
+.
+.Sh AUTHORS
+.An June Bug Aq Mt june@causal.agency
+.
+.Sh BUGS
+Send mail to
+.Aq Mt list+pounce@causal.agency
+or join
+.Li #ascii.town
+on
+.Li chat.freenode.net .
