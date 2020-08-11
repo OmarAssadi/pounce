@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# PROVIDE: pounce_palaver
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name='pounce_palaver'
+rcvar='pounce_palaver_enable'
+
+load_rc_config "${name}"
+
+: ${pounce_palaver_enable:='NO'}
+
+command='/usr/sbin/daemon'
+pidprefix="/var/run/${name}"
+pidfile="${pidprefix}.pid"
+
+child_command='%%PREFIX%%/bin/pounce-palaver'
+
+if [ -n "$2" ]; then
+	profile=$2
+	if [ -n "${pounce_palaver_profiles}" ]; then
+		pidfile="${pidprefix}.${profile}.pid"
+		eval pounce_palaver_enable="\${pounce_palaver_${profile}_enable:-${pounce_palaver_enable}}"
+		eval pounce_palaver_flags="\${pounce_palaver_${profile}_flags:-${pounce_palaver_flags}}"
+		eval pounce_palaver_user="\${pounce_palaver_${profile}_user:-${pounce_palaver_user}}"
+		eval pounce_palaver_env="\${pounce_palaver_${profile}_env:-${pounce_palaver_env}}"
+	else
+		echo "$0: extra argument ignored"
+	fi
+else
+	if [ -n "${pounce_palaver_profiles}" -a -n "$1" ]; then
+		for profile in ${pounce_palaver_profiles}; do
+			echo "===> ${name} profile: ${profile}"
+			%%PREFIX%%/etc/rc.d/${name} "$1" "${profile}" || exit "$?"
+		done
+		exit
+	fi
+fi
+
+child_flags=$pounce_palaver_flags
+child_user=$pounce_palaver_user
+unset pounce_palaver_flags pounce_palaver_user
+command_args="\
+	-r -P ${pidfile} -T ${name}${profile:+/${profile}} \
+	${child_user:+-u ${child_user}} \
+	-- ${child_command} ${child_flags}"
+
+run_rc_command "$1"
