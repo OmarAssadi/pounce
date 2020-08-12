@@ -1,4 +1,4 @@
-.Dd August  1, 2020
+.Dd August 12, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl NTev
+.Op Fl LNTev
 .Op Fl A Ar cert
 .Op Fl C Ar cert
 .Op Fl H Ar host
@@ -138,6 +138,15 @@ path for the
 .Ar host
 set by
 .Fl H .
+.
+.It Fl L , Cm palaver
+Advertise the
+.Sy palaverapp.com
+IRCv3 vendor-specific capability to clients.
+This option only enables the capability;
+push notifications must be provided by the
+.Xr pounce-palaver 1
+special-purpose client.
 .
 .It Fl N , Cm no-names
 Do not request
