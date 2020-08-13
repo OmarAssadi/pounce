@@ -537,8 +537,10 @@ static void jsonBody(
 	fprintf(file, "{\"badge\":%d", badge);
 	fprintf(file, ",\"sender\":");
 	jsonString(file, msg->nick);
-	fprintf(file, ",\"channel\":");
-	jsonString(file, msg->params[0]);
+	if (strcmp(msg->params[0], nick)) {
+		fprintf(file, ",\"channel\":");
+		jsonString(file, msg->params[0]);
+	}
 	if (network) {
 		fprintf(file, ",\"network\":");
 		jsonString(file, network);
