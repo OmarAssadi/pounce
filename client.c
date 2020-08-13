@@ -297,19 +297,20 @@ static void handleTagmsg(struct Client *client, struct Message *msg) {
 }
 
 static const struct {
+	bool intercept;
+	bool need;
 	const char *cmd;
 	Handler *fn;
-	bool need;
 } Handlers[] = {
-	{ "AUTHENTICATE", handleAuthenticate, false },
-	{ "CAP", handleCap, false },
-	{ "NICK", handleNick, false },
-	{ "NOTICE", handlePrivmsg, true },
-	{ "PASS", handlePass, false },
-	{ "PRIVMSG", handlePrivmsg, true },
-	{ "QUIT", handleQuit, true },
-	{ "TAGMSG", handleTagmsg, true },
-	{ "USER", handleUser, false },
+	{ false, false, "AUTHENTICATE", handleAuthenticate },
+	{ false, false, "NICK", handleNick },
+	{ false, false, "PASS", handlePass },
+	{ false, false, "USER", handleUser },
+	{ true, false, "CAP", handleCap },
+	{ true, true, "NOTICE", handlePrivmsg },
+	{ true, true, "PRIVMSG", handlePrivmsg },
+	{ true, true, "QUIT", handleQuit },
+	{ true, true, "TAGMSG", handleTagmsg },
 };
 
 static void clientParse(struct Client *client, char *line) {
@@ -333,6 +334,7 @@ static bool intercept(const char *line, size_t len) {
 		line = sp;
 	}
 	for (size_t i = 0; i < ARRAY_LEN(Handlers); ++i) {
+		if (!Handlers[i].intercept) continue;
 		size_t n = strlen(Handlers[i].cmd);
 		if (len < n) continue;
 		if (memcmp(line, Handlers[i].cmd, n)) continue;
