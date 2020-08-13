@@ -1,4 +1,4 @@
-.Dd August  6, 2020
+.Dd August 12, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -83,6 +83,27 @@ to find it.
 .Bd -literal -offset indent
 PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 .Ed
+.
+.Ss Additional Components
+Additional functionality can be provided
+by special-purpose clients connected to
+.Nm .
+.Bl -bullet
+.It
+Logging can be provided by
+.Lk https://git.causal.agency/litterbox litterbox .
+.It
+Push notifications for the Palaver IRC app
+can be provided by
+.Nm pounce-palaver ,
+located in the
+.Pa contrib/palaver
+directory.
+It additionally requires
+.Sy libcurl
+and
+.Sy libsqlite3 .
+.El
 .
 .Sh FILES
 .Bl -tag -width "dispatch.c" -compact
