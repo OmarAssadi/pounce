@@ -527,17 +527,24 @@ static void handleReplyUnaway(struct Message *msg) {
 	sqlite3_reset(stmts[Clear]);
 }
 
+static bool noPreview;
+static bool noPrivatePreview;
+
 static void jsonBody(
 	char *buf, size_t cap,
 	struct Message *msg, const char *network, bool preview
 ) {
+	bool private = (msg->params[0][0] != '#');
+	if (private && noPrivatePreview) preview = false;
+	if (noPreview) preview = false;
+
 	FILE *file = fmemopen(buf, cap, "w");
 	if (!file) err(EX_OSERR, "fmemopen");
 
 	fprintf(file, "{\"badge\":%d", badge);
 	fprintf(file, ",\"sender\":");
 	jsonString(file, msg->nick);
-	if (strcmp(msg->params[0], nick)) {
+	if (!private) {
 		fprintf(file, ",\"channel\":");
 		jsonString(file, msg->params[0]);
 	}
@@ -654,9 +661,11 @@ int main(int argc, char *argv[]) {
 	const char *pass = NULL;
 	const char *user = "pounce-palaver";
 
-	for (int opt; 0 < (opt = getopt(argc, argv, "!c:d:k:p:u:vw:"));) {
+	for (int opt; 0 < (opt = getopt(argc, argv, "!NPc:d:k:p:u:vw:"));) {
 		switch (opt) {
 			break; case '!': insecure = true;
+			break; case 'N': noPreview = true;
+			break; case 'P': noPrivatePreview = true;
 			break; case 'c': cert = optarg;
 			break; case 'd': path = optarg;
 			break; case 'k': priv = optarg;

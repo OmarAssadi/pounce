@@ -1,4 +1,4 @@
-.Dd August 11, 2020
+.Dd August 16, 2020
 .Dt POUNCE-PALAVER 1
 .Os
 .
@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl v
+.Op Fl PNv
 .Op Fl c Ar cert
 .Op Fl d Ar path
 .Op Fl k Ar priv
@@ -32,6 +32,12 @@ option must be enabled in
 .Pp
 The arguments are as follows:
 .Bl -tag -width Ds
+.It Fl N
+Never send message previews,
+regardless of the app preferences.
+.It Fl P
+Never send message previews
+for private messages.
 .It Fl c Ar cert
 Load the TLS client certificate from
 .Ar path .
