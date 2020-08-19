@@ -32,7 +32,7 @@ done
 
 case "$(uname)" in
 	(FreeBSD)
-		ldlibs -lcrypt -lcrypto
+		ldlibs -lcrypt
 		config libtls
 		defstr OPENSSL_BIN /usr/bin/openssl
 		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
@@ -41,18 +41,18 @@ case "$(uname)" in
 	(Linux)
 		cflags -D_GNU_SOURCE
 		ldlibs -lcrypt
-		config libcrypto libtls
+		config libtls
 		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
 		;;
 	(Darwin)
 		cflags -D__STDC_WANT_LIB_EXT1__=1
 		cflags "-D'explicit_bzero(b,l)=memset_s((b),(l),0,(l))'"
-		config libcrypto libtls
+		config libtls
 		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
 		;;
 	(*)
 		ldlibs -lcrypt
-		config libcrypto libtls
+		config libtls
 		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
 		;;
 esac

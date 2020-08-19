@@ -31,7 +31,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
-#include <openssl/rand.h>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -52,6 +51,11 @@
 #include <sys/capsicum.h>
 #endif
 
+// For getentropy(2):
+#ifdef __APPLE__
+#include <sys/random.h>
+#endif
+
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
@@ -62,8 +66,8 @@ bool verbose;
 
 static void hashPass(void) {
 	byte rand[12];
-	int n = RAND_bytes(rand, sizeof(rand));
-	if (n < 1) errx(EX_OSERR, "RAND_bytes failure");
+	int error = getentropy(rand, sizeof(rand));
+	if (error) err(EX_OSERR, "getentropy");
 
 	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
 	base64(&salt[3], rand, sizeof(rand));
