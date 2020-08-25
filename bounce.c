@@ -432,8 +432,8 @@ int main(int argc, char *argv[]) {
 
 	FILE *localCA = NULL;
 	if (caPath) {
-		localCA = fopen(caPath, "r");
-		if (!localCA) err(EX_NOINPUT, "%s", caPath);
+		localCA = configOpen(caPath, "r");
+		if (!localCA) return EX_NOINPUT;
 	}
 
 	struct SplitPath certSplit = splitPath(certPath);
