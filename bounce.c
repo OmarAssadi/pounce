@@ -152,8 +152,8 @@ static void saveSave(void) {
 
 static void saveLoad(const char *path) {
 	umask(0066);
-	saveFile = fopen(path, "a+");
-	if (!saveFile) err(EX_CANTCREAT, "%s", path);
+	saveFile = dataOpen(path, "a+");
+	if (!saveFile) exit(EX_CANTCREAT);
 
 	int error = flock(fileno(saveFile), LOCK_EX | LOCK_NB);
 	if (error && errno != EWOULDBLOCK) err(EX_OSERR, "flock");
