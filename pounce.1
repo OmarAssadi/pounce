@@ -550,20 +550,8 @@ to enable the
 daemon:
 .Bd -literal -offset indent
 pounce_enable="YES"
-.Ed
-.
-.Pp
-By default,
-the
-.Nm
-daemon is started in the
-.Pa /usr/local/etc/pounce
-directory.
-Configuration files in that location
-can be loaded by setting
-.Va pounce_flags :
-.Bd -literal -offset indent
-pounce_flags="example.conf"
+pounce_user="user"
+pounce_env="HOME=/home/user"
 .Ed
 .
 .Pp

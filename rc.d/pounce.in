@@ -33,6 +33,7 @@ if [ -n "$2" ]; then
 		eval pounce_flags="\${pounce_${profile}_flags:-${pounce_flags}}"
 		eval pounce_chdir="\${pounce_${profile}_chdir:-${pounce_chdir}}"
 		eval pounce_user="\${pounce_${profile}_user:-${pounce_user}}"
+		eval pounce_env="\${pounce_${profile}_env:-${pounce_env}}"
 	else
 		echo "$0: extra argument ignored"
 	fi
