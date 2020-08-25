@@ -208,6 +208,11 @@ void stateSync(struct Client *client);
 const char *stateNick(void);
 const char *stateEcho(void);
 
+const char *configPath(const char **dirs, const char *path);
+const char *dataPath(const char **dirs, const char *path);
+FILE *configOpen(const char *path, const char *mode);
+FILE *dataOpen(const char *path, const char *mode);
+
 struct option;
 int getopt_config(
 	int argc, char *const *argv,

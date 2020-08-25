@@ -20,6 +20,7 @@ OBJS += local.o
 OBJS += ring.o
 OBJS += server.o
 OBJS += state.o
+OBJS += xdg.o
 
 dev: tags all
 
