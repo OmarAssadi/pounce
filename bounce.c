@@ -335,16 +335,6 @@ int main(int argc, char *argv[]) {
 		{ .val = 'w', .name = "pass", required_argument },
 		{ .val = 'x', .name = "hash", no_argument },
 		{ .val = 'y', .name = "away", required_argument },
-
-		// Deprecated names:
-		{ .val = 'A', .name = "client-ca", required_argument },
-		{ .val = 'C', .name = "cert", required_argument },
-		{ .val = 'H', .name = "bind-host", required_argument },
-		{ .val = 'K', .name = "priv", required_argument },
-		{ .val = 'P', .name = "bind-port", required_argument },
-		{ .val = 'U', .name = "bind-path", required_argument },
-		{ .val = 'W', .name = "client-pass", required_argument },
-
 		{0},
 	};
 	char opts[2 * ARRAY_LEN(options)];
