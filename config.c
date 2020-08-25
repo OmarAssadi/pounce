@@ -64,11 +64,8 @@ int getopt_config(
 			if (optind < argc) {
 				num = 0;
 				path = argv[optind++];
-				file = fopen(path, "r");
-				if (!file) {
-					warn("%s", path);
-					return clean('?');
-				}
+				file = configOpen(path, "r");
+				if (!file) return clean('?');
 			} else {
 				return clean(-1);
 			}
