@@ -1,4 +1,4 @@
-.Dd August 12, 2020
+.Dd August 25, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -90,6 +90,12 @@ for details.
 .Pp
 Options can be loaded from
 files listed on the command line.
+Files are searched for in
+.Pa $XDG_CONFIG_DIRS/pounce
+unless the path starts with
+.Ql /
+or
+.Ql \&. .
 Each option is placed on a line,
 and lines beginning with
 .Ql #
@@ -105,7 +111,9 @@ The arguments are as follows:
 Require clients to authenticate
 using a TLS client certificate
 signed by the certificate authority loaded from
-.Ar path .
+.Ar path ,
+which is searched for
+in the same manner as configuration files.
 See
 .Sx Generating Client Certificates .
 If
@@ -183,7 +191,7 @@ Bind to source address
 .Ar host
 when connecting to the server.
 .
-.It Fl T
+.It Fl T , Cm no-sts
 Do not advertise a
 strict transport security (STS) policy
 to clients.
@@ -233,7 +241,9 @@ it is recommended to use SASL EXTERNAL instead with
 .
 .It Fl c Ar path , Cm client-cert = Ar path
 Load the TLS client certificate from
-.Ar path .
+.Ar path ,
+which is searched for
+in the same manner as configuration files.
 If the private key is in a separate file,
 it is loaded with
 .Fl k .
@@ -252,13 +262,17 @@ See
 .Sx Configuring CertFP .
 .
 .It Fl f Ar path , Cm save = Ar path
-Load the contents of the buffer from
-.Ar path ,
-if it exists,
-and truncate it.
-On shutdown,
-save the contents of the buffer to
-.Ar path .
+Load and save the contents of the buffer from
+.Ar path
+in
+.Pa $XDG_DATA_DIRS/pounce ,
+or an absolute or relative path if
+.Ar path
+starts with
+.Ql /
+or
+.Ql \&. .
+The file is truncated after loading.
 .
 .It Fl g Ar path
 Generate a TLS client certificate using
@@ -281,7 +295,9 @@ Join the comma-separated list of
 .
 .It Fl k Ar path , Cm client-priv = Ar path
 Load the TLS client private key from
-.Ar path .
+.Ar path ,
+which is searched for
+in the same manner as configuration files.
 .
 .It Fl n Ar nick , Cm nick = Ar nick
 Set nickname to
@@ -525,7 +541,9 @@ sasl-external
 .El
 .
 .Ss Service Configuration
-Add the following to
+On
+.Fx ,
+add the following to
 .Pa /etc/rc.conf
 to enable the
 .Nm
@@ -587,6 +605,33 @@ command.
 .Bl -tag -width Ds
 .It Ev USER
 The default nickname.
+.El
+.
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa $XDG_CONFIG_DIRS/pounce
+Configuration files are searched for first in
+.Ev $XDG_CONFIG_HOME ,
+usually
+.Pa ~/.config ,
+followed by the colon-separated list of paths
+.Ev $XDG_CONFIG_DIRS ,
+usually
+.Pa /etc/xdg .
+.It Pa ~/.config/pounce
+The most likely location of configuration files.
+.
+.It Pa $XDG_DATA_DIRS/pounce
+Save files are searched for first in
+.Ev $XDG_DATA_HOME ,
+usually
+.Pa ~/.local/share ,
+followed by the colon-separated list of paths
+.Ev $XDG_DATA_DIRS ,
+usually
+.Pa /usr/local/share:/usr/share .
+.It Pa ~/.local/share/pounce
+The most likely location of save files.
 .El
 .
 .Sh EXAMPLES
@@ -681,6 +726,16 @@ join = #ascii.town
 .%T IRCv3.2 server-time Extension
 .%I IRCv3 Working Group
 .%U https://ircv3.net/specs/extensions/server-time-3.2
+.Re
+.
+.It
+.Rs
+.%A Waldo Bastian
+.%A Ryan Lortie
+.%A Lennart Poettering
+.%T XDG Base Directory Specification
+.%D November 24, 2010
+.%U https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 .Re
 .El
 .
