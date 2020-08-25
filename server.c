@@ -57,13 +57,24 @@ void serverConfig(bool insecure, const char *cert, const char *priv) {
 	}
 
 	if (cert) {
-		error = tls_config_set_keypair_file(config, cert, (priv ? priv : cert));
-		if (error) {
-			errx(
-				EX_SOFTWARE, "tls_config_set_keypair_file: %s",
-				tls_config_error(config)
-			);
+		const char *dirs = NULL;
+		for (const char *path; NULL != (path = configPath(&dirs, cert));) {
+			if (priv) {
+				error = tls_config_set_cert_file(config, path);
+			} else {
+				error = tls_config_set_keypair_file(config, path, path);
+			}
+			if (!error) break;
 		}
+		if (error) errx(EX_NOINPUT, "%s: %s", cert, tls_config_error(config));
+	}
+	if (priv) {
+		const char *dirs = NULL;
+		for (const char *path; NULL != (path = configPath(&dirs, priv));) {
+			error = tls_config_set_key_file(config, path);
+			if (!error) break;
+		}
+		if (error) errx(EX_NOINPUT, "%s: %s", priv, tls_config_error(config));
 	}
 
 	client = tls_client();
