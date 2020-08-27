@@ -236,9 +236,11 @@ struct tls *localAccept(int *fd, int bind) {
 	int error = setsockopt(*fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
 	if (error) err(EX_OSERR, "setsockopt");
 
+#ifdef TCP_KEEPIDLE
 	int idle = 15 * 60;
 	error = setsockopt(*fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
 	if (error) err(EX_OSERR, "setsockopt");
+#endif
 
 	struct tls *client;
 	error = tls_accept_socket(server, &client, *fd);

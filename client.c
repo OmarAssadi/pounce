@@ -166,11 +166,16 @@ static void handlePass(struct Client *client, struct Message *msg) {
 		client->error = true;
 		return;
 	}
-	if (!strcmp(crypt(msg->params[0], clientPass), clientPass)) {
+#ifdef __OpenBSD__
+	int error = crypt_checkpass(msg->params[0], clientPass);
+#else
+	int error = strcmp(crypt(msg->params[0], clientPass), clientPass);
+#endif
+	if (error) {
+		passRequired(client);
+	} else {
 		client->need &= ~NeedPass;
 		maybeSync(client);
-	} else {
-		passRequired(client);
 	}
 	explicit_bzero(msg->params[0], strlen(msg->params[0]));
 }

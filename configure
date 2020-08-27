@@ -37,6 +37,10 @@ case "$(uname)" in
 		defstr OPENSSL_BIN /usr/bin/openssl
 		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
 		;;
+	(OpenBSD)
+		ldlibs -ltls
+		defstr OPENSSL_BIN /usr/bin/openssl
+		;;
 	(Linux)
 		cflags -D_GNU_SOURCE
 		ldlibs -lcrypt

@@ -64,6 +64,15 @@
 
 bool verbose;
 
+#ifdef __OpenBSD__
+static void hashPass(void) {
+	char hash[_PASSWORD_LEN];
+	char *pass = getpass("Password: ");
+	int error = crypt_newhash(pass, "bcrypt,a", hash, sizeof(hash));
+	if (error) err(EX_OSERR, "crypt_newhash");
+	printf("%s\n", hash);
+}
+#else
 static void hashPass(void) {
 	byte rand[12];
 	int error = getentropy(rand, sizeof(rand));
@@ -75,6 +84,7 @@ static void hashPass(void) {
 	char *pass = getpass("Password: ");
 	printf("%s\n", crypt(pass, salt));
 }
+#endif
 
 static void genReq(const char *path) {
 	const char *name = strrchr(path, '/');
