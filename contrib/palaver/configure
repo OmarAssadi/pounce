@@ -31,10 +31,6 @@ for opt; do
 done
 
 case "$(uname)" in
-	(FreeBSD)
-		config libcurl libtls sqlite3
-		echo 'INSTALLS = install-rcs'
-		;;
 	(OpenBSD)
 		ldlibs -ltls
 		config libcurl sqlite3

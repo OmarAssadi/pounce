@@ -1,4 +1,4 @@
-.Dd August 16, 2020
+.Dd August 27, 2020
 .Dt POUNCE-PALAVER 1
 .Os
 .
@@ -70,50 +70,6 @@ Log in with the server password
 Connect to
 .Ar host .
 .El
-.
-.Ss Service Configuration
-Add the following to
-.Pa /etc/rc.conf
-to enable the
-.Nm
-daemon:
-.Bd -literal -offset indent
-pounce_palaver_enable="YES"
-.Ed
-.
-.Pp
-To use the preferences database of a user,
-add the following:
-.Bd -literal -offset indent
-pounce_palaver_user="user"
-pounce_palaver_env="HOME=/home/user"
-.Ed
-.
-.Pp
-The
-.Nm
-service supports profiles
-for running multiple instances.
-Set
-.Va pounce_palaver_profiles
-to a space-separated list of names.
-Flags for each profile
-will be set from
-.Va pounce_palaver_${profile}_flags .
-For example:
-.Bd -literal -offset indent
-pounce_palaver_profiles="example1 example2"
-pounce_palaver_example1_flags="example1.irc.example.org"
-pounce_palaver_example2_flags="example2.irc.example.org"
-.Ed
-.Pp
-The commands
-.Cm start , stop ,
-etc.\&
-will operate on the profile
-given as an additional argument,
-or on all profiles
-without an additional argument.
 .
 .Sh FILES
 .Bl -tag -width Ds
