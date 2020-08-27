@@ -155,6 +155,8 @@ static void alert(int sock) {
 }
 
 int main(int argc, char *argv[]) {
+	int error;
+
 	const char *host = "localhost";
 	const char *port = "6697";
 	const char *path = NULL;
@@ -178,10 +180,18 @@ int main(int argc, char *argv[]) {
 		errx(EX_USAGE, "directory required");
 	}
 
+#ifdef __OpenBSD__
+	error = unveil(path, "r");
+	if (error) err(EX_OSERR, "unveil");
+
+	error = pledge("stdio rpath inet unix dns sendfd", NULL);
+	if (error) err(EX_OSERR, "pledge");
+#endif
+
 	int dir = open(path, O_DIRECTORY);
 	if (dir < 0) err(EX_NOINPUT, "%s", path);
 
-	int error = fchdir(dir);
+	error = fchdir(dir);
 	if (error) err(EX_NOINPUT, "%s", path);
 
 	struct addrinfo *head;
