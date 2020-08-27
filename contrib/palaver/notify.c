@@ -58,16 +58,8 @@ static CURL *curl;
 static sqlite3 *db;
 static struct tls *client;
 
-static void dbOpen(char *path) {
-	char *base = strrchr(path, '/');
-	*base = '\0';
-	int error = mkdir(path, 0700);
-	if (error && errno != EEXIST) err(EX_CANTCREAT, "%s", path);
-	*base = '/';
-
-	error = sqlite3_open_v2(
-		path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL
-	);
+static void dbOpen(const char *path, int flags) {
+	int error = sqlite3_open_v2(path, &db, flags, NULL);
 	if (error == SQLITE_CANTOPEN) {
 		sqlite3_close(db);
 		db = NULL;
@@ -80,7 +72,7 @@ static void dbOpen(char *path) {
 
 static void dbFind(char *path) {
 	if (path) {
-		dbOpen(path);
+		dbOpen(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 		if (db) return;
 		errx(EX_NOINPUT, "%s: database not found", path);
 	}
@@ -88,6 +80,7 @@ static void dbFind(char *path) {
 	const char *home = getenv("HOME");
 	const char *dataHome = getenv("XDG_DATA_HOME");
 	const char *dataDirs = getenv("XDG_DATA_DIRS");
+	if (!dataDirs) dataDirs = "/usr/local/share:/usr/share";
 
 	char buf[PATH_MAX];
 	if (dataHome) {
@@ -96,19 +89,29 @@ static void dbFind(char *path) {
 		if (!home) errx(EX_CONFIG, "HOME unset");
 		snprintf(buf, sizeof(buf), "%s/.local/share/" DATABASE_PATH, home);
 	}
-	dbOpen(buf);
+	dbOpen(buf, SQLITE_OPEN_READWRITE);
 	if (db) return;
 
-	if (!dataDirs) dataDirs = "/usr/local/share:/usr/share";
+	char create[PATH_MAX];
+	snprintf(create, sizeof(create), "%s", buf);
+
 	while (*dataDirs) {
 		size_t len = strcspn(dataDirs, ":");
 		snprintf(buf, sizeof(buf), "%.*s/" DATABASE_PATH, (int)len, dataDirs);
-		dbOpen(buf);
+		dbOpen(buf, SQLITE_OPEN_READWRITE);
 		if (db) return;
 		dataDirs += len;
 		if (*dataDirs) dataDirs++;
 	}
-	errx(EX_NOINPUT, "database not found");
+
+	char *base = strrchr(create, '/');
+	*base = '\0';
+	int error = mkdir(create, 0700);
+	if (error && errno != EEXIST) err(EX_CANTCREAT, "%s", create);
+	*base = '/';
+
+	dbOpen(create, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+	if (!db) errx(EX_CANTCREAT, "%s: cannot create database", create);
 }
 
 static int dbParam(sqlite3_stmt *stmt, const char *param) {
