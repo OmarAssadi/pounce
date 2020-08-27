@@ -686,6 +686,7 @@ int main(int argc, char *argv[]) {
 
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curlError);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, (verbose ? 1L : 0L));
 	curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
