@@ -46,7 +46,7 @@
 // Why must it return (const unsigned char *)?
 #define sqlite3_column_text(...) (const char *)sqlite3_column_text(__VA_ARGS__)
 
-#define DATABASE_PATH "pounce-palaver/preferences.sqlite"
+#define DATABASE_PATH "pounce/palaver.sqlite"
 
 #define SQL(...) #__VA_ARGS__
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
