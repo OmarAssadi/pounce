@@ -36,7 +36,6 @@ case "$(uname)" in
 		config libtls
 		defstr OPENSSL_BIN /usr/bin/openssl
 		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
-		echo 'INSTALLS = install-rcs install-dirs'
 		;;
 	(Linux)
 		cflags -D_GNU_SOURCE

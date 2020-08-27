@@ -1,4 +1,4 @@
-.Dd August 25, 2020
+.Dd August 27, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -539,55 +539,6 @@ sasl-external
 # or: pounce -e -c example.pem
 .Ed
 .El
-.
-.Ss Service Configuration
-On
-.Fx ,
-add the following to
-.Pa /etc/rc.conf
-to enable the
-.Nm
-daemon:
-.Bd -literal -offset indent
-pounce_enable="YES"
-pounce_user="user"
-pounce_env="HOME=/home/user"
-.Ed
-.
-.Pp
-The
-.Nm
-service supports profiles
-for running multiple instances.
-Set
-.Va pounce_profiles
-to a space-separated list of names.
-Flags for each profile will be set from
-.Va pounce_${profile}_flags .
-For example:
-.Bd -literal -offset indent
-pounce_profiles="example1 example2"
-pounce_example1_flags="example1.conf"
-pounce_example2_flags="example2.conf"
-.Ed
-.
-.Pp
-The commands
-.Cm start , stop ,
-etc.\&
-will operate on the profile given as an additional argument,
-or on all profiles without an additional argument.
-.
-.Pp
-The
-.Cm reload
-command will cause the
-.Nm
-daemon to reload certificate files.
-To reload other configuration,
-use the
-.Cm restart
-command.
 .
 .Sh ENVIRONMENT
 .Bl -tag -width Ds

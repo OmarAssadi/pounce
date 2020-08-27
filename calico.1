@@ -1,4 +1,4 @@
-.Dd May 19, 2020
+.Dd August 27, 2020
 .Dt CALICO 1
 .Os
 .
@@ -37,6 +37,12 @@ Incoming connections are passed directly
 to instances of
 .Xr pounce 1 ,
 which handle TLS negotiation.
+Instances of
+.Xr pounce 1
+and
+.Nm
+can be restarted
+independently of each other.
 .
 .Pp
 The arguments are as follows:
@@ -59,38 +65,6 @@ The path to the directory containing
 .Xr pounce 1
 UNIX-domain sockets.
 .El
-.
-.Ss Service Configuration
-Add the following to
-.Pa /etc/rc.conf
-to enable the
-.Nm
-daemon:
-.Bd -literal -offset indent
-calico_enable="YES"
-.Ed
-.
-.Pp
-The default socket directory is
-.Pa /var/run/calico .
-It can be changed by setting
-.Va calico_path .
-The
-.Xr pounce 1
-service can be configured
-to listen in this directory
-with the following:
-.Bd -literal -offset indent
-pounce_flags="-U /var/run/calico"
-.Ed
-.
-.Pp
-The
-.Nm
-and
-.Xr pounce 1
-services can be started and stopped
-independently of each other.
 .
 .Sh EXAMPLES
 Obtain certificates for

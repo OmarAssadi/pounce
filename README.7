@@ -1,4 +1,4 @@
-.Dd August 24, 2020
+.Dd August 27, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -84,6 +84,16 @@ to find it.
 PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 .Ed
 .
+.Pp
+On
+.Fx
+and
+.Ox
+the recommended way to run
+.Nm
+is with the process supervisor
+.Lk https://git.causal.agency/catsit catsit .
+.
 .Ss Additional Components
 Additional functionality can be provided
 by special-purpose clients connected to
@@ -128,10 +138,6 @@ configuration parsing
 XDG base directories
 .It Pa dispatch.c
 SNI socket dispatch
-.It Pa rc.d/
-.Fx
-.Xr rc 8
-scripts
 .El
 .
 .Sh CONTRIBUTING
