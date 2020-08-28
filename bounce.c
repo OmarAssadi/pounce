@@ -284,6 +284,8 @@ static void eventRemove(size_t i) {
 }
 
 int main(int argc, char *argv[]) {
+	int error;
+
 	size_t ringSize = 4096;
 	const char *savePath = NULL;
 
@@ -427,6 +429,11 @@ int main(int argc, char *argv[]) {
 		errx(EX_CONFIG, "password must be hashed with -x");
 	}
 
+#ifdef __OpenBSD__
+	error = pledge("stdio rpath wpath cpath inet flock unix dns recvfd", NULL);
+	if (error) err(EX_OSERR, "pledge");
+#endif
+
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
 
@@ -453,7 +460,7 @@ int main(int argc, char *argv[]) {
 	int server = serverConnect(serverBindHost, host, port);
 
 #ifdef __FreeBSD__
-	int error = cap_enter();
+	error = cap_enter();
 	if (error) err(EX_OSERR, "cap_enter");
 
 	cap_rights_t saveRights, fileRights, sockRights, bindRights;
@@ -489,7 +496,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGUSR1, signalHandler);
 
 	for (size_t i = 0; i < binds; ++i) {
-		int error = listen(bind[i], -1);
+		error = listen(bind[i], -1);
 		if (error) err(EX_IOERR, "listen");
 		eventAdd(bind[i], NULL);
 	}
@@ -525,7 +532,7 @@ int main(int argc, char *argv[]) {
 					continue;
 				}
 
-				int error = tls_handshake(tls);
+				error = tls_handshake(tls);
 				if (error) {
 					warnx("tls_handshake: %s", tls_error(tls));
 					tls_free(tls);
