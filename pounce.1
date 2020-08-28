@@ -1,4 +1,4 @@
-.Dd August 27, 2020
+.Dd August 28, 2020
 .Dt POUNCE 1
 .Os
 .
@@ -96,6 +96,8 @@ unless the path starts with
 .Ql /
 or
 .Ql \&. .
+Certificate and private key paths
+are searched for in the same manner.
 Each option is placed on a line,
 and lines beginning with
 .Ql #
@@ -111,9 +113,7 @@ The arguments are as follows:
 Require clients to authenticate
 using a TLS client certificate
 signed by the certificate authority loaded from
-.Ar path ,
-which is searched for
-in the same manner as configuration files.
+.Ar path .
 See
 .Sx Generating Client Certificates .
 If
@@ -241,9 +241,7 @@ it is recommended to use SASL EXTERNAL instead with
 .
 .It Fl c Ar path , Cm client-cert = Ar path
 Load the TLS client certificate from
-.Ar path ,
-which is searched for
-in the same manner as configuration files.
+.Ar path .
 If the private key is in a separate file,
 it is loaded with
 .Fl k .
@@ -295,9 +293,7 @@ Join the comma-separated list of
 .
 .It Fl k Ar path , Cm client-priv = Ar path
 Load the TLS client private key from
-.Ar path ,
-which is searched for
-in the same manner as configuration files.
+.Ar path .
 .
 .It Fl n Ar nick , Cm nick = Ar nick
 Set nickname to
@@ -379,12 +375,13 @@ daemon exits.
 Upon receiving the
 .Dv SIGUSR1
 signal,
-the certificate and private key
+the certificate, private key and local CA
 will be reloaded from the paths
 specified by
-.Fl C
+.Fl C ,
+.Fl K
 and
-.Fl K .
+.Fl A .
 .
 .Ss Client Configuration
 Clients should be configured to
@@ -460,8 +457,8 @@ pounce -g client2.pem
 .It
 Concatenate the certificate public keys into a CA file:
 .Bd -literal -offset indent
-openssl x509 -subject -in client1.pem >> auth.pem
-openssl x509 -subject -in client2.pem >> auth.pem
+openssl x509 -subject -in client1.pem >> ~/.config/pounce/auth.pem
+openssl x509 -subject -in client2.pem >> ~/.config/pounce/auth.pem
 .Ed
 .It
 Configure
@@ -497,7 +494,7 @@ Since only the public key is needed
 for certificate verification,
 extract it from the CA:
 .Bd -literal -offset indent
-openssl x509 -in auth.pem -out auth.crt
+openssl x509 -in auth.pem -out ~/.config/pounce/auth.crt
 .Ed
 .It
 Configure
@@ -515,7 +512,7 @@ local-ca = auth.crt
 .It
 Generate a new TLS client certificate:
 .Bd -literal -offset indent
-pounce -g example.pem
+pounce -g ~/.config/pounce/example.pem
 .Ed
 .It
 Connect to the server using the certificate:
@@ -549,7 +546,8 @@ The default nickname.
 .Sh FILES
 .Bl -tag -width Ds
 .It Pa $XDG_CONFIG_DIRS/pounce
-Configuration files are searched for first in
+Configuration files, certificates and private keys
+are searched for first in
 .Ev $XDG_CONFIG_HOME ,
 usually
 .Pa ~/.config ,
@@ -569,6 +567,8 @@ followed by the colon-separated list of paths
 .Ev $XDG_DATA_DIRS ,
 usually
 .Pa /usr/local/share:/usr/share .
+New save files are created in
+.Ev $XDG_DATA_HOME .
 .It Pa ~/.local/share/pounce
 The most likely location of save files.
 .El

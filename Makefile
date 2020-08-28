@@ -10,6 +10,7 @@ MANS = ${BINS:=.1}
 -include config.mk
 
 OBJS += bounce.o
+OBJS += cert.o
 OBJS += client.o
 OBJS += config.o
 OBJS += local.o

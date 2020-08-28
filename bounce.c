@@ -177,76 +177,10 @@ static void saveLoad(const char *path) {
 	atexit(saveSave);
 }
 
-struct SplitPath {
-	int dir;
-	char *file;
-	int targetDir;
-};
-
-static bool linkTarget(char *target, size_t cap, int dir, const char *file) {
-	ssize_t len = readlinkat(dir, file, target, cap - 1);
-	if (len < 0 && errno == EINVAL) return false;
-	if (len < 0) err(EX_NOINPUT, "%s", file);
-	target[len] = '\0';
-	return true;
-}
-
-static struct SplitPath splitPath(char *path) {
-	struct SplitPath split = { .targetDir = -1 };
-	split.file = strrchr(path, '/');
-	if (split.file) {
-		*split.file++ = '\0';
-		split.dir = open(path, O_DIRECTORY);
-	} else {
-		split.file = path;
-		split.dir = open(".", O_DIRECTORY);
-	}
-	if (split.dir < 0) err(EX_NOINPUT, "%s", path);
-
-	// Capsicum workaround for certbot "live" symlinks to "../../archive".
-	char target[PATH_MAX];
-	if (!linkTarget(target, sizeof(target), split.dir, split.file)) {
-		return split;
-	}
-	char *file = strrchr(target, '/');
-	if (file) {
-		*file = '\0';
-		split.targetDir = openat(split.dir, target, O_DIRECTORY);
-		if (split.targetDir < 0) err(EX_NOINPUT, "%s", target);
-	}
-
-	return split;
-}
-
-static FILE *splitOpen(struct SplitPath split) {
-	if (split.targetDir >= 0) {
-		char target[PATH_MAX];
-		if (!linkTarget(target, sizeof(target), split.dir, split.file)) {
-			errx(EX_CONFIG, "file is no longer a symlink");
-		}
-		split.dir = split.targetDir;
-		split.file = strrchr(target, '/');
-		if (!split.file) {
-			errx(EX_CONFIG, "symlink no longer targets directory");
-		}
-		split.file++;
-	}
-
-	int fd = openat(split.dir, split.file, O_RDONLY);
-	if (fd < 0) err(EX_NOINPUT, "%s", split.file);
-	FILE *file = fdopen(fd, "r");
-	if (!file) err(EX_IOERR, "fdopen");
-	return file;
-}
-
 #ifdef __FreeBSD__
 static void capLimit(int fd, const cap_rights_t *rights) {
 	int error = cap_rights_limit(fd, rights);
 	if (error) err(EX_OSERR, "cap_rights_limit");
-}
-static void capLimitSplit(struct SplitPath split, const cap_rights_t *rights) {
-	capLimit(split.dir, rights);
-	if (split.targetDir >= 0) capLimit(split.targetDir, rights);
 }
 #endif
 
@@ -437,19 +371,43 @@ int main(int argc, char *argv[]) {
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
 
-	FILE *localCA = NULL;
+	struct Cert localCA = { -1, -1, "" };
 	if (caPath) {
-		localCA = configOpen(caPath, "r");
-		if (!localCA) return EX_NOINPUT;
+		const char *dirs = NULL;
+		for (const char *path; NULL != (path = configPath(&dirs, caPath));) {
+			error = certOpen(&localCA, path);
+			if (!error) break;
+		}
+		if (error) err(EX_NOINPUT, "%s", caPath);
 	}
 
-	struct SplitPath certSplit = splitPath(certPath);
-	struct SplitPath privSplit = splitPath(privPath);
-	FILE *cert = splitOpen(certSplit);
-	FILE *priv = splitOpen(privSplit);
-	localConfig(cert, priv, localCA, !clientPass);
-	fclose(cert);
-	fclose(priv);
+	const char *dirs;
+	struct Cert cert;
+	struct Cert priv;
+	dirs = NULL;
+	for (const char *path; NULL != (path = configPath(&dirs, certPath));) {
+		error = certOpen(&cert, path);
+		if (!error) break;
+	}
+	if (error) err(EX_NOINPUT, "%s", certPath);
+	dirs = NULL;
+	for (const char *path; NULL != (path = configPath(&dirs, privPath));) {
+		error = certOpen(&priv, path);
+		if (!error) break;
+	}
+	if (error) err(EX_NOINPUT, "%s", privPath);
+
+	FILE *certRead = certFile(&cert);
+	if (!certRead) err(EX_NOINPUT, "%s", certPath);
+	FILE *privRead = certFile(&priv);
+	if (!privRead) err(EX_NOINPUT, "%s", privPath);
+	FILE *caRead = (caPath ? certFile(&localCA) : NULL);
+	if (caPath && !caRead) err(EX_NOINPUT, "%s", caPath);
+
+	localConfig(certRead, privRead, caRead, !clientPass);
+	fclose(certRead);
+	fclose(privRead);
+	if (caPath) fclose(caRead);
 
 	int bind[8];
 	size_t binds = bindPath[0]
@@ -471,9 +429,14 @@ int main(int argc, char *argv[]) {
 	cap_rights_merge(&bindRights, &sockRights);
 
 	if (saveFile) capLimit(fileno(saveFile), &saveRights);
-	if (localCA) capLimit(fileno(localCA), &fileRights);
-	capLimitSplit(certSplit, &fileRights);
-	capLimitSplit(privSplit, &fileRights);
+	capLimit(cert.parent, &fileRights);
+	capLimit(cert.target, &fileRights);
+	capLimit(priv.parent, &fileRights);
+	capLimit(priv.target, &fileRights);
+	if (caPath) {
+		capLimit(localCA.parent, &fileRights);
+		capLimit(localCA.target, &fileRights);
+	}
 	for (size_t i = 0; i < binds; ++i) {
 		capLimit(bind[i], &bindRights);
 	}
@@ -566,11 +529,25 @@ int main(int argc, char *argv[]) {
 
 		if (signals[SIGUSR1]) {
 			signals[SIGUSR1] = 0;
-			cert = splitOpen(certSplit);
-			priv = splitOpen(privSplit);
-			localConfig(cert, priv, localCA, !clientPass);
-			fclose(cert);
-			fclose(priv);
+			certRead = certFile(&cert);
+			if (!certRead) {
+				warn("%s", certPath);
+				continue;
+			}
+			privRead = certFile(&priv);
+			if (!privRead) {
+				warn("%s", privPath);
+				continue;
+			}
+			caRead = (caPath ? certFile(&localCA) : NULL);
+			if (caPath && !caRead) {
+				warn("%s", caPath);
+				continue;
+			}
+			localConfig(certRead, privRead, caRead, !clientPass);
+			fclose(certRead);
+			fclose(privRead);
+			if (caPath) fclose(caRead);
 		}
 	}
 

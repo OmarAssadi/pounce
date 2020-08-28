@@ -25,6 +25,7 @@
  * covered work.
  */
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -207,6 +208,14 @@ void stateParse(char *line);
 void stateSync(struct Client *client);
 const char *stateNick(void);
 const char *stateEcho(void);
+
+struct Cert {
+	int parent;
+	int target;
+	char name[NAME_MAX];
+};
+int certOpen(struct Cert *cert, const char *path);
+FILE *certFile(const struct Cert *cert);
 
 const char *configPath(const char **dirs, const char *path);
 const char *dataPath(const char **dirs, const char *path);
