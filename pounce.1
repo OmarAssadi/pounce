@@ -574,17 +574,26 @@ The most likely location of save files.
 .El
 .
 .Sh EXAMPLES
-Obtain a certificate and start
+Obtain a certificate
+and make its private key available to
 .Nm :
 .Bd -literal -offset indent
-certbot certonly -d pounce.example.org
-pounce -H pounce.example.org -h chat.freenode.net -j '#ascii.town'
+sudo certbot certonly -d irc.example.org
+sudo chown :$USER /etc/letsencrypt/live/irc.example.org/privkey.pem
+sudo chmod g+r /etc/letsencrypt/live/irc.example.org/privkey.pem
+.Ed
+.
+.Pp
+Start
+.Nm :
+.Bd -literal -offset indent
+pounce -H irc.example.org -h chat.freenode.net -j '#ascii.town'
 .Ed
 .
 .Pp
 Equivalent configuration file:
 .Bd -literal -offset indent
-local-host = pounce.example.org
+local-host = irc.example.org
 host = chat.freenode.net
 join = #ascii.town
 .Ed
