@@ -184,6 +184,41 @@ static void capLimit(int fd, const cap_rights_t *rights) {
 }
 #endif
 
+#ifdef __OpenBSD__
+static void unveilParent(const char *path, const char *mode) {
+	char buf[PATH_MAX];
+	strlcpy(buf, path, sizeof(buf));
+	char *base = strrchr(buf, '/');
+	if (base) *base = '\0';
+	int error = unveil((base ? buf : "."), mode);
+	if (error && errno != ENOENT) err(EX_OSERR, "unveil");
+}
+static void unveilTarget(const char *path, const char *mode) {
+	char buf[PATH_MAX];
+	strlcpy(buf, path, sizeof(buf));
+	char *base = strrchr(buf, '/');
+	base = (base ? base + 1 : buf);
+	ssize_t len = readlink(path, base, sizeof(buf) - (base - buf) - 1);
+	if (len < 0) return;
+	base[len] = '\0';
+	unveilParent(buf, mode);
+}
+static void unveilConfig(const char *path) {
+	const char *dirs = NULL;
+	for (const char *abs; NULL != (abs = configPath(&dirs, path));) {
+		unveilParent(abs, "r");
+		unveilTarget(abs, "r");
+	}
+}
+static void unveilData(const char *path) {
+	const char *dirs = NULL;
+	for (const char *abs; NULL != (abs = dataPath(&dirs, path));) {
+		int error = unveil(abs, "rwc");
+		if (error && errno != ENOENT) err(EX_OSERR, "unveil");
+	}
+}
+#endif
+
 static volatile sig_atomic_t signals[NSIG];
 static void signalHandler(int signal) {
 	signals[signal] = 1;
@@ -364,6 +399,17 @@ int main(int argc, char *argv[]) {
 	}
 
 #ifdef __OpenBSD__
+	unveilConfig(certPath);
+	unveilConfig(privPath);
+	if (caPath) unveilConfig(caPath);
+	if (clientCert) unveilConfig(clientCert);
+	if (clientPriv) unveilConfig(clientPriv);
+	if (savePath) unveilData(savePath);
+	if (bindPath[0]) unveilParent(bindPath, "rwc");
+
+	error = unveil(tls_default_ca_cert_file(), "r");
+	if (error) err(EX_OSFILE, "%s", tls_default_ca_cert_file());
+
 	error = pledge("stdio rpath wpath cpath inet flock unix dns recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif

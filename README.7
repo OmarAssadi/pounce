@@ -1,4 +1,4 @@
-.Dd August 28, 2020
+.Dd August 30, 2020
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -51,9 +51,19 @@ or by LibreSSL.
 It primarily targets
 .Fx ,
 where it is sandboxed with
-.Xr capsicum 4 .
+.Xr capsicum 4 ,
+and
+.Ox ,
+where it is sandboxed with
+.Xr pledge 2
+and
+.Xr unveil 2 .
 Linux and macOS
 are also supported.
+On
+.Ox ,
+configure with
+.Fl \-mandir=/usr/local/man .
 .Bd -literal -offset indent
 \&./configure
 make all
