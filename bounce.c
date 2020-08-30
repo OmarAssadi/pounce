@@ -64,91 +64,37 @@
 
 bool verbose;
 
-#ifdef __OpenBSD__
-static void hashPass(void) {
-	char hash[_PASSWORD_LEN];
-	char *pass = getpass("Password: ");
-	int error = crypt_newhash(pass, "bcrypt,a", hash, sizeof(hash));
-	if (error) err(EX_OSERR, "crypt_newhash");
-	printf("%s\n", hash);
-}
-#else
-static void hashPass(void) {
-	byte rand[12];
-	int error = getentropy(rand, sizeof(rand));
-	if (error) err(EX_OSERR, "getentropy");
-
-	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
-	base64(&salt[3], rand, sizeof(rand));
-
-	char *pass = getpass("Password: ");
-	printf("%s\n", crypt(pass, salt));
-}
-#endif
-
-static void genReq(const char *path) {
-	const char *name = strrchr(path, '/');
-	name = (name ? &name[1] : path);
-	char subj[256];
-	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
-	execlp(
-		OPENSSL_BIN, "openssl", "req",
-		"-new", "-newkey", "rsa:4096", "-sha256", "-nodes",
-		"-subj", subj, "-keyout", path,
-		NULL
-	);
-	err(EX_UNAVAILABLE, "openssl");
+static volatile sig_atomic_t signals[NSIG];
+static void signalHandler(int signal) {
+	signals[signal] = 1;
 }
 
-static void redir(int dst, int src) {
-	int fd = dup2(src, dst);
-	if (fd < 0) err(EX_OSERR, "dup2");
-	close(src);
-}
+static struct {
+	struct pollfd *fds;
+	struct Client **clients;
+	size_t cap, len;
+} event;
 
-static void genCert(const char *path, const char *ca) {
-	int out = open(path, O_WRONLY | O_APPEND | O_CREAT, 0600);
-	if (out < 0) err(EX_CANTCREAT, "%s", path);
-
-	int rw[2];
-	int error = pipe(rw);
-	if (error) err(EX_OSERR, "pipe");
-
-	pid_t pid = fork();
-	if (pid < 0) err(EX_OSERR, "fork");
-	if (!pid) {
-		close(rw[0]);
-		redir(STDOUT_FILENO, rw[1]);
-		genReq(path);
+static void eventAdd(int fd, struct Client *client) {
+	if (event.len == event.cap) {
+		event.cap = (event.cap ? event.cap * 2 : 8);
+		event.fds = realloc(event.fds, sizeof(*event.fds) * event.cap);
+		if (!event.fds) err(EX_OSERR, "realloc");
+		event.clients = realloc(
+			event.clients, sizeof(*event.clients) * event.cap
+		);
+		if (!event.clients) err(EX_OSERR, "realloc");
 	}
-
-	close(rw[1]);
-	redir(STDIN_FILENO, rw[0]);
-	redir(STDOUT_FILENO, out);
-	execlp(
-		OPENSSL_BIN, "openssl", "x509",
-		"-req", "-days", "3650", "-CAcreateserial",
-		(ca ? "-CA" : "-signkey"), (ca ? ca : path),
-		NULL
-	);
-	err(EX_UNAVAILABLE, "openssl");
+	event.fds[event.len] = (struct pollfd) { .fd = fd, .events = POLLIN };
+	event.clients[event.len] = client;
+	event.len++;
 }
 
-static size_t parseSize(const char *str) {
-	char *rest;
-	size_t size = strtoull(str, &rest, 0);
-	if (*rest) errx(EX_USAGE, "invalid size: %s", str);
-	return size;
-}
-
-static struct timeval parseInterval(const char *str) {
-	char *rest;
-	long ms = strtol(str, &rest, 0);
-	if (*rest) errx(EX_USAGE, "invalid interval: %s", str);
-	return (struct timeval) {
-		.tv_sec = ms / 1000,
-		.tv_usec = 1000 * (ms % 1000),
-	};
+static void eventRemove(size_t i) {
+	close(event.fds[i].fd);
+	event.len--;
+	event.fds[i] = event.fds[event.len];
+	event.clients[i] = event.clients[event.len];
 }
 
 static FILE *saveFile;
@@ -193,6 +139,7 @@ static void unveilParent(const char *path, const char *mode) {
 	int error = unveil((base ? buf : "."), mode);
 	if (error && errno != ENOENT) err(EX_OSERR, "unveil");
 }
+
 static void unveilTarget(const char *path, const char *mode) {
 	char buf[PATH_MAX];
 	strlcpy(buf, path, sizeof(buf));
@@ -203,6 +150,7 @@ static void unveilTarget(const char *path, const char *mode) {
 	base[len] = '\0';
 	unveilParent(buf, mode);
 }
+
 static void unveilConfig(const char *path) {
 	const char *dirs = NULL;
 	for (const char *abs; NULL != (abs = configPath(&dirs, path));) {
@@ -210,6 +158,7 @@ static void unveilConfig(const char *path) {
 		unveilTarget(abs, "r");
 	}
 }
+
 static void unveilData(const char *path) {
 	const char *dirs = NULL;
 	for (const char *abs; NULL != (abs = dataPath(&dirs, path));) {
@@ -217,40 +166,27 @@ static void unveilData(const char *path) {
 		if (error && errno != ENOENT) err(EX_OSERR, "unveil");
 	}
 }
-#endif
+#endif /* __OpenBSD__ */
 
-static volatile sig_atomic_t signals[NSIG];
-static void signalHandler(int signal) {
-	signals[signal] = 1;
+static size_t parseSize(const char *str) {
+	char *rest;
+	size_t size = strtoull(str, &rest, 0);
+	if (*rest) errx(EX_USAGE, "invalid size: %s", str);
+	return size;
 }
 
-static struct {
-	struct pollfd *fds;
-	struct Client **clients;
-	size_t cap, len;
-} event;
-
-static void eventAdd(int fd, struct Client *client) {
-	if (event.len == event.cap) {
-		event.cap = (event.cap ? event.cap * 2 : 8);
-		event.fds = realloc(event.fds, sizeof(*event.fds) * event.cap);
-		if (!event.fds) err(EX_OSERR, "realloc");
-		event.clients = realloc(
-			event.clients, sizeof(*event.clients) * event.cap
-		);
-		if (!event.clients) err(EX_OSERR, "realloc");
-	}
-	event.fds[event.len] = (struct pollfd) { .fd = fd, .events = POLLIN };
-	event.clients[event.len] = client;
-	event.len++;
+static struct timeval parseInterval(const char *str) {
+	char *rest;
+	long ms = strtol(str, &rest, 0);
+	if (*rest) errx(EX_USAGE, "invalid interval: %s", str);
+	return (struct timeval) {
+		.tv_sec = ms / 1000,
+		.tv_usec = 1000 * (ms % 1000),
+	};
 }
 
-static void eventRemove(size_t i) {
-	close(event.fds[i].fd);
-	event.len--;
-	event.fds[i] = event.fds[event.len];
-	event.clients[i] = event.clients[event.len];
-}
+static void hashPass(void);
+static void genCert(const char *path, const char *ca);
 
 int main(int argc, char *argv[]) {
 	int error;
@@ -605,4 +541,74 @@ int main(int argc, char *argv[]) {
 		clientFree(event.clients[i]);
 		close(event.fds[i].fd);
 	}
+}
+
+#ifdef __OpenBSD__
+static void hashPass(void) {
+	char hash[_PASSWORD_LEN];
+	char *pass = getpass("Password: ");
+	int error = crypt_newhash(pass, "bcrypt,a", hash, sizeof(hash));
+	if (error) err(EX_OSERR, "crypt_newhash");
+	printf("%s\n", hash);
+}
+#else
+static void hashPass(void) {
+	byte rand[12];
+	int error = getentropy(rand, sizeof(rand));
+	if (error) err(EX_OSERR, "getentropy");
+
+	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
+	base64(&salt[3], rand, sizeof(rand));
+
+	char *pass = getpass("Password: ");
+	printf("%s\n", crypt(pass, salt));
+}
+#endif
+
+static void genReq(const char *path) {
+	const char *name = strrchr(path, '/');
+	name = (name ? &name[1] : path);
+	char subj[256];
+	snprintf(subj, sizeof(subj), "/CN=%.*s", (int)strcspn(name, "."), name);
+	execlp(
+		OPENSSL_BIN, "openssl", "req",
+		"-new", "-newkey", "rsa:4096", "-sha256", "-nodes",
+		"-subj", subj, "-keyout", path,
+		NULL
+	);
+	err(EX_UNAVAILABLE, "openssl");
+}
+
+static void redir(int dst, int src) {
+	int fd = dup2(src, dst);
+	if (fd < 0) err(EX_OSERR, "dup2");
+	close(src);
+}
+
+static void genCert(const char *path, const char *ca) {
+	int out = open(path, O_WRONLY | O_APPEND | O_CREAT, 0600);
+	if (out < 0) err(EX_CANTCREAT, "%s", path);
+
+	int rw[2];
+	int error = pipe(rw);
+	if (error) err(EX_OSERR, "pipe");
+
+	pid_t pid = fork();
+	if (pid < 0) err(EX_OSERR, "fork");
+	if (!pid) {
+		close(rw[0]);
+		redir(STDOUT_FILENO, rw[1]);
+		genReq(path);
+	}
+
+	close(rw[1]);
+	redir(STDIN_FILENO, rw[0]);
+	redir(STDOUT_FILENO, out);
+	execlp(
+		OPENSSL_BIN, "openssl", "x509",
+		"-req", "-days", "3650", "-CAcreateserial",
+		(ca ? "-CA" : "-signkey"), (ca ? ca : path),
+		NULL
+	);
+	err(EX_UNAVAILABLE, "openssl");
 }
