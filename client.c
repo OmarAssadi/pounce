@@ -262,64 +262,62 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 	client->error = true;
 }
 
-static void handlePrivmsg(struct Client *client, struct Message *msg) {
-	if (!msg->params[0] || !msg->params[1]) return;
-
-	int origin;
-	char line[MessageCap];
-	snprintf(
-		line, sizeof(line), "@%s %n:%s %s %s :%s",
-		(msg->tags ? msg->tags : ""), &origin,
-		stateEcho(), msg->cmd, msg->params[0], msg->params[1]
-	);
-	size_t diff = ringDiff(client->consumer);
-	ringProduce((msg->tags ? line : &line[origin]));
-	if (!diff) ringConsume(NULL, client->consumer);
-	if (!strcmp(msg->params[0], stateNick())) return;
-
+static void reserialize(
+	char *buf, size_t cap, const char *origin, const struct Message *msg
+) {
+	size_t len = 0;
 	if (msg->tags) {
-		serverFormat(
-			"@%s %s %s :%s\r\n",
-			msg->tags, msg->cmd, msg->params[0], msg->params[1]
-		);
-	} else {
-		serverFormat("%s %s :%s\r\n", msg->cmd, msg->params[0], msg->params[1]);
+		len += snprintf(&buf[len], cap - len, "@%s ", msg->tags);
+		if (len >= cap) return;
 	}
+	if (!origin) origin = msg->origin;
+	if (origin) {
+		len += snprintf(&buf[len], cap - len, ":%s ", origin);
+		if (len >= cap) return;
+	}
+	len += snprintf(&buf[len], cap - len, "%s", msg->cmd);
+	if (len >= cap) return;
+	for (size_t i = 0; i < ParamCap && msg->params[i]; ++i) {
+		if (i + 1 == ParamCap || !msg->params[i + 1]) {
+			len += snprintf(&buf[len], cap - len, " :%s", msg->params[i]);
+		} else {
+			len += snprintf(&buf[len], cap - len, " %s", msg->params[i]);
+		}
+		if (len >= cap) return;
+	}
+}
+
+static void clientProduce(struct Client *client, const char *line) {
+	size_t diff = ringDiff(client->consumer);
+	ringProduce(line);
+	if (!diff) ringConsume(NULL, client->consumer);
+}
+
+static void handlePrivmsg(struct Client *client, struct Message *msg) {
+	if (!msg->params[0]) return;
+	char buf[MessageCap];
+	reserialize(buf, sizeof(buf), stateEcho(), msg);
+	clientProduce(client, buf);
+	if (!strcmp(msg->params[0], stateNick())) return;
+	reserialize(buf, sizeof(buf), NULL, msg);
+	serverFormat("%s\r\n", buf);
 }
 
 static void handleTagmsg(struct Client *client, struct Message *msg) {
-	if (!msg->tags || !msg->params[0]) return;
-	char line[MessageCap];
-	snprintf(
-		line, sizeof(line), "@%s :%s TAGMSG %s",
-		msg->tags, stateEcho(), msg->params[0]
-	);
-	size_t diff = ringDiff(client->consumer);
-	ringProduce(line);
-	if (!diff) ringConsume(NULL, client->consumer);
+	if (!msg->params[0]) return;
+	char buf[MessageCap];
+	reserialize(buf, sizeof(buf), stateEcho(), msg);
+	clientProduce(client, buf);
 	if (!strcmp(msg->params[0], stateNick())) return;
-	serverFormat("@%s TAGMSG %s\r\n", msg->tags, msg->params[0]);
+	reserialize(buf, sizeof(buf), NULL, msg);
+	serverFormat("%s\r\n", buf);
 }
 
 static void handlePalaver(struct Client *client, struct Message *msg) {
-	if (client->need & NeedPass || !msg->params[0]) return;
-	char line[MessageCap];
-	if (msg->params[3]) {
-		snprintf(
-			line, sizeof(line), "PALAVER %s %s %s %s",
-			msg->params[0], msg->params[1], msg->params[2], msg->params[3]
-		);
-	} else if (msg->params[2]) {
-		snprintf(
-			line, sizeof(line), "PALAVER %s %s %s",
-			msg->params[0], msg->params[1], msg->params[2]
-		);
-	} else {
-		snprintf(line, sizeof(line), "PALAVER %s", msg->params[0]);
-	}
-	size_t diff = ringDiff(client->consumer);
-	ringProduce(line);
-	if (!diff) ringConsume(NULL, client->consumer);
+	if (client->need & NeedPass) return;
+	char buf[MessageCap];
+	reserialize(buf, sizeof(buf), NULL, msg);
+	clientProduce(client, buf);
 }
 
 static const struct {
