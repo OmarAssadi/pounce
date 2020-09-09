@@ -355,6 +355,7 @@ int main(int argc, char *argv[]) {
 
 	struct Cert localCA = { -1, -1, "" };
 	if (caPath) {
+		error = 0;
 		const char *dirs = NULL;
 		for (const char *path; NULL != (path = configPath(&dirs, caPath));) {
 			error = certOpen(&localCA, path);
