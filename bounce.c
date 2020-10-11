@@ -68,6 +68,9 @@ static volatile sig_atomic_t signals[NSIG];
 static void signalHandler(int signal) {
 	signals[signal] = 1;
 }
+static void justExit(int signal) {
+	exit(128 + signal);
+}
 
 static struct {
 	struct pollfd *fds;
@@ -349,6 +352,12 @@ int main(int argc, char *argv[]) {
 	error = pledge("stdio rpath wpath cpath inet flock unix dns recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif
+
+	// Either exit with cleanup or ignore signals until entering the main loop.
+	signal(SIGINT, justExit);
+	signal(SIGTERM, justExit);
+	signal(SIGINFO, SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
 
 	ringAlloc(ringSize);
 	if (savePath) saveLoad(savePath);
