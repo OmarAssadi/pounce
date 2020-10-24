@@ -533,16 +533,15 @@ static void handleReplyUnaway(struct Message *msg) {
 static bool noPreview;
 static bool noPrivatePreview;
 
-static void jsonBody(
-	char *buf, size_t cap,
-	struct Message *msg, const char *network, bool preview
-) {
+static char *jsonBody(struct Message *msg, const char *network, bool preview) {
 	bool private = (msg->params[0][0] != '#');
 	if (private && noPrivatePreview) preview = false;
 	if (noPreview) preview = false;
 
-	FILE *file = fmemopen(buf, cap, "w");
-	if (!file) err(EX_OSERR, "fmemopen");
+	char *buf;
+	size_t len;
+	FILE *file = open_memstream(&buf, &len);
+	if (!file) err(EX_OSERR, "open_memstream");
 
 	fprintf(file, "{\"badge\":%d", badge);
 	fprintf(file, ",\"sender\":");
@@ -570,9 +569,10 @@ static void jsonBody(
 	}
 	fprintf(file, "}");
 
-	// XXX: fmemopen only null-terminates if there is room.
-	fclose(file);
-	buf[cap - 1] = '\0';
+	int error = fclose(file);
+	if (error) err(EX_IOERR, "fclose");
+
+	return buf;
 }
 
 static void handlePrivmsg(struct Message *msg) {
@@ -600,13 +600,13 @@ static void handlePrivmsg(struct Message *msg) {
 		const char *preview = sqlite3_column_text(stmts[Notify], i++);
 		const char *network = sqlite3_column_text(stmts[Notify], i++);
 
-		char body[4096];
 		if (!badged) {
 			badge++;
 			badged = true;
 		}
-		jsonBody(body, sizeof(body), msg, network, !strcmp(preview, "true"));
+		char *body = jsonBody(msg, network, !strcmp(preview, "true"));
 		pushNotify(endpoint, token, body);
+		free(body);
 	}
 	if (result != SQLITE_DONE) errx(EX_SOFTWARE, "%s", sqlite3_errmsg(db));
 	sqlite3_reset(stmts[Notify]);
