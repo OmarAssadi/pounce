@@ -140,7 +140,7 @@ static void unveilParent(const char *path, const char *mode) {
 	char *base = strrchr(buf, '/');
 	if (base) *base = '\0';
 	int error = unveil((base ? buf : "."), mode);
-	if (error && errno != ENOENT) err(EX_OSERR, "unveil");
+	if (error && errno != ENOENT) err(EX_NOINPUT, "%s", path);
 }
 
 static void unveilTarget(const char *path, const char *mode) {
@@ -166,7 +166,7 @@ static void unveilData(const char *path) {
 	const char *dirs = NULL;
 	for (const char *abs; NULL != (abs = dataPath(&dirs, path));) {
 		int error = unveil(abs, "rwc");
-		if (error && errno != ENOENT) err(EX_OSERR, "unveil");
+		if (error && errno != ENOENT) err(EX_CANTCREAT, "%s", abs);
 	}
 }
 #endif /* __OpenBSD__ */
