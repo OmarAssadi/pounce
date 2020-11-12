@@ -121,7 +121,9 @@ static char *serverName(void) {
 	skip(uint8());
 	skip(uint16());
 	skip(uint8());
-	peek.len = uint16();
+	uint16_t len = uint16();
+	if (len > peek.len) return NULL;
+	peek.len = len;
 	while (peek.len) {
 		// Extension
 		uint16_t type = uint16();
