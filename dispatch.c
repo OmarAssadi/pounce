@@ -25,6 +25,7 @@
  * covered work.
  */
 
+#include <assert.h>
 #include <err.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -43,49 +44,6 @@
 #ifdef __FreeBSD__
 #include <sys/capsicum.h>
 #endif
-
-static struct {
-	struct pollfd *ptr;
-	size_t len, cap;
-} event;
-
-static void eventAdd(int fd) {
-	if (event.len == event.cap) {
-		event.cap = (event.cap ? event.cap * 2 : 8);
-		event.ptr = realloc(event.ptr, sizeof(*event.ptr) * event.cap);
-		if (!event.ptr) err(EX_OSERR, "malloc");
-	}
-	event.ptr[event.len++] = (struct pollfd) {
-		.fd = fd,
-		.events = POLLIN,
-	};
-}
-
-static void eventRemove(size_t i) {
-	close(event.ptr[i].fd);
-	event.ptr[i] = event.ptr[--event.len];
-}
-
-static ssize_t sendfd(int sock, int fd) {
-	char buf[CMSG_SPACE(sizeof(int))];
-
-	char x = 0;
-	struct iovec iov = { .iov_base = &x, .iov_len = 1 };
-	struct msghdr msg = {
-		.msg_iov = &iov,
-		.msg_iovlen = 1,
-		.msg_control = buf,
-		.msg_controllen = sizeof(buf),
-	};
-
-	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-	cmsg->cmsg_level = SOL_SOCKET;
-	cmsg->cmsg_type = SCM_RIGHTS;
-	*(int *)CMSG_DATA(cmsg) = fd;
-
-	return sendmsg(sock, &msg, 0);
-}
 
 static struct {
 	uint8_t buf[4096];
@@ -156,6 +114,27 @@ static void alert(int sock) {
 	if (len < 0) warn("send");
 }
 
+static ssize_t sendfd(int sock, int fd) {
+	char buf[CMSG_SPACE(sizeof(int))];
+
+	char x = 0;
+	struct iovec iov = { .iov_base = &x, .iov_len = 1 };
+	struct msghdr msg = {
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = buf,
+		.msg_controllen = sizeof(buf),
+	};
+
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	*(int *)CMSG_DATA(cmsg) = fd;
+
+	return sendmsg(sock, &msg, 0);
+}
+
 int main(int argc, char *argv[]) {
 	int error;
 
@@ -196,6 +175,10 @@ int main(int argc, char *argv[]) {
 	error = fchdir(dir);
 	if (error) err(EX_NOINPUT, "%s", path);
 
+	enum { Cap = 1024 };
+	struct pollfd fds[Cap];
+	size_t nfds = 0;
+
 	struct addrinfo *head;
 	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
@@ -206,7 +189,7 @@ int main(int argc, char *argv[]) {
 	if (error) errx(EX_NOHOST, "%s:%s: %s", host, port, gai_strerror(error));
 
 	size_t binds = 0;
-	for (struct addrinfo *ai = head; ai; ai = ai->ai_next) {
+	for (struct addrinfo *ai = head; ai && binds < Cap - 1; ai = ai->ai_next) {
 		int sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (sock < 0) err(EX_OSERR, "socket");
 
@@ -223,7 +206,7 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		eventAdd(sock);
+		fds[nfds++] = (struct pollfd) { .fd = sock, .events = POLLIN };
 		binds++;
 	}
 	if (!binds) errx(EX_UNAVAILABLE, "could not bind any sockets");
@@ -243,63 +226,62 @@ int main(int argc, char *argv[]) {
 	error = cap_rights_limit(dir, &dirRights);
 	if (error) err(EX_OSERR, "cap_rights_limit");
 	for (size_t i = 0; i < binds; ++i) {
-		error = cap_rights_limit(event.ptr[i].fd, &bindRights);
+		error = cap_rights_limit(fds[i].fd, &bindRights);
 		if (error) err(EX_OSERR, "cap_rights_limit");
 	}
 #endif
 
 	for (size_t i = 0; i < binds; ++i) {
-		error = listen(event.ptr[i].fd, -1);
+		error = listen(fds[i].fd, -1);
 		if (error) err(EX_IOERR, "listen");
 	}
 
 	signal(SIGPIPE, SIG_IGN);
 	for (;;) {
-		int nfds = poll(
-			event.ptr, event.len, (event.len > binds ? timeout : -1)
-		);
-		if (nfds < 0) err(EX_IOERR, "poll");
+		for (size_t i = 0; i < binds; ++i) {
+			fds[i].events = (nfds < Cap ? POLLIN : 0);
+		}
 
-		if (!nfds) {
-			for (size_t i = event.len - 1; i >= binds; --i) {
-				eventRemove(i);
+		int ready = poll(fds, nfds, (nfds > binds ? timeout : -1));
+		if (ready < 0) err(EX_IOERR, "poll");
+
+		if (!ready) {
+			for (size_t i = binds; i < nfds; ++i) {
+				close(fds[i].fd);
 			}
+			nfds = binds;
 			continue;
 		}
 
-		for (size_t i = event.len - 1; i < event.len; --i) {
-			if (!event.ptr[i].revents) continue;
+		for (size_t i = nfds - 1; i < nfds; --i) {
+			if (!fds[i].revents) continue;
 
 			if (i < binds) {
-				int sock = accept(event.ptr[i].fd, NULL, NULL);
+				int sock = accept(fds[i].fd, NULL, NULL);
 				if (sock < 0) {
 					warn("accept");
 					continue;
 				}
-				eventAdd(sock);
+				assert(nfds < Cap);
+				fds[nfds++] = (struct pollfd) { .fd = sock, .events = POLLIN };
 				continue;
 			}
 
-			if (event.ptr[i].revents & (POLLHUP | POLLERR)) {
-				eventRemove(i);
-				continue;
-			}
+			if (fds[i].revents & (POLLHUP | POLLERR)) goto remove;
 
 			ssize_t len = recv(
-				event.ptr[i].fd, peek.buf, sizeof(peek.buf) - 1, MSG_PEEK
+				fds[i].fd, peek.buf, sizeof(peek.buf) - 1, MSG_PEEK
 			);
 			if (len < 0) {
 				warn("recv");
-				eventRemove(i);
-				continue;
+				goto remove;
 			}
 			peek.len = len;
 
 			char *name = serverName();
 			if (!name || name[0] == '.' || strchr(name, '/')) {
-				alert(event.ptr[i].fd);
-				eventRemove(i);
-				continue;
+				alert(fds[i].fd);
+				goto remove;
 			}
 
 			struct sockaddr_un addr = { .sun_family = AF_UNIX };
@@ -321,17 +303,19 @@ int main(int argc, char *argv[]) {
 
 			if (error) {
 				warn("%s", name);
-				alert(event.ptr[i].fd);
+				alert(fds[i].fd);
 			} else {
-				len = sendfd(sock, event.ptr[i].fd);
+				len = sendfd(sock, fds[i].fd);
 				if (len < 0) {
 					warn("%s", name);
-					alert(event.ptr[i].fd);
+					alert(fds[i].fd);
 				}
 			}
-
 			close(sock);
-			eventRemove(i);
+
+remove:
+			close(fds[i].fd);
+			fds[i] = fds[--nfds];
 		}
 	}
 }
