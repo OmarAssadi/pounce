@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 			peek.len = len;
 
 			char *name = serverName();
-			if (!name || name[0] == '.' || name[0] == '/') {
+			if (!name || name[0] == '.' || strchr(name, '/')) {
 				alert(event.ptr[i].fd);
 				eventRemove(i);
 				continue;
