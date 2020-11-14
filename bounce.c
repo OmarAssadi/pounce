@@ -486,15 +486,7 @@ int main(int argc, char *argv[]) {
 					warn("accept");
 					continue;
 				}
-
-				error = tls_handshake(tls);
-				if (error) {
-					warnx("tls_handshake: %s", tls_error(tls));
-					tls_free(tls);
-					close(fd);
-				} else {
-					eventAdd(fd, clientAlloc(tls));
-				}
+				eventAdd(fd, clientAlloc(tls));
 				continue;
 			}
 

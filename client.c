@@ -48,6 +48,7 @@ char *clientAway;
 static size_t active;
 
 enum Need {
+	BIT(NeedHandshake),
 	BIT(NeedNick),
 	BIT(NeedUser),
 	BIT(NeedPass),
@@ -69,11 +70,23 @@ struct Client *clientAlloc(struct tls *tls) {
 	struct Client *client = calloc(1, sizeof(*client));
 	if (!client) err(EX_OSERR, "calloc");
 	client->tls = tls;
-	client->need = NeedNick | NeedUser | (clientPass ? NeedPass : 0);
-	if ((clientCaps & CapSASL) && tls_peer_cert_provided(tls)) {
+	client->need = NeedHandshake | NeedNick | NeedUser;
+	if (clientPass) client->need |= NeedPass;
+	return client;
+}
+
+static void clientHandshake(struct Client *client) {
+	int error = tls_handshake(client->tls);
+	if (error == TLS_WANT_POLLIN || error == TLS_WANT_POLLOUT) return;
+	if (error) {
+		warnx("client tls_handshake: %s", tls_error(client->tls));
+		client->error = true;
+		return;
+	}
+	client->need &= ~NeedHandshake;
+	if ((clientCaps & CapSASL) && tls_peer_cert_provided(client->tls)) {
 		client->need &= ~NeedPass;
 	}
-	return client;
 }
 
 void clientFree(struct Client *client) {
@@ -369,6 +382,11 @@ static bool intercept(const char *line, size_t len) {
 }
 
 void clientRecv(struct Client *client) {
+	if (client->need & NeedHandshake) {
+		clientHandshake(client);
+		return;
+	}
+
 	ssize_t read = tls_read(
 		client->tls,
 		&client->buf[client->len], sizeof(client->buf) - client->len
