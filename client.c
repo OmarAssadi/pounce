@@ -47,25 +47,6 @@ char *clientAway;
 
 static size_t active;
 
-enum Need {
-	BIT(NeedHandshake),
-	BIT(NeedNick),
-	BIT(NeedUser),
-	BIT(NeedPass),
-	BIT(NeedCapEnd),
-};
-
-struct Client {
-	struct tls *tls;
-	enum Need need;
-	size_t consumer;
-	size_t setPos;
-	enum Cap caps;
-	char buf[MessageCap];
-	size_t len;
-	bool error;
-};
-
 struct Client *clientAlloc(struct tls *tls) {
 	struct Client *client = calloc(1, sizeof(*client));
 	if (!client) err(EX_OSERR, "calloc");
@@ -98,10 +79,6 @@ void clientFree(struct Client *client) {
 	tls_close(client->tls);
 	tls_free(client->tls);
 	free(client);
-}
-
-bool clientError(const struct Client *client) {
-	return client->error;
 }
 
 void clientSend(struct Client *client, const char *ptr, size_t len) {

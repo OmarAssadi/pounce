@@ -184,12 +184,28 @@ void serverEnqueue(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 void serverDequeue(void);
 
+enum Need {
+	BIT(NeedHandshake),
+	BIT(NeedNick),
+	BIT(NeedUser),
+	BIT(NeedPass),
+	BIT(NeedCapEnd),
+};
+struct Client {
+	bool error;
+	struct tls *tls;
+	enum Need need;
+	enum Cap caps;
+	size_t consumer;
+	size_t setPos;
+	char buf[MessageCap];
+	size_t len;
+};
 extern enum Cap clientCaps;
 extern char *clientPass;
 extern char *clientAway;
 struct Client *clientAlloc(struct tls *tls);
 void clientFree(struct Client *client);
-bool clientError(const struct Client *client);
 void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
 void clientFormat(struct Client *client, const char *format, ...)
