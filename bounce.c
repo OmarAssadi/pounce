@@ -538,10 +538,13 @@ int main(int argc, char *argv[]) {
 	serverFormat("QUIT :%s\r\n", quit);
 	for (size_t i = binds + 1; i < event.len; ++i) {
 		assert(event.clients[i]);
-		clientFormat(event.clients[i], ":%s QUIT :%s\r\n", stateEcho(), quit);
-		clientFormat(event.clients[i], "ERROR :Disconnecting\r\n");
+		if (!event.clients[i]->need) {
+			clientFormat(
+				event.clients[i], ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",
+				stateEcho(), quit
+			);
+		}
 		clientFree(event.clients[i]);
-		close(event.fds[i].fd);
 	}
 }
 
