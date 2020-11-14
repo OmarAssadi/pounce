@@ -480,9 +480,9 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (!event.clients[i]) {
-				int fd;
-				struct tls *tls = localAccept(&fd, event.fds[i].fd);
-				if (!tls) {
+				struct tls *tls;
+				int fd = localAccept(&tls, event.fds[i].fd);
+				if (fd < 0) {
 					warn("accept");
 					continue;
 				}

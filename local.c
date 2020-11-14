@@ -221,29 +221,29 @@ static int recvfd(int sock) {
 	return *(int *)CMSG_DATA(cmsg);
 }
 
-struct tls *localAccept(int *fd, int bind) {
-	*fd = accept(bind, NULL, NULL);
-	if (*fd < 0) return NULL;
+int localAccept(struct tls **client, int bind) {
+	int fd = accept(bind, NULL, NULL);
+	if (fd < 0) return fd;
 
 	if (unix) {
-		int sent = recvfd(*fd);
+		int sent = recvfd(fd);
 		if (sent < 0) err(EX_IOERR, "recvfd");
-		close(*fd);
-		*fd = sent;
+		close(fd);
+		fd = sent;
 	}
 
 	int on = 1;
-	int error = setsockopt(*fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
+	int error = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
 	if (error) err(EX_OSERR, "setsockopt");
 
 #ifdef TCP_KEEPIDLE
 	int idle = 15 * 60;
-	error = setsockopt(*fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
+	error = setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
 	if (error) err(EX_OSERR, "setsockopt");
 #endif
 
-	struct tls *client;
-	error = tls_accept_socket(server, &client, *fd);
+	error = tls_accept_socket(server, client, fd);
 	if (error) errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
-	return client;
+
+	return fd;
 }

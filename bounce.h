@@ -171,7 +171,7 @@ void ringLoad(FILE *file);
 void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require);
 size_t localBind(int fds[], size_t cap, const char *host, const char *port);
 size_t localUnix(int fds[], size_t cap, const char *path);
-struct tls *localAccept(int *fd, int bind);
+int localAccept(struct tls **tls, int bind);
 
 extern struct timeval serverQueueInterval;
 void serverConfig(bool insecure, const char *cert, const char *priv);
