@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <fcntl.h>
 #include <regex.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -47,9 +48,11 @@ char *clientAway;
 
 static size_t active;
 
-struct Client *clientAlloc(struct tls *tls) {
+struct Client *clientAlloc(int sock, struct tls *tls) {
 	struct Client *client = calloc(1, sizeof(*client));
 	if (!client) err(EX_OSERR, "calloc");
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+	client->sock = sock;
 	client->tls = tls;
 	client->need = NeedHandshake | NeedNick | NeedUser;
 	if (clientPass) client->need |= NeedPass;
@@ -83,17 +86,19 @@ void clientFree(struct Client *client) {
 
 void clientSend(struct Client *client, const char *ptr, size_t len) {
 	if (verbose) fprintf(stderr, "\x1B[34m%.*s\x1B[m", (int)len, ptr);
+	fcntl(client->sock, F_SETFL, 0);
 	while (len) {
 		ssize_t ret = tls_write(client->tls, ptr, len);
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
 		if (ret < 0) {
 			warnx("client tls_write: %s", tls_error(client->tls));
 			client->error = true;
-			return;
+			break;
 		}
 		ptr += ret;
 		len -= ret;
 	}
+	fcntl(client->sock, F_SETFL, O_NONBLOCK);
 }
 
 void clientFormat(struct Client *client, const char *format, ...) {

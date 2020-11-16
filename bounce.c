@@ -481,12 +481,12 @@ int main(int argc, char *argv[]) {
 
 			if (!event.clients[i]) {
 				struct tls *tls;
-				int fd = localAccept(&tls, event.fds[i].fd);
-				if (fd < 0) {
+				int sock = localAccept(&tls, event.fds[i].fd);
+				if (sock < 0) {
 					warn("accept");
 					continue;
 				}
-				eventAdd(fd, clientAlloc(tls));
+				eventAdd(sock, clientAlloc(sock, tls));
 				continue;
 			}
 

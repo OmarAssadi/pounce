@@ -193,6 +193,7 @@ enum Need {
 };
 struct Client {
 	bool error;
+	int sock;
 	struct tls *tls;
 	enum Need need;
 	enum Cap caps;
@@ -204,7 +205,7 @@ struct Client {
 extern enum Cap clientCaps;
 extern char *clientPass;
 extern char *clientAway;
-struct Client *clientAlloc(struct tls *tls);
+struct Client *clientAlloc(int sock, struct tls *tls);
 void clientFree(struct Client *client);
 void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
