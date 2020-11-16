@@ -232,9 +232,10 @@ static void handleCap(struct Client *client, struct Message *msg) {
 
 static void handleAuthenticate(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) msg->params[0] = "";
-	if (!strcmp(msg->params[0], "EXTERNAL")) {
+	bool cert = (clientCaps & CapSASL) && tls_peer_cert_provided(client->tls);
+	if (cert && !strcmp(msg->params[0], "EXTERNAL")) {
 		clientFormat(client, "AUTHENTICATE +\r\n");
-	} else if (!strcmp(msg->params[0], "+")) {
+	} else if (cert && !strcmp(msg->params[0], "+")) {
 		clientFormat(
 			client, ":%s 900 * %s * :You are now logged in as *\r\n",
 			ORIGIN, stateEcho()
