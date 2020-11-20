@@ -195,6 +195,7 @@ struct Client {
 	bool error;
 	int sock;
 	struct tls *tls;
+	time_t time;
 	enum Need need;
 	enum Cap caps;
 	size_t consumer;

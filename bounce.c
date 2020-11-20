@@ -25,7 +25,6 @@
  * covered work.
  */
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -44,6 +43,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sysexits.h>
+#include <time.h>
 #include <tls.h>
 #include <unistd.h>
 
@@ -458,8 +458,9 @@ int main(int argc, char *argv[]) {
 	eventAdd(server, NULL);
 
 	for (;;) {
+		bool need = false;
 		for (size_t i = binds + 1; i < event.len; ++i) {
-			assert(event.clients[i]);
+			if (event.clients[i]->need) need = true;
 			if (clientDiff(event.clients[i])) {
 				event.fds[i].events |= POLLOUT;
 			} else {
@@ -467,8 +468,20 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		int nfds = poll(event.fds, event.len, -1);
+		const int Timeout = 10;
+		int nfds = poll(event.fds, event.len, (need ? Timeout * 1000 : -1));
 		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
+
+		if (need) {
+			time_t now = time(NULL);
+			for (size_t i = event.len - 1; i >= binds + 1; --i) {
+				struct Client *client = event.clients[i];
+				if (client->need && now - client->time >= Timeout) {
+					clientFree(client);
+					eventRemove(i);
+				}
+			}
+		}
 
 		for (size_t i = event.len - 1; nfds > 0 && i < event.len; --i) {
 			short revents = event.fds[i].revents;
@@ -537,7 +550,6 @@ int main(int argc, char *argv[]) {
 
 	serverFormat("QUIT :%s\r\n", quit);
 	for (size_t i = binds + 1; i < event.len; ++i) {
-		assert(event.clients[i]);
 		if (!event.clients[i]->need) {
 			clientFormat(
 				event.clients[i], ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",

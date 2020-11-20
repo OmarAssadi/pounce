@@ -54,6 +54,7 @@ struct Client *clientAlloc(int sock, struct tls *tls) {
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 	client->sock = sock;
 	client->tls = tls;
+	client->time = time(NULL);
 	client->need = NeedHandshake | NeedNick | NeedUser;
 	if (clientPass) client->need |= NeedPass;
 	return client;
