@@ -456,91 +456,78 @@ int main(int argc, char *argv[]) {
 		eventAdd(bind[i], NULL);
 	}
 	eventAdd(server, NULL);
+	size_t clientIndex = event.len;
 
 	for (;;) {
-		bool need = false;
-		for (size_t i = binds + 1; i < event.len; ++i) {
-			if (event.clients[i]->need) need = true;
+		enum Need needs = 0;
+		for (size_t i = clientIndex; i < event.len; ++i) {
+			event.fds[i].events = POLLIN;
 			if (clientDiff(event.clients[i])) {
 				event.fds[i].events |= POLLOUT;
-			} else {
-				event.fds[i].events &= ~POLLOUT;
 			}
+			needs |= event.clients[i]->need;
 		}
 
-		const int Timeout = 10;
-		int nfds = poll(event.fds, event.len, (need ? Timeout * 1000 : -1));
-		if (nfds < 0 && errno != EINTR) err(EX_IOERR, "poll");
+		int timeout = 10000;
+		int ready = poll(event.fds, event.len, (needs ? timeout : -1));
+		if (ready < 0 && errno != EINTR) err(EX_IOERR, "poll");
 
-		if (need) {
+		if (needs) {
 			time_t now = time(NULL);
-			for (size_t i = event.len - 1; i >= binds + 1; --i) {
+			for (size_t i = event.len - 1; i >= clientIndex; --i) {
 				struct Client *client = event.clients[i];
-				if (client->need && now - client->time >= Timeout) {
-					clientFree(client);
-					eventRemove(i);
-				}
+				if (!client->need) continue;
+				if (now - client->time < timeout / 1000) continue;
+				clientFree(client);
+				eventRemove(i);
 			}
 		}
 
-		for (size_t i = event.len - 1; nfds > 0 && i < event.len; --i) {
+		for (size_t i = event.len - 1; ready > 0 && i < event.len; --i) {
 			short revents = event.fds[i].revents;
 			if (!revents) continue;
 
-			if (event.fds[i].fd == server) {
+			struct Client *client = event.clients[i];
+			if (client) {
+				if (revents & POLLOUT) clientConsume(client);
+				if (revents & POLLIN) clientRecv(client);
+				if (client->error || revents & (POLLHUP | POLLERR)) {
+					clientFree(client);
+					eventRemove(i);
+				}
+			} else if (event.fds[i].fd == server) {
 				serverRecv();
-				continue;
-			}
-
-			if (!event.clients[i]) {
-				struct tls *tls;
+			} else {
+				struct tls *tls = NULL;
 				int sock = localAccept(&tls, event.fds[i].fd);
 				if (sock < 0) {
 					warn("accept");
 					continue;
 				}
 				eventAdd(sock, clientAlloc(sock, tls));
-				continue;
-			}
-
-			struct Client *client = event.clients[i];
-			if (revents & POLLOUT) clientConsume(client);
-			if (revents & POLLIN) clientRecv(client);
-			if (client->error || revents & (POLLHUP | POLLERR)) {
-				clientFree(client);
-				eventRemove(i);
 			}
 		}
 
-		if (signals[SIGINT] || signals[SIGTERM]) break;
-
+		if (signals[SIGINT] || signals[SIGTERM]) {
+			break;
+		}
 		if (signals[SIGALRM]) {
 			signals[SIGALRM] = 0;
 			serverDequeue();
 		}
-
 		if (signals[SIGINFO]) {
 			signals[SIGINFO] = 0;
 			ringInfo();
 		}
-
 		if (signals[SIGUSR1]) {
 			signals[SIGUSR1] = 0;
 			certRead = certFile(&cert);
-			if (!certRead) {
-				warn("%s", certPath);
-				continue;
-			}
 			privRead = certFile(&priv);
-			if (!privRead) {
-				warn("%s", privPath);
-				continue;
-			}
-			caRead = (caPath ? certFile(&localCA) : NULL);
-			if (caPath && !caRead) {
-				warn("%s", caPath);
-				continue;
-			}
+			if (caPath) caRead = certFile(&localCA);
+			if (!certRead) warn("%s", certPath);
+			if (!privRead) warn("%s", privPath);
+			if (!caRead && caPath) warn("%s", caPath);
+			if (!certRead || !privRead || (!caRead && caPath)) continue;
 			localConfig(certRead, privRead, caRead, !clientPass);
 			fclose(certRead);
 			fclose(privRead);
@@ -549,14 +536,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	serverFormat("QUIT :%s\r\n", quit);
-	for (size_t i = binds + 1; i < event.len; ++i) {
-		if (!event.clients[i]->need) {
+	for (size_t i = clientIndex; i < event.len; ++i) {
+		struct Client *client = event.clients[i];
+		if (!client->need) {
 			clientFormat(
-				event.clients[i], ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",
+				client, ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",
 				stateEcho(), quit
 			);
 		}
-		clientFree(event.clients[i]);
+		clientFree(client);
 	}
 }
 
