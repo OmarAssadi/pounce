@@ -158,21 +158,37 @@ static void unixUnlink(void) {
 	if (error) warn("unlinkat");
 }
 
+static int unixBind(int sock, const char *path) {
+	struct sockaddr_un addr = { .sun_family = AF_UNIX };
+	int len = snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", path);
+	if ((size_t)len >= sizeof(addr.sun_path)) {
+		errx(EX_CONFIG, "path too long: %s", path);
+	}
+
+	int error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
+	if (!error || errno != EADDRINUSE) return error;
+
+	int check = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (check < 0) err(EX_OSERR, "socket");
+
+	error = connect(check, (struct sockaddr *)&addr, SUN_LEN(&addr));
+	close(check);
+	if (!error) {
+		errno = EADDRINUSE;
+		return -1;
+	}
+
+	unlink(path);
+	return bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
+}
+
 size_t localUnix(int fds[], size_t cap, const char *path) {
 	if (!cap) return 0;
 
 	int sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) err(EX_OSERR, "socket");
 
-	struct sockaddr_un addr = { .sun_family = AF_UNIX };
-	int len = snprintf(
-		addr.sun_path, sizeof(addr.sun_path), "%s", path
-	);
-	if ((size_t)len >= sizeof(addr.sun_path)) {
-		errx(EX_CONFIG, "path too long: %s", path);
-	}
-
-	int error = bind(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
+	int error = unixBind(sock, path);
 	if (error) err(EX_UNAVAILABLE, "%s", path);
 
 	char dir[PATH_MAX] = ".";
@@ -227,8 +243,8 @@ int localAccept(struct tls **client, int bind) {
 
 	if (unix) {
 		int sent = recvfd(fd);
-		if (sent < 0) err(EX_IOERR, "recvfd");
 		close(fd);
+		if (sent < 0) return sent;
 		fd = sent;
 	}
 
