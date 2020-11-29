@@ -27,6 +27,8 @@
 
 #include <assert.h>
 #include <err.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -139,17 +141,17 @@ void ringInfo(void) {
 	}
 }
 
-static const size_t Signatures[] = {
+static const uint64_t Signatures[] = {
 	0x0165636E756F70, // no ring size
 	0x0265636E756F70, // time_t only
 	0x0365636E756F70,
 };
 
-static size_t signatureVersion(size_t signature) {
+static size_t signatureVersion(uint64_t signature) {
 	for (size_t i = 0; i < ARRAY_LEN(Signatures); ++i) {
 		if (signature == Signatures[i]) return i;
 	}
-	errx(EX_DATAERR, "unknown file signature %zX", signature);
+	errx(EX_DATAERR, "unknown file signature %" PRIX64, signature);
 }
 
 static int writeSize(FILE *file, size_t value) {
@@ -163,7 +165,7 @@ static int writeString(FILE *file, const char *str) {
 }
 
 int ringSave(FILE *file) {
-	if (writeSize(file, Signatures[2])) return -1;
+	if (!fwrite(&Signatures[2], sizeof(*Signatures), 1, file)) return -1;
 	if (writeSize(file, ring.len)) return -1;
 	if (writeSize(file, producer)) return -1;
 	if (writeSize(file, consumers.len)) return -1;
@@ -202,7 +204,7 @@ static void readString(FILE *file, char **buf, size_t *cap) {
 }
 
 void ringLoad(FILE *file) {
-	size_t signature;
+	uint64_t signature;
 	fread(&signature, sizeof(signature), 1, file);
 	if (ferror(file)) err(EX_IOERR, "fread");
 	if (feof(file)) return;
