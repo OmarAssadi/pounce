@@ -333,6 +333,7 @@ static const struct {
 	{ "005", handleReplyISupport },
 	{ "332", handleReplyTopic },
 	{ "433", handleErrorNicknameInUse },
+	{ "437", handleErrorNicknameInUse },
 	{ "900", handleReplyLoggedIn },
 	{ "904", handleErrorSASLFail },
 	{ "905", handleErrorSASLFail },
