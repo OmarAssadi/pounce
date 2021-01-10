@@ -54,21 +54,17 @@ int getopt_config(
 	const char *optstring, const struct option *longopts, int *longindex
 ) {
 	static int opt;
-	if (opt >= 0) {
-		opt = getopt_long(argc, argv, optstring, longopts, longindex);
-	}
-	if (opt >= 0) return opt;
-
 	for (;;) {
 		if (!file) {
-			if (optind < argc) {
-				num = 0;
-				path = argv[optind++];
-				file = configOpen(path, "r");
-				if (!file) return clean('?');
-			} else {
-				return clean(-1);
+			if (optind == argc) return clean(-1);
+			if (opt >= 0 && argv[optind][0] == '-') {
+				opt = getopt_long(argc, argv, optstring, longopts, longindex);
+				if (opt >= 0 || optind == argc) return clean(opt);
 			}
+			num = 0;
+			path = argv[optind++];
+			file = configOpen(path, "r");
+			if (!file) return clean('?');
 		}
 
 		for (;;) {
