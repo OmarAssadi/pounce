@@ -42,7 +42,9 @@
 
 static struct tls *client;
 
-void serverConfig(bool insecure, const char *cert, const char *priv) {
+void serverConfig(
+	bool insecure, const char *trust, const char *cert, const char *priv
+) {
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
@@ -54,6 +56,15 @@ void serverConfig(bool insecure, const char *cert, const char *priv) {
 	if (insecure) {
 		tls_config_insecure_noverifycert(config);
 		tls_config_insecure_noverifyname(config);
+	}
+	if (trust) {
+		tls_config_insecure_noverifyname(config);
+		const char *dirs = NULL;
+		for (const char *path; NULL != (path = configPath(&dirs, trust));) {
+			error = tls_config_set_ca_file(config, path);
+			if (!error) break;
+		}
+		if (error) errx(EX_NOINPUT, "%s: %s", trust, tls_config_error(config));
 	}
 
 	if (cert) {
@@ -143,6 +154,13 @@ int serverConnect(const char *bindHost, const char *host, const char *port) {
 	if (error) errx(EX_PROTOCOL, "tls_handshake: %s", tls_error(client));
 
 	return sock;
+}
+
+void serverPrintCert(void) {
+	size_t len;
+	const byte *pem = tls_peer_cert_chain_pem(client, &len);
+	printf("subject= %s\n", tls_peer_cert_subject(client));
+	fwrite(pem, len, 1, stdout);
 }
 
 void serverSend(const char *ptr, size_t len) {

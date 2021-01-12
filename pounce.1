@@ -1,4 +1,4 @@
-.Dd August 28, 2020
+.Dd January 11, 2021
 .Dt POUNCE 1
 .Os
 .
@@ -29,10 +29,18 @@
 .Op Fl p Ar port
 .Op Fl q Ar quit
 .Op Fl r Ar real
+.Op Fl t Ar trust
 .Op Fl s Ar size
 .Op Fl u Ar user
 .Op Fl w Ar pass
 .Op Fl y Ar away
+.Op Ar config ...
+.
+.Nm
+.Fl o
+.Op Fl S Ar bind
+.Op Fl h Ar host
+.Op Fl p Ar port
 .Op Ar config ...
 .
 .Nm
@@ -300,6 +308,11 @@ Set nickname to
 .Ar nick .
 The default nickname is the user's name.
 .
+.It Fl o
+Print the server certificate chain
+to standard output in PEM format
+and exit.
+.
 .It Fl p Ar port , Cm port = Ar port
 Connect to
 .Ar port .
@@ -320,6 +333,13 @@ Set the number of messages contained in the buffer to
 .Ar size .
 The size must be a power of two.
 The default size is 4096.
+.
+.It Fl t Ar path , Cm trust = Ar path
+Trust the certificate loaded from
+.Ar path .
+Server name verification is disabled.
+See
+.Sx Connecting to Servers with Self-signed Certificates .
 .
 .It Fl u Ar user , Cm user = Ar user
 Set username to
@@ -534,6 +554,24 @@ to require successful authentication when connecting:
 client-cert = example.pem
 sasl-external
 # or: pounce -e -c example.pem
+.Ed
+.El
+.
+.Ss Connecting to Servers with Self-signed Certificates
+.Bl -enum
+.It
+Connect to the server
+and write its certificate to a file:
+.Bd -literal -offset indent
+pounce -o -h irc.example.org > ~/.config/pounce/example.pem
+.Ed
+.It
+Configure
+.Nm
+to trust the certificate:
+.Bd -literal -offset indent
+trust = example.pem
+# or: pounce -t example.pem
 .Ed
 .El
 .

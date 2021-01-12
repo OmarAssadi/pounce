@@ -206,6 +206,8 @@ int main(int argc, char *argv[]) {
 	const char *genPath = NULL;
 
 	bool insecure = false;
+	bool printCert = false;
+	const char *trust = NULL;
 	const char *clientCert = NULL;
 	const char *clientPriv = NULL;
 	const char *serverBindHost = NULL;
@@ -246,10 +248,12 @@ int main(int argc, char *argv[]) {
 		{ .val = 'j', .name = "join", required_argument },
 		{ .val = 'k', .name = "client-priv", required_argument },
 		{ .val = 'n', .name = "nick", required_argument },
+		{ .val = 'o', .name = "print-cert", no_argument },
 		{ .val = 'p', .name = "port", required_argument },
 		{ .val = 'q', .name = "quit", required_argument },
 		{ .val = 'r', .name = "real", required_argument },
 		{ .val = 's', .name = "size", required_argument },
+		{ .val = 't', .name = "trust", required_argument },
 		{ .val = 'u', .name = "user", required_argument },
 		{ .val = 'v', .name = "verbose", no_argument },
 		{ .val = 'w', .name = "pass", required_argument },
@@ -288,10 +292,12 @@ int main(int argc, char *argv[]) {
 			break; case 'j': join = optarg;
 			break; case 'k': clientPriv = optarg;
 			break; case 'n': nick = optarg;
+			break; case 'o': insecure = true; printCert = true;
 			break; case 'p': port = optarg;
 			break; case 'q': quit = optarg;
 			break; case 'r': real = optarg;
 			break; case 's': ringSize = parseSize(optarg);
+			break; case 't': trust = optarg;
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
@@ -341,6 +347,7 @@ int main(int argc, char *argv[]) {
 	unveilConfig(certPath);
 	unveilConfig(privPath);
 	if (caPath) unveilConfig(caPath);
+	if (trust) unveilConfig(trust);
 	if (clientCert) unveilConfig(clientCert);
 	if (clientPriv) unveilConfig(clientPriv);
 	if (savePath) unveilData(savePath);
@@ -352,6 +359,13 @@ int main(int argc, char *argv[]) {
 	error = pledge("stdio rpath wpath cpath inet flock unix dns recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif
+
+	if (printCert) {
+		serverConfig(insecure, trust, clientCert, clientPriv);
+		serverConnect(serverBindHost, host, port);
+		serverPrintCert();
+		return EX_OK;
+	}
 
 	// Either exit with cleanup or ignore signals until entering the main loop.
 	signal(SIGINT, justExit);
@@ -406,7 +420,7 @@ int main(int argc, char *argv[]) {
 		? localUnix(bind, ARRAY_LEN(bind), bindPath)
 		: localBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
 
-	serverConfig(insecure, clientCert, clientPriv);
+	serverConfig(insecure, trust, clientCert, clientPriv);
 	int server = serverConnect(serverBindHost, host, port);
 
 #ifdef __FreeBSD__
