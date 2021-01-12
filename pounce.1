@@ -9,22 +9,22 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl LNTev
-.Op Fl A Ar cert
-.Op Fl C Ar cert
-.Op Fl H Ar host
-.Op Fl K Ar priv
-.Op Fl P Ar port
-.Op Fl Q Ar time
-.Op Fl R Ar caps
+.Op Fl A Ar local-ca
+.Op Fl C Ar local-cert
+.Op Fl H Ar local-host
+.Op Fl K Ar local-priv
+.Op Fl P Ar local-port
+.Op Fl Q Ar queue-interval
+.Op Fl R Ar blind-req
 .Op Fl S Ar bind
-.Op Fl U Ar unix
-.Op Fl W Ar pass
-.Op Fl a Ar auth
-.Op Fl c Ar cert
+.Op Fl U Ar local-path
+.Op Fl W Ar local-pass
+.Op Fl a Ar sasl-plain
+.Op Fl c Ar client-cert
 .Op Fl f Ar save
 .Op Fl h Ar host
 .Op Fl j Ar join
-.Op Fl k Ar priv
+.Op Fl k Ar client-priv
 .Op Fl n Ar nick
 .Op Fl p Ar port
 .Op Fl q Ar quit
