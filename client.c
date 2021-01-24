@@ -259,6 +259,27 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 	client->error = true;
 }
 
+static bool hasTag(const struct Message *msg, const char *key) {
+	if (!msg->tags) return false;
+	size_t len = strlen(key);
+	for (const char *tags = msg->tags; *tags;) {
+		if (
+			!strncmp(tags, key, len) &&
+			(!tags[len] || tags[len] == ';' || tags[len] == '=')
+		) return true;
+		tags += strcspn(tags, ";");
+		tags += (*tags == ';');
+	}
+	return false;
+}
+
+static const char *synthLabel(struct Client *client) {
+	enum { LabelCap = 64 };
+	static char buf[sizeof("label=") + LabelCap];
+	snprintf(buf, sizeof(buf), "label=pounce~%zu", client->consumer);
+	return buf;
+}
+
 static void reserialize(
 	char *buf, size_t cap, const char *origin, const struct Message *msg
 ) {
@@ -287,27 +308,31 @@ static void reserialize(
 static void clientProduce(struct Client *client, const char *line) {
 	size_t diff = ringDiff(client->consumer);
 	ringProduce(line);
-	if (!diff) ringConsume(NULL, client->consumer);
+	if (!diff && !(client->caps & CapEchoMessage)) {
+		ringConsume(NULL, client->consumer);
+	}
 }
 
 static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	if (!msg->params[0]) return;
 	char buf[MessageCap];
-	reserialize(buf, sizeof(buf), stateEcho(), msg);
-	clientProduce(client, buf);
-	if (!strcmp(msg->params[0], stateNick())) return;
+	bool self = !strcmp(msg->params[0], stateNick());
+	if (!(stateCaps & CapEchoMessage) || self) {
+		reserialize(buf, sizeof(buf), stateEcho(), msg);
+		clientProduce(client, buf);
+	}
+	if (self) return;
 	reserialize(buf, sizeof(buf), NULL, msg);
-	serverFormat("%s\r\n", buf);
-}
-
-static void handleTagmsg(struct Client *client, struct Message *msg) {
-	if (!msg->params[0]) return;
-	char buf[MessageCap];
-	reserialize(buf, sizeof(buf), stateEcho(), msg);
-	clientProduce(client, buf);
-	if (!strcmp(msg->params[0], stateNick())) return;
-	reserialize(buf, sizeof(buf), NULL, msg);
-	serverFormat("%s\r\n", buf);
+	if (stateCaps & CapEchoMessage && !hasTag(msg, "label")) {
+		serverFormat(
+			"@%s%c%s\r\n",
+			synthLabel(client),
+			(buf[0] == '@' ? ';' : ' '),
+			(buf[0] == '@' ? &buf[1] : buf)
+		);
+	} else {
+		serverFormat("%s\r\n", buf);
+	}
 }
 
 static void handlePalaver(struct Client *client, struct Message *msg) {
@@ -332,7 +357,7 @@ static const struct {
 	{ true, true, "NOTICE", handlePrivmsg },
 	{ true, true, "PRIVMSG", handlePrivmsg },
 	{ true, true, "QUIT", handleQuit },
-	{ true, true, "TAGMSG", handleTagmsg },
+	{ true, true, "TAGMSG", handlePrivmsg },
 };
 
 static void clientParse(struct Client *client, char *line) {
@@ -551,12 +576,6 @@ static const char *filterUserhostInNames(const char *line) {
 	);
 }
 
-static const char *filterTags(const char *line) {
-	if (line[0] != '@') return line;
-	const char *sp = strchr(line, ' ');
-	return (sp ? sp + 1 : NULL);
-}
-
 static Filter *Filters[] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
@@ -573,6 +592,27 @@ static Filter *Filters[] = {
 	[CapUserhostInNamesBit] = filterUserhostInNames,
 };
 
+static const char *filterEchoMessage(struct Client *client, const char *line) {
+	if (line[0] != '@') return line;
+	const char *label = synthLabel(client);
+	size_t len = strlen(label);
+	for (const char *tags = &line[1]; *tags != ' ';) {
+		if (
+			!strncmp(tags, label, len) &&
+			(tags[len] == ' ' || tags[len] == ';')
+		) return NULL;
+		tags += strcspn(tags, "; ");
+		tags += (*tags == ';');
+	}
+	return line;
+}
+
+static const char *filterTags(const char *line) {
+	if (line[0] != '@') return line;
+	const char *sp = strchr(line, ' ');
+	return (sp ? sp + 1 : NULL);
+}
+
 static bool hasTime(const char *line) {
 	if (!strncmp(line, "@time=", 6)) return true;
 	while (*line && *line != ' ') {
@@ -588,10 +628,13 @@ void clientConsume(struct Client *client) {
 	const char *line = ringPeek(&time, client->consumer);
 	if (!line) return;
 
-	if (stateCaps & TagCaps && !(client->caps & TagCaps)) {
+	enum Cap diff = client->caps ^ (clientCaps | stateCaps);
+	if (diff & CapEchoMessage) {
+		line = filterEchoMessage(client, line);
+	}
+	if (line && stateCaps & TagCaps && !(client->caps & TagCaps)) {
 		line = filterTags(line);
 	}
-	enum Cap diff = client->caps ^ (clientCaps | stateCaps);
 	for (size_t i = 0; line && i < ARRAY_LEN(Filters); ++i) {
 		if (!Filters[i]) continue;
 		if (diff & (1 << i)) line = Filters[i](line);

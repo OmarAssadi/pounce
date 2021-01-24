@@ -83,6 +83,7 @@ static inline struct Message parse(char *line) {
 	X("causal.agency/consumer", CapConsumer) \
 	X("causal.agency/passive", CapPassive) \
 	X("chghost", CapChghost) \
+	X("echo-message", CapEchoMessage) \
 	X("extended-join", CapExtendedJoin) \
 	X("invite-notify", CapInviteNotify) \
 	X("labeled-response", CapLabeledResponse) \
