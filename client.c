@@ -259,15 +259,16 @@ static void handleQuit(struct Client *client, struct Message *msg) {
 	client->error = true;
 }
 
-static bool hasTag(const struct Message *msg, const char *key) {
-	if (!msg->tags) return false;
-	size_t len = strlen(key);
-	for (const char *tags = msg->tags; *tags;) {
+static bool hasTag(const char *tags, const char *tag) {
+	if (!tags) return false;
+	size_t len = strlen(tag);
+	bool val = strchr(tag, '=');
+	while (*tags && *tags != ' ') {
 		if (
-			!strncmp(tags, key, len) &&
-			(!tags[len] || tags[len] == ';' || tags[len] == '=')
+			!strncmp(tags, tag, len) &&
+			(!tags[len] || strchr((val ? "; " : "=; "), tags[len]))
 		) return true;
-		tags += strcspn(tags, ";");
+		tags += strcspn(tags, "; ");
 		tags += (*tags == ';');
 	}
 	return false;
@@ -323,7 +324,7 @@ static void handlePrivmsg(struct Client *client, struct Message *msg) {
 	}
 	if (self) return;
 	reserialize(buf, sizeof(buf), NULL, msg);
-	if (stateCaps & CapEchoMessage && !hasTag(msg, "label")) {
+	if (stateCaps & CapEchoMessage && !hasTag(msg->tags, "label")) {
 		serverFormat(
 			"@%s%c%s\r\n",
 			synthLabel(client),
@@ -594,33 +595,14 @@ static Filter *Filters[] = {
 
 static const char *filterEchoMessage(struct Client *client, const char *line) {
 	if (line[0] != '@') return line;
-	const char *label = synthLabel(client);
-	size_t len = strlen(label);
-	for (const char *tags = &line[1]; *tags != ' ';) {
-		if (
-			!strncmp(tags, label, len) &&
-			(tags[len] == ' ' || tags[len] == ';')
-		) return NULL;
-		tags += strcspn(tags, "; ");
-		tags += (*tags == ';');
-	}
-	return line;
+	if (!hasTag(&line[1], synthLabel(client))) return line;
+	return NULL;
 }
 
 static const char *filterTags(const char *line) {
 	if (line[0] != '@') return line;
 	const char *sp = strchr(line, ' ');
 	return (sp ? sp + 1 : NULL);
-}
-
-static bool hasTime(const char *line) {
-	if (!strncmp(line, "@time=", 6)) return true;
-	while (*line && *line != ' ') {
-		line += strcspn(line, "; ");
-		if (!strncmp(line, ";time=", 6)) return true;
-		if (*line == ';') line++;
-	}
-	return false;
 }
 
 void clientConsume(struct Client *client) {
@@ -644,7 +626,10 @@ void clientConsume(struct Client *client) {
 		return;
 	}
 
-	if (client->caps & CapServerTime && !hasTime(line)) {
+	if (
+		client->caps & CapServerTime &&
+		(line[0] != '@' || !hasTag(&line[1], "time"))
+	) {
 		char ts[sizeof("YYYY-MM-DDThh:mm:ss")];
 		struct tm *tm = gmtime(&time.tv_sec);
 		strftime(ts, sizeof(ts), "%FT%T", tm);
