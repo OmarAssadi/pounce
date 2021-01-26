@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sysexits.h>
 
 #include "bounce.h"
 
@@ -71,7 +72,7 @@ basePath(struct Base base, const char **dirs, const char *path) {
 		return buf;
 	}
 
-	if (path[0] == '/' || path[0] == '.') {
+	if (path[strspn(path, ".")] == '/') {
 		*dirs = "";
 		return path;
 	}
@@ -89,7 +90,7 @@ basePath(struct Base base, const char **dirs, const char *path) {
 			home, base.defHome, path
 		);
 	} else {
-		return NULL;
+		errx(EX_CONFIG, "HOME unset");
 	}
 	return buf;
 }
@@ -98,8 +99,7 @@ const char *configPath(const char **dirs, const char *path) {
 	return basePath(Config, dirs, path);
 }
 
-const char *
-dataPath(const char **dirs, const char *path) {
+const char *dataPath(const char **dirs, const char *path) {
 	return basePath(Data, dirs, path);
 }
 
@@ -110,17 +110,16 @@ FILE *configOpen(const char *path, const char *mode) {
 		if (file) return file;
 		if (errno != ENOENT) warn("%s", abs);
 	}
-	FILE *file = fopen(path, mode);
-	if (!file) warn("%s", path);
-	return file;
+	dirs = NULL;
+	warn("%s", configPath(&dirs, path));
+	return NULL;
 }
 
 static void dataMkdir(const char *path) {
 	const char *dirs = NULL;
-	const char *abs = dataPath(&dirs, path);
-	if (!abs) return;
-	int error = mkdir(abs, S_IRWXU);
-	if (error && errno != EEXIST) warn("%s", abs);
+	path = dataPath(&dirs, path);
+	int error = mkdir(path, S_IRWXU);
+	if (error && errno != EEXIST) warn("%s", path);
 }
 
 FILE *dataOpen(const char *path, const char *mode) {
@@ -130,20 +129,9 @@ FILE *dataOpen(const char *path, const char *mode) {
 		if (file) return file;
 		if (errno != ENOENT) warn("%s", abs);
 	}
-
-	if (mode[0] != 'r') {
-		dataMkdir("");
-		dirs = NULL;
-		path = dataPath(&dirs, path);
-		if (!path) {
-			warn("HOME unset");
-			return NULL;
-		}
-		FILE *file = fopen(path, mode);
-		if (!file) warn("%s", path);
-		return file;
-	}
-
+	if (mode[0] != 'r') dataMkdir("");
+	dirs = NULL;
+	path = dataPath(&dirs, path);
 	FILE *file = fopen(path, mode);
 	if (!file) warn("%s", path);
 	return file;
