@@ -101,9 +101,10 @@ files listed on the command line.
 Files are searched for in
 .Pa $XDG_CONFIG_DIRS/pounce
 unless the path starts with
-.Ql /
+.Ql / ,
+.Ql \&./
 or
-.Ql \&. .
+.Ql \&../ .
 Certificate and private key paths
 are searched for in the same manner.
 Each option is placed on a line,
@@ -268,16 +269,17 @@ See
 .Sx Configuring CertFP .
 .
 .It Fl f Ar path , Cm save = Ar path
-Load and save the contents of the buffer from
+Save and load the contents of the buffer from
 .Ar path
 in
 .Pa $XDG_DATA_DIRS/pounce ,
 or an absolute or relative path if
 .Ar path
 starts with
-.Ql /
+.Ql / ,
+.Ql \&./
 or
-.Ql \&. .
+.Ql \&../ .
 The file is truncated after loading.
 .
 .It Fl g Ar path
