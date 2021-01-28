@@ -1,4 +1,4 @@
-.Dd August 30, 2020
+.Dd January 28, 2021
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -48,7 +48,18 @@ provided by either
 .Lk https://git.causal.agency/libretls/about LibreTLS
 (for OpenSSL)
 or by LibreSSL.
-It primarily targets
+.Nm
+and
+.Sy libtls
+may be packaged for your system.
+Check the Repology pages for
+.Lk https://repology.org/project/pounce/versions pounce
+and
+.Lk https://repology.org/project/libretls/versions libretls .
+.
+.Pp
+.Nm
+primarily targets
 .Fx ,
 where it is sandboxed with
 .Xr capsicum 4 ,
@@ -60,8 +71,7 @@ and
 .Xr unveil 2 .
 Linux and macOS
 are also supported.
-On
-.Ox ,
+On BSD systems,
 configure with
 .Fl \-mandir=/usr/local/man .
 .Bd -literal -offset indent
