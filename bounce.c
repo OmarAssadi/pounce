@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
 	error = unveil(tls_default_ca_cert_file(), "r");
 	if (error) err(EX_OSFILE, "%s", tls_default_ca_cert_file());
 
-	error = pledge("stdio rpath wpath cpath inet flock unix dns recvfd", NULL);
+	error = pledge("stdio rpath wpath cpath flock inet dns unix recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif
 
@@ -422,6 +422,16 @@ int main(int argc, char *argv[]) {
 
 	serverConfig(insecure, trust, clientCert, clientPriv);
 	int server = serverConnect(serverBindHost, host, port);
+
+#ifdef __OpenBSD__
+	char promises[64];
+	snprintf(
+		promises, sizeof(promises), "stdio rpath inet%s",
+		(bindPath[0] ? " cpath unix recvfd" : "")
+	);
+	error = pledge(promises, NULL);
+	if (error) err(EX_OSERR, "pledge");
+#endif
 
 #ifdef __FreeBSD__
 	error = cap_enter();
