@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 
 	while (!stateReady()) serverRecv();
 	serverFormat("AWAY :%s\r\n", clientAway);
-	if (join) serverFormat("JOIN :%s\r\n", join);
+	if (join) serverFormat("JOIN %s\r\n", join);
 
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
