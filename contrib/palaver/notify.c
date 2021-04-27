@@ -148,7 +148,6 @@ static void dbInit(void) {
 			port INTEGER NOT NULL,
 			client TEXT NOT NULL,
 			version TEXT NOT NULL,
-			network TEXT,
 			UNIQUE (host, port, client)
 		);
 		CREATE TABLE IF NOT EXISTS preferences (
@@ -348,10 +347,10 @@ static const char *Queries[QueriesLen] = {
 	),
 
 	[End] = SQL(
-		INSERT INTO clients (host, port, client, version, network)
-		VALUES (:host, :port, :client, :version, :network)
+		INSERT INTO clients (host, port, client, version)
+		VALUES (:host, :port, :client, :version)
 		ON CONFLICT (host, port, client) DO
-		UPDATE SET version = :version, network = :network
+		UPDATE SET version = :version
 		WHERE host = :host AND port = :port AND client = :client;
 	),
 
@@ -391,8 +390,7 @@ static const char *Queries[QueriesLen] = {
 		SELECT
 			pushToken.value,
 			pushEndpoint.value,
-			coalesce(showMessagePreview.value, 'true'),
-			clients.network
+			coalesce(showMessagePreview.value, 'true')
 		FROM clients
 		JOIN matches USING (client)
 		JOIN preferences AS pushToken USING (client)
@@ -413,7 +411,6 @@ static void palaverIdentify(struct Message *msg) {
 	int result = sqlite3_step(stmts[Identify]);
 	if (result == SQLITE_DONE) {
 		format("PALAVER REQ\r\n");
-		dbBindCopy(stmts[End], ":network", msg->params[3]);
 	} else if (result != SQLITE_ROW) {
 		errx(EX_SOFTWARE, "%s", sqlite3_errmsg(db));
 	}
@@ -533,7 +530,7 @@ static void handleReplyUnaway(struct Message *msg) {
 static bool noPreview;
 static bool noPrivatePreview;
 
-static char *jsonBody(struct Message *msg, const char *network, bool preview) {
+static char *jsonBody(struct Message *msg, bool preview) {
 	bool private = (msg->params[0][0] != '#');
 	if (private && noPrivatePreview) preview = false;
 	if (noPreview) preview = false;
@@ -549,10 +546,6 @@ static char *jsonBody(struct Message *msg, const char *network, bool preview) {
 	if (!private) {
 		fprintf(file, ",\"channel\":");
 		jsonString(file, msg->params[0]);
-	}
-	if (network) {
-		fprintf(file, ",\"network\":");
-		jsonString(file, network);
 	}
 	if (preview) {
 		if (!strncmp(msg->params[1], "\1ACTION ", 8)) {
@@ -598,13 +591,12 @@ static void handlePrivmsg(struct Message *msg) {
 		const char *token = sqlite3_column_text(stmts[Notify], i++);
 		const char *endpoint = sqlite3_column_text(stmts[Notify], i++);
 		const char *preview = sqlite3_column_text(stmts[Notify], i++);
-		const char *network = sqlite3_column_text(stmts[Notify], i++);
 
 		if (!badged) {
 			badge++;
 			badged = true;
 		}
-		char *body = jsonBody(msg, network, !strcmp(preview, "true"));
+		char *body = jsonBody(msg, !strcmp(preview, "true"));
 		pushNotify(endpoint, token, body);
 		free(body);
 	}
