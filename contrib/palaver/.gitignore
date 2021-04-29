@@ -1,4 +1,3 @@
 *.o
 config.mk
 pounce-palaver
-rc.d/pounce_palaver

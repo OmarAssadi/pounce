@@ -1,6 +1,5 @@
 PREFIX ?= /usr/local
 MANDIR ?= ${PREFIX}/share/man
-ETCDIR ?= ${PREFIX}/etc
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
 LDLIBS = -lcurl -lsqlite3 -ltls
