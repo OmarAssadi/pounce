@@ -157,6 +157,12 @@ static void dbInit(void) {
 		);
 		CREATE INDEX IF NOT EXISTS preferencesIndex
 		ON preferences (client, key);
+		CREATE TABLE IF NOT EXISTS badges (
+			host TEXT NOT NULL,
+			port TEXT NOT NULL,
+			count INTEGER NOT NULL,
+			UNIQUE (host, port)
+		);
 	);
 	int error = sqlite3_exec(db, sql, NULL, NULL, NULL);
 	if (error) errx(EX_SOFTWARE, "%s: %s", sqlite3_errmsg(db), sql);
@@ -246,7 +252,6 @@ static void handleError(struct Message *msg) {
 
 static char *nick;
 static bool away;
-static int badge;
 
 static void handleReplyWelcome(struct Message *msg) {
 	require(msg, false, 1);
@@ -324,8 +329,11 @@ enum {
 	Begin,
 	Set,
 	End,
-	Clear,
+	Each,
 	Notify,
+	Increment,
+	Reset,
+	Badge,
 	QueriesLen,
 };
 
@@ -354,7 +362,7 @@ static const char *Queries[QueriesLen] = {
 		WHERE host = :host AND port = :port AND client = :client;
 	),
 
-	[Clear] = SQL(
+	[Each] = SQL(
 		SELECT pushToken.value, pushEndpoint.value
 		FROM clients
 		JOIN preferences AS pushToken USING (client)
@@ -401,7 +409,37 @@ static const char *Queries[QueriesLen] = {
 		WHERE pushToken.key = 'PUSH-TOKEN'
 			AND pushEndpoint.key = 'PUSH-ENDPOINT';
 	),
+
+	[Increment] = SQL(
+		INSERT INTO badges (host, port, count)
+		VALUES (:host, :port, 1)
+		ON CONFLICT (host, port) DO
+		UPDATE SET count = count + 1
+		WHERE host = :host AND port = :port;
+	),
+
+	[Reset] = SQL(
+		DELETE FROM badges WHERE host = :host AND port = :port;
+	),
+
+	[Badge] = SQL(
+		SELECT sum(count) FROM badges;
+	),
 };
+
+static int badgeCount(int op) {
+	dbVerbose(stmts[op]);
+	int result = sqlite3_step(stmts[op]);
+	if (result != SQLITE_DONE) errx(EX_SOFTWARE, "%s", sqlite3_errmsg(db));
+	sqlite3_reset(stmts[op]);
+
+	dbVerbose(stmts[Badge]);
+	result = sqlite3_step(stmts[Badge]);
+	if (result != SQLITE_ROW) errx(EX_SOFTWARE, "%s", sqlite3_errmsg(db));
+	int badge = sqlite3_column_int(stmts[Badge], 0);
+	sqlite3_reset(stmts[Badge]);
+	return badge;
+}
 
 static void palaverIdentify(struct Message *msg) {
 	require(msg, false, 3);
@@ -462,18 +500,6 @@ static void handlePalaver(struct Message *msg) {
 	}
 }
 
-static void jsonString(FILE *file, const char *str) {
-	fputc('"', file);
-	for (const char *ch = str; *ch; ++ch) {
-		if (iscntrl(*ch) || *ch == '"' || *ch == '\\') {
-			fprintf(file, "\\u%04x", (unsigned)*ch);
-		} else {
-			fputc(*ch, file);
-		}
-	}
-	fputc('"', file);
-}
-
 static void pushNotify(const char *endpoint, const char *token, char *body) {
 	CURLcode code = curl_easy_setopt(curl, CURLOPT_URL, endpoint);
 	if (code) {
@@ -511,26 +537,40 @@ static void handleReplyNowAway(struct Message *msg) {
 
 static void handleReplyUnaway(struct Message *msg) {
 	(void)msg;
+	if (!away) return;
 	away = false;
-	if (!badge) return;
-	badge = 0;
 
-	dbVerbose(stmts[Clear]);
+	char json[32];
+	snprintf(json, sizeof(json), "{\"badge\":%d}", badgeCount(Reset));
+
 	int result;
-	while (SQLITE_ROW == (result = sqlite3_step(stmts[Clear]))) {
+	dbVerbose(stmts[Each]);
+	while (SQLITE_ROW == (result = sqlite3_step(stmts[Each]))) {
 		int i = 0;
-		const char *token = sqlite3_column_text(stmts[Clear], i++);
-		const char *endpoint = sqlite3_column_text(stmts[Clear], i++);
-		pushNotify(endpoint, token, "{\"badge\":0}");
+		const char *token = sqlite3_column_text(stmts[Each], i++);
+		const char *endpoint = sqlite3_column_text(stmts[Each], i++);
+		pushNotify(endpoint, token, json);
 	}
 	if (result != SQLITE_DONE) errx(EX_SOFTWARE, "%s", sqlite3_errmsg(db));
-	sqlite3_reset(stmts[Clear]);
+	sqlite3_reset(stmts[Each]);
 }
 
 static bool noPreview;
 static bool noPrivatePreview;
 
-static char *jsonBody(struct Message *msg, bool preview) {
+static void jsonString(FILE *file, const char *str) {
+	fputc('"', file);
+	for (const char *ch = str; *ch; ++ch) {
+		if (iscntrl(*ch) || *ch == '"' || *ch == '\\') {
+			fprintf(file, "\\u%04x", (unsigned)*ch);
+		} else {
+			fputc(*ch, file);
+		}
+	}
+	fputc('"', file);
+}
+
+static char *jsonBody(int badge, struct Message *msg, bool preview) {
 	bool private = (msg->params[0][0] != '#');
 	if (private && noPrivatePreview) preview = false;
 	if (noPreview) preview = false;
@@ -585,18 +625,15 @@ static void handlePrivmsg(struct Message *msg) {
 	);
 	dbVerbose(stmts[Notify]);
 	int result;
-	bool badged = false;
+	int badge = 0;
 	while (SQLITE_ROW == (result = sqlite3_step(stmts[Notify]))) {
 		int i = 0;
 		const char *token = sqlite3_column_text(stmts[Notify], i++);
 		const char *endpoint = sqlite3_column_text(stmts[Notify], i++);
 		const char *preview = sqlite3_column_text(stmts[Notify], i++);
 
-		if (!badged) {
-			badge++;
-			badged = true;
-		}
-		char *body = jsonBody(msg, !strcmp(preview, "true"));
+		if (!badge) badge = badgeCount(Increment);
+		char *body = jsonBody(badge, msg, !strcmp(preview, "true"));
 		pushNotify(endpoint, token, body);
 		free(body);
 	}
