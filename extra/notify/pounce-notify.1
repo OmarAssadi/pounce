@@ -1,0 +1,121 @@
+.Dd April 30, 2021
+.Dt POUNCE-NOTIFY 1
+.Os
+.
+.Sh NAME
+.Nm pounce-notify
+.Nd notifications for pounce
+.
+.Sh SYNOPSIS
+.Nm
+.Op Fl v
+.Op Fl c Ar cert
+.Op Fl k Ar priv
+.Op Fl p Ar port
+.Op Fl u Ar user
+.Op Fl w Ar pass
+.Ar host
+.Ar command
+.
+.Sh DESCRIPTION
+The
+.Nm
+daemon provides
+a generic interface for notifications
+via the
+.Xr pounce 1
+IRC bouncer.
+For each IRC message
+that is either a private message
+or a message containing the user's nick
+.Po
+case-sensitive,
+surrounded by either whitespace or punctuation
+.Pc ,
+the
+.Ar command
+is run
+with information about the message
+set in its environment.
+.
+.Pp
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl c Ar cert
+Load the TLS client certificate from
+.Ar path .
+If the private key
+is in a separate file,
+it is loaded with
+.Fl k .
+.It Fl k Ar priv
+Load the TLS client private key from
+.Ar path .
+.It Fl p Ar port
+Connect to
+.Ar port .
+The default port is 6697.
+.It Fl u Ar user
+Set the username to
+.Ar user .
+The default username is
+.Dq pounce-notify .
+.It Fl v
+Log IRC protocol to standard error.
+.It Fl w Ar pass
+Log in with the server password
+.Ar pass .
+.It Ar host
+Connect to
+.Ar host .
+.It Ar command
+The command to run,
+interpreted by the shell.
+.El
+.
+.Sh ENVIRONMENT
+The
+.Ar command
+is run
+with the following variables
+set in its environment:
+.Bl -tag -width Ds
+.It Ev NOTIFY_CHANNEL
+The channel in which the message was sent.
+Unset if the message was private.
+.It Ev NOTIFY_HOST
+The hostname of the user who sent the message.
+.It Ev NOTIFY_MESSAGE
+The content of the message.
+.It Ev NOTIFY_NICK
+The nickname of the user who sent the message.
+.It Ev NOTIFY_TIME
+The time the message was sent,
+in
+.Sy server-time
+format.
+.It Ev NOTIFY_USER
+The username of the user who sent the message.
+.It Ev POUNCE_HOST
+The host
+.Nm
+is connected to.
+.It Ev POUNCE_PORT
+The port
+.Nm
+is connected to.
+.El
+.
+.Sh SEE ALSO
+.Xr pounce 1
+.
+.Sh AUTHORS
+.An June Bug Aq Mt june@causal.agency
+.
+.Sh BUGS
+Send mail to
+.Aq Mt list+pounce@causal.agency
+or join
+.Li #ascii.town
+on
+.Li chat.freenode.net .
