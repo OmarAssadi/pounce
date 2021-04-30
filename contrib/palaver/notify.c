@@ -283,6 +283,8 @@ static void handleReplyUserHost(struct Message *msg) {
 	}
 }
 
+static bool sensitive;
+
 static void keyword(sqlite3_context *ctx, int n, sqlite3_value *args[]) {
 	assert(n == 2);
 	const char *haystack = (const char *)sqlite3_value_text(args[0]);
@@ -311,7 +313,7 @@ static void keyword(sqlite3_context *ctx, int n, sqlite3_value *args[]) {
 	size_t len = strlen(needle);
 	const char *match = haystack;
 	sqlite3_result_int(ctx, false);
-	while (NULL != (match = strcasestr(match, needle))) {
+	while (NULL != (match = (sensitive ? strstr : strcasestr)(match, needle))) {
 		char a = (match > haystack ? match[-1] : ' ');
 		char b = (match[len] ? match[len] : ' ');
 		if (b == '\1') b = ' ';
@@ -693,7 +695,7 @@ int main(int argc, char *argv[]) {
 	const char *pass = NULL;
 	const char *user = "pounce-palaver";
 
-	for (int opt; 0 < (opt = getopt(argc, argv, "!NPc:d:k:p:u:vw:"));) {
+	for (int opt; 0 < (opt = getopt(argc, argv, "!NPc:d:k:p:su:vw:"));) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'N': noPreview = true;
@@ -702,6 +704,7 @@ int main(int argc, char *argv[]) {
 			break; case 'd': path = optarg;
 			break; case 'k': priv = optarg;
 			break; case 'p': port = optarg;
+			break; case 's': sensitive = true;
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;

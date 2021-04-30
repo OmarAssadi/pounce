@@ -1,4 +1,4 @@
-.Dd August 27, 2020
+.Dd April 30, 2021
 .Dt POUNCE-PALAVER 1
 .Os
 .
@@ -8,7 +8,7 @@
 .
 .Sh SYNOPSIS
 .Nm
-.Op Fl PNv
+.Op Fl PNsv
 .Op Fl c Ar cert
 .Op Fl d Ar path
 .Op Fl k Ar priv
@@ -56,6 +56,9 @@ Load the TLS client private key from
 Connect to
 .Ar port .
 The default port is 6697.
+.It Fl s
+Match nick and keywords case-sensitively,
+despite the specification.
 .It Fl u Ar user
 Set the username to
 .Ar user .
