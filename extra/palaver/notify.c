@@ -708,6 +708,7 @@ int main(int argc, char *argv[]) {
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
+			break; default:  return EX_USAGE;
 		}
 	}
 	if (optind == argc) errx(EX_USAGE, "host required");
