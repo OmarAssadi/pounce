@@ -4,20 +4,20 @@ set -eu
 cflags() {
 	echo "CFLAGS += $*"
 }
-ldlibs() {
-	echo "LDLIBS ${o:-}= $*"
-	o=+
-}
-config() {
-	pkg-config --print-errors "$@"
-	cflags $(pkg-config --cflags "$@")
-	ldlibs $(pkg-config --libs "$@")
-}
 defstr() {
 	cflags "-D'$1=\"$2\"'"
 }
 defvar() {
 	defstr "$1" "$(pkg-config --variable=$3 $2)${4:-}"
+}
+ldadd() {
+	lib=$1; shift
+	echo "LDADD.${lib} = $*"
+}
+config() {
+	pkg-config --print-errors "$@"
+	cflags $(pkg-config --cflags "$@")
+	for lib; do ldadd $lib $(pkg-config --libs $lib); done
 }
 
 exec >config.mk
@@ -25,6 +25,7 @@ exec >config.mk
 for opt; do
 	case "${opt}" in
 		(--prefix=*) echo "PREFIX = ${opt#*=}" ;;
+		(--bindir=*) echo "BINDIR = ${opt#*=}" ;;
 		(--mandir=*) echo "MANDIR = ${opt#*=}" ;;
 		(*) echo "warning: unsupported option ${opt}" >&2 ;;
 	esac
@@ -32,7 +33,6 @@ done
 
 case "$(uname)" in
 	(OpenBSD)
-		ldlibs -ltls
 		;;
 	(Linux)
 		cflags -D_GNU_SOURCE

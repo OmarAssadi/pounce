@@ -2,7 +2,6 @@
 *.o
 calico
 config.mk
-localhost.crt
-localhost.key
+localhost.pem
 pounce
 tags

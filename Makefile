@@ -1,53 +1,60 @@
 PREFIX ?= /usr/local
-MANDIR ?= ${PREFIX}/share/man
+BINDIR ?= ${PREFIX}/bin
+MANDIR ?= ${PREFIX}/man
 
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic
-LDLIBS = -lcrypt -ltls
+LDADD.crypt = -lcrypt
+LDADD.libtls = -ltls
 
 BINS = calico pounce
 MANS = ${BINS:=.1}
 
 -include config.mk
 
-OBJS += bounce.o
-OBJS += cert.o
-OBJS += client.o
-OBJS += config.o
-OBJS += local.o
-OBJS += ring.o
-OBJS += server.o
-OBJS += state.o
-OBJS += xdg.o
+LDLIBS.calico =
+LDLIBS.pounce = ${LDADD.crypt} ${LDADD.libtls}
+
+OBJS.calico += dispatch.o
+
+OBJS.pounce += bounce.o
+OBJS.pounce += cert.o
+OBJS.pounce += client.o
+OBJS.pounce += config.o
+OBJS.pounce += local.o
+OBJS.pounce += ring.o
+OBJS.pounce += server.o
+OBJS.pounce += state.o
+OBJS.pounce += xdg.o
+
+OBJS = ${OBJS.calico} ${OBJS.pounce}
 
 dev: tags all
 
 all: ${BINS}
 
-calico: dispatch.o
-	${CC} ${LDFLAGS} dispatch.o -o $@
+calico: ${OBJS.calico}
 
-pounce: ${OBJS}
-	${CC} ${LDFLAGS} ${OBJS} ${LDLIBS} -o $@
+pounce: ${OBJS.pounce}
 
-${OBJS}: bounce.h
+${BINS}:
+	${CC} ${LDFLAGS} ${OBJS.$@} ${LDLIBS.$@} -o $@
 
-tags: *.c *.h
-	ctags -w *.c *.h
+${OBJS.pounce}: bounce.h
+
+tags: *.[ch]
+	ctags -w *.[ch]
 
 clean:
-	rm -f tags ${BINS} ${OBJS} dispatch.o
+	rm -f ${BINS} ${OBJS} tags
 
 install: ${BINS} ${MANS}
-	install -d ${DESTDIR}${PREFIX}/bin ${DESTDIR}${MANDIR}/man1
-	install ${BINS} ${DESTDIR}${PREFIX}/bin
+	install -d ${DESTDIR}${BINDIR} ${DESTDIR}${MANDIR}/man1
+	install ${BINS} ${DESTDIR}${BINDIR}
 	install -m 644 ${MANS} ${DESTDIR}${MANDIR}/man1
 
 uninstall:
-	rm -f ${BINS:%=${DESTDIR}${PREFIX}/bin/%}
+	rm -f ${BINS:%=${DESTDIR}${BINDIR}/%}
 	rm -f ${MANS:%=${DESTDIR}${MANDIR}/man1/%}
 
-localhost.crt:
-	printf "[dn]\nCN=localhost\n[req]\ndistinguished_name=dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" \
-		| openssl req -x509 -out localhost.crt -keyout localhost.key \
-		-newkey rsa:2048 -nodes -sha256 \
-		-subj '/CN=localhost' -extensions EXT -config /dev/fd/0
+localhost.pem: pounce
+	./pounce -g $@
