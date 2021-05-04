@@ -1,4 +1,4 @@
-.Dd April 30, 2021
+.Dd May  4, 2021
 .Dt POUNCE-NOTIFY 1
 .Os
 .
@@ -20,37 +20,33 @@
 .Sh DESCRIPTION
 The
 .Nm
-daemon provides
-a generic interface for notifications
-via the
+program connects to an instance of
 .Xr pounce 1
-IRC bouncer.
-For each IRC message
-that is either a private message
-or a message containing the user's nick
-.Po
-case-sensitive,
-surrounded by either whitespace or punctuation
-.Pc ,
-the
+at
+.Ar host
+and runs
 .Ar command
-is run
-with information about the message
-set in its environment.
+for each private message
+or message containing the user's nickname
+while the user is marked as away.
+The nickname is matched case-sensitively
+and must be surrounded by whitespace or punctuation.
+Information about the message
+is passed to the command
+through the environment.
 .
 .Pp
 The arguments are as follows:
 .Bl -tag -width Ds
 .It Fl c Ar cert
 Load the TLS client certificate from
-.Ar path .
-If the private key
-is in a separate file,
+.Ar cert .
+If the private key is in a separate file,
 it is loaded with
 .Fl k .
 .It Fl k Ar priv
 Load the TLS client private key from
-.Ar path .
+.Ar priv .
 .It Fl p Ar port
 Connect to
 .Ar port .
@@ -60,28 +56,19 @@ Set the username to
 .Ar user .
 The default username is
 .Dq pounce-notify .
-.It Fl v
-Log IRC protocol to standard error.
 .It Fl w Ar pass
 Log in with the server password
 .Ar pass .
-.It Ar host
-Connect to
-.Ar host .
-.It Ar command
-The command to run,
-interpreted by the shell.
 .El
 .
 .Sh ENVIRONMENT
-The
-.Ar command
-is run
-with the following variables
-set in its environment:
-.Bl -tag -width Ds
+The following variables
+are set in the environment of
+.Ar command :
+.Bl -tag -width "NOTIFY_MESSAGE" -compact
 .It Ev NOTIFY_CHANNEL
-The channel in which the message was sent.
+The name of the channel
+in which the message was sent.
 Unset if the message was private.
 .It Ev NOTIFY_HOST
 The hostname of the user who sent the message.
