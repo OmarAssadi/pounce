@@ -72,16 +72,16 @@ and dispatch to two instances of
 .Xr pounce 1 :
 .Bd -literal -offset indent
 certbot certonly -d oftc.example.org
-certbot certonly -d freenode.example.org
+certbot certonly -d libera.example.org
 pounce -U /var/run/calico -H oftc.example.org oftc.conf
-pounce -U /var/run/calico -H freenode.example.org freenode.conf
+pounce -U /var/run/calico -H libera.example.org libera.conf
 calico -H example.org /var/run/calico
 .Ed
 .Pp
 The two instances can be connected to via
 .Li oftc.example.org:6697
 and
-.Li freenode.example.org:6697 ,
+.Li libera.example.org:6697 ,
 respectively.
 .
 .Sh SEE ALSO
@@ -118,4 +118,4 @@ Send mail to
 or join
 .Li #ascii.town
 on
-.Li chat.freenode.net .
+.Li irc.tilde.chat .

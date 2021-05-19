@@ -193,7 +193,7 @@ Blindly request the IRCv3 capabilities
 This can be used to enable hidden capabilities,
 such as
 .Sy userhost-in-names
-on freenode.
+on some networks.
 .
 .It Fl S Ar host , Cm bind = Ar host
 Bind to source address
@@ -628,14 +628,14 @@ sudo chmod g+r /etc/letsencrypt/live/irc.example.org/privkey.pem
 Start
 .Nm :
 .Bd -literal -offset indent
-pounce -H irc.example.org -h chat.freenode.net -j '#ascii.town'
+pounce -H irc.example.org -h irc.tilde.chat -j '#ascii.town'
 .Ed
 .
 .Pp
 Equivalent configuration file:
 .Bd -literal -offset indent
 local-host = irc.example.org
-host = chat.freenode.net
+host = irc.tilde.chat
 join = #ascii.town
 .Ed
 .
@@ -797,7 +797,7 @@ Send mail to
 or join
 .Li #ascii.town
 on
-.Li chat.freenode.net .
+.Li irc.tilde.chat .
 .
 .Pp
 A client will sometimes receive its own message,
