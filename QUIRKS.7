@@ -1,0 +1,56 @@
+.Dd May 25, 2021
+.Dt QUIRKS 7
+.Os "Causal Agency"
+.
+.Sh NAME
+.Nm Quirks
+.Nd IRC networks and clients
+.
+.Sh DESCRIPTION
+This file documents the quirks
+of connecting
+.Xr pounce 1
+with particular IRC networks and clients.
+.
+.Ss Networks
+.Bl -tag -width Ds
+.It EFnet
+EFnet uses port 9999 for TLS
+and uses self-signed certificates.
+.
+.It EsperNet
+EsperNet supports SASL,
+but not SASL EXTERNAL.
+Either the
+.Cm sasl-plain
+option can be used,
+or the
+.Cm client-cert
+option without the
+.Cm sasl-external
+option.
+.
+.It OFTC
+OFTC does not support SASL,
+but does support CertFP.
+The
+.Cm client-cert
+option can be used without the
+.Cm sasl-external
+option.
+.El
+.
+.Ss Clients
+.Bl -tag -width Ds
+.It Palaver (iOS)
+Palaver sets its username
+to the same as its nickname.
+The default nick of
+.Dq Palaver
+therefore works well.
+.
+.It Revolution (Android)
+Revolution won't connect properly
+if the nick it is configured with
+is not the one pounce is currently using.
+.El
