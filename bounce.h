@@ -152,17 +152,15 @@ static inline enum Cap capParse(const char *list, const char *values[CapBits]) {
 static inline const char *capList(enum Cap caps, const char *values[CapBits]) {
 	static char buf[1024];
 	buf[0] = '\0';
-	size_t len = 0;
+	char *ptr = buf, *end = &buf[sizeof(buf)];
 	for (size_t i = 0; i < ARRAY_LEN(CapNames); ++i) {
 		if (caps & (1 << i)) {
-			len += snprintf(
-				&buf[len], sizeof(buf) - len,
-				"%s%s%s%s",
-				(len ? " " : ""), CapNames[i],
-				(values && values[i] ? "=" : ""),
-				(values && values[i] ? values[i] : "")
+			ptr = seprintf(
+				ptr, end, "%s%s", (ptr > buf ? " " : ""), CapNames[i]
 			);
-			if (len >= sizeof(buf)) break;
+			if (values && values[i]) {
+				ptr = seprintf(ptr, end, "=%s", values[i]);
+			}
 		}
 	}
 	return buf;
