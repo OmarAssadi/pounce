@@ -26,6 +26,7 @@
  */
 
 #include <limits.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,6 +49,18 @@
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
 
 typedef unsigned char byte;
+
+static inline char *seprintf(char *ptr, char *end, const char *fmt, ...)
+	__attribute__((format(printf, 3, 4)));
+static inline char *seprintf(char *ptr, char *end, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	int n = vsnprintf(ptr, end - ptr, fmt, ap);
+	va_end(ap);
+	if (n < 0) return NULL;
+	if (n > end - ptr) return end;
+	return ptr + n;
+}
 
 enum { MessageCap = 8191 + 512 };
 
