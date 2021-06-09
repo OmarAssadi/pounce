@@ -284,25 +284,20 @@ static const char *synthLabel(struct Client *client) {
 static void reserialize(
 	char *buf, size_t cap, const char *origin, const struct Message *msg
 ) {
-	size_t len = 0;
+	char *ptr = buf, *end = &buf[cap];
 	if (msg->tags) {
-		len += snprintf(&buf[len], cap - len, "@%s ", msg->tags);
-		if (len >= cap) return;
+		ptr = seprintf(ptr, end, "@%s ", msg->tags);
 	}
-	if (!origin) origin = msg->origin;
-	if (origin) {
-		len += snprintf(&buf[len], cap - len, ":%s ", origin);
-		if (len >= cap) return;
+	if (origin || msg->origin) {
+		ptr = seprintf(ptr, end, ":%s ", (origin ? origin : msg->origin));
 	}
-	len += snprintf(&buf[len], cap - len, "%s", msg->cmd);
-	if (len >= cap) return;
+	ptr = seprintf(ptr, end, "%s", msg->cmd);
 	for (size_t i = 0; i < ParamCap && msg->params[i]; ++i) {
 		if (i + 1 == ParamCap || !msg->params[i + 1]) {
-			len += snprintf(&buf[len], cap - len, " :%s", msg->params[i]);
+			ptr = seprintf(ptr, end, " :%s", msg->params[i]);
 		} else {
-			len += snprintf(&buf[len], cap - len, " %s", msg->params[i]);
+			ptr = seprintf(ptr, end, " %s", msg->params[i]);
 		}
-		if (len >= cap) return;
 	}
 }
 
