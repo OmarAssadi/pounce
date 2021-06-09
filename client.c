@@ -449,34 +449,22 @@ static int wordcmp(const char *line, size_t i, const char *word) {
 		: (int)len - (int)strlen(word);
 }
 
-static size_t strlcpyn(char *dst, const char *src, size_t cap, size_t len) {
-	if (len < cap) {
-		memcpy(dst, src, len);
-		dst[len] = '\0';
-	} else {
-		memcpy(dst, src, cap - 1);
-		dst[cap - 1] = '\0';
-	}
-	return len;
-}
-
 // s/..(..)../\1/g
-static char *snip(char *dst, size_t cap, const char *src, const regex_t *regex) {
-	size_t len = 0;
+static char *
+snip(char *dst, size_t cap, const char *src, const regex_t *regex) {
+	char *ptr = dst, *end = &dst[cap];
 	regmatch_t match[2];
 	assert(regex->re_nsub);
 	for (; *src; src += match[0].rm_eo) {
 		if (regexec(regex, src, 2, match, 0)) break;
-		len += strlcpyn(&dst[len], src, cap - len, match[0].rm_so);
-		if (len >= cap) return NULL;
-		len += strlcpyn(
-			&dst[len], &src[match[1].rm_so],
-			cap - len, match[1].rm_eo - match[1].rm_so
+		ptr = seprintf(
+			ptr, end, "%.*s%.*s",
+			(int)match[0].rm_so, src,
+			(int)(match[1].rm_eo - match[1].rm_so), &src[match[1].rm_so]
 		);
-		if (len >= cap) return NULL;
 	}
-	len += snprintf(&dst[len], cap - len, "%s", src);
-	return (len < cap ? dst : NULL);
+	ptr = seprintf(ptr, end, "%s", src);
+	return (ptr == end ? NULL : dst);
 }
 
 static regex_t *compile(regex_t *regex, const char *pattern) {
