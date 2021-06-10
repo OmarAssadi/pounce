@@ -205,6 +205,7 @@ static void handleReplyMyInfo(struct Message *msg) {
 }
 
 static struct {
+	bool done;
 	char **tokens;
 	size_t cap, len;
 } support;
@@ -222,10 +223,16 @@ static void supportAdd(const char *token) {
 
 static void handleReplyISupport(struct Message *msg) {
 	require(msg, false, 1);
+	if (support.done) return;
 	for (size_t i = 1; i < ParamCap; ++i) {
 		if (!msg->params[i] || strchr(msg->params[i], ' ')) break;
 		supportAdd(msg->params[i]);
 	}
+}
+
+static void handleReplyMOTDStart(struct Message *msg) {
+	(void)msg;
+	support.done = true;
 }
 
 struct Channel {
@@ -339,6 +346,8 @@ static const struct {
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
 	{ "332", handleReplyTopic },
+	{ "375", handleReplyMOTDStart },
+	{ "422", handleReplyMOTDStart },
 	{ "433", handleErrorNicknameInUse },
 	{ "437", handleErrorNicknameInUse },
 	{ "900", handleReplyLoggedIn },
