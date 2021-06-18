@@ -1,4 +1,4 @@
-.Dd January 23, 2021
+.Dd June 18, 2021
 .Dt POUNCE 1
 .Os
 .
@@ -25,6 +25,7 @@
 .Op Fl h Ar host
 .Op Fl j Ar join
 .Op Fl k Ar client-priv
+.Op Fl m Ar mode
 .Op Fl n Ar nick
 .Op Fl p Ar port
 .Op Fl q Ar quit
@@ -306,6 +307,10 @@ with the optional comma-separated list of channel
 .It Fl k Ar path | Cm client-priv No = Ar path
 Load the TLS client private key from
 .Ar path .
+.
+.It Fl m Ar mode | Cm mode No = Ar mode
+Set the user
+.Ar mode .
 .
 .It Fl n Ar nick | Cm nick No = Ar nick
 Set nickname to

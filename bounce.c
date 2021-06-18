@@ -221,6 +221,7 @@ int main(int argc, char *argv[]) {
 	const char *user = NULL;
 	const char *real = NULL;
 
+	const char *mode = NULL;
 	const char *join = NULL;
 	const char *quit = "connection reset by purr";
 
@@ -247,6 +248,7 @@ int main(int argc, char *argv[]) {
 		{ .val = 'h', .name = "host", required_argument },
 		{ .val = 'j', .name = "join", required_argument },
 		{ .val = 'k', .name = "client-priv", required_argument },
+		{ .val = 'm', .name = "mode", required_argument },
 		{ .val = 'n', .name = "nick", required_argument },
 		{ .val = 'o', .name = "print-cert", no_argument },
 		{ .val = 'p', .name = "port", required_argument },
@@ -291,6 +293,7 @@ int main(int argc, char *argv[]) {
 			break; case 'h': host = optarg;
 			break; case 'j': join = optarg;
 			break; case 'k': clientPriv = optarg;
+			break; case 'm': mode = optarg;
 			break; case 'n': nick = optarg;
 			break; case 'o': insecure = true; printCert = true;
 			break; case 'p': port = optarg;
@@ -465,6 +468,7 @@ int main(int argc, char *argv[]) {
 
 	while (!stateReady()) serverRecv();
 	serverFormat("AWAY :%s\r\n", clientAway);
+	if (mode) serverFormat("MODE %s %s\r\n", stateNick(), mode);
 	if (join) serverFormat("JOIN %s\r\n", join);
 
 	signal(SIGINT, signalHandler);
