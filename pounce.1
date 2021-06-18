@@ -118,7 +118,7 @@ following their corresponding flags.
 The arguments are as follows:
 .
 .Bl -tag -width Ds
-.It Fl A Ar path , Cm local-ca = Ar path
+.It Fl A Ar path | Cm local-ca No = Ar path
 Require clients to authenticate
 using a TLS client certificate
 signed by the certificate authority loaded from
@@ -131,7 +131,7 @@ is also set,
 clients may instead authenticate
 with a server password.
 .
-.It Fl C Ar path , Cm local-cert = Ar path
+.It Fl C Ar path | Cm local-cert No = Ar path
 Load TLS certificate from
 .Ar path .
 The default path is the
@@ -141,12 +141,12 @@ path for the
 set by
 .Fl H .
 .
-.It Fl H Ar host , Cm local-host = Ar host
+.It Fl H Ar host | Cm local-host No = Ar host
 Bind to
 .Ar host .
 The default host is localhost.
 .
-.It Fl K Ar path , Cm local-priv = Ar path
+.It Fl K Ar path | Cm local-priv No = Ar path
 Load TLS private key from
 .Ar path .
 The default path is the
@@ -156,7 +156,7 @@ path for the
 set by
 .Fl H .
 .
-.It Fl L , Cm palaver
+.It Fl L | Cm palaver
 Advertise the
 .Sy palaverapp.com
 IRCv3 vendor-specific capability to clients.
@@ -165,7 +165,7 @@ push notifications must be provided by the
 .Xr pounce-palaver 1
 special-purpose client.
 .
-.It Fl N , Cm no-names
+.It Fl N | Cm no-names
 Do not request
 .Ql NAMES
 for each channel when a client connects.
@@ -173,12 +173,12 @@ This avoids already connected clients
 receiving unsolicited responses
 but prevents new clients from populating user lists.
 .
-.It Fl P Ar port , Cm local-port = Ar port
+.It Fl P Ar port | Cm local-port No = Ar port
 Bind to
 .Ar port .
 The default port is 6697.
 .
-.It Fl Q Ar ms , Cm queue-interval = Ar ms
+.It Fl Q Ar ms | Cm queue-interval No = Ar ms
 Set the server send queue interval in milliseconds.
 The queue is only used
 for automated messages sent by
@@ -187,7 +187,7 @@ Messages from clients
 are sent to the server immediately.
 The default interval is 200 milliseconds.
 .
-.It Fl R Ar caps , Cm blind-req = Ar caps
+.It Fl R Ar caps | Cm blind-req No = Ar caps
 Blindly request the IRCv3 capabilities
 .Ar caps .
 This can be used to enable hidden capabilities,
@@ -195,17 +195,17 @@ such as
 .Sy userhost-in-names
 on some networks.
 .
-.It Fl S Ar host , Cm bind = Ar host
+.It Fl S Ar host | Cm bind No = Ar host
 Bind to source address
 .Ar host
 when connecting to the server.
 .
-.It Fl T , Cm no-sts
+.It Fl T | Cm no-sts
 Do not advertise a
 strict transport security (STS) policy
 to clients.
 .
-.It Fl U Ar path , Cm local-path = Ar path
+.It Fl U Ar path | Cm local-path No = Ar path
 Bind to a UNIX-domain socket at
 .Ar path .
 Clients are only accepted as dispatched by
@@ -223,7 +223,7 @@ This option takes precedence over
 and
 .Fl P .
 .
-.It Fl W Ar pass , Cm local-pass = Ar pass
+.It Fl W Ar pass | Cm local-pass No = Ar pass
 Require the server password
 .Ar pass
 for clients to connect.
@@ -237,7 +237,7 @@ is also set,
 clients may instead authenticate
 using a TLS client certificate.
 .
-.It Fl a Ar user : Ns Ar pass , Cm sasl-plain = Ar user : Ns Ar pass
+.It Fl a Ar user : Ns Ar pass | Cm sasl-plain No = Ar user : Ns Ar pass
 Authenticate as
 .Ar user
 with
@@ -248,7 +248,7 @@ the account password in plaintext,
 it is recommended to use SASL EXTERNAL instead with
 .Fl e .
 .
-.It Fl c Ar path , Cm client-cert = Ar path
+.It Fl c Ar path | Cm client-cert No = Ar path
 Load the TLS client certificate from
 .Ar path .
 If the private key is in a separate file,
@@ -260,7 +260,7 @@ authenticate using SASL EXTERNAL.
 Certificates can be generated with
 .Fl g .
 .
-.It Fl e , Cm sasl-external
+.It Fl e | Cm sasl-external
 Authenticate using SASL EXTERNAL,
 also known as CertFP.
 The TLS client certificate is loaded with
@@ -268,7 +268,7 @@ The TLS client certificate is loaded with
 See
 .Sx Configuring CertFP .
 .
-.It Fl f Ar path , Cm save = Ar path
+.It Fl f Ar path | Cm save No = Ar path
 Save and load the contents of the buffer from
 .Ar path
 in
@@ -293,19 +293,19 @@ by the certificate authority if
 is set,
 otherwise it is self-signed.
 .
-.It Fl h Ar host , Cm host = Ar host
+.It Fl h Ar host | Cm host No = Ar host
 Connect to
 .Ar host .
 .
-.It Fl j Ar chan , Cm join = Ar chan
+.It Fl j Ar chan | Cm join No = Ar chan
 Join the comma-separated list of
 .Ar chan .
 .
-.It Fl k Ar path , Cm client-priv = Ar path
+.It Fl k Ar path | Cm client-priv No = Ar path
 Load the TLS client private key from
 .Ar path .
 .
-.It Fl n Ar nick , Cm nick = Ar nick
+.It Fl n Ar nick | Cm nick No = Ar nick
 Set nickname to
 .Ar nick .
 The default nickname is the user's name.
@@ -315,40 +315,40 @@ Print the server certificate chain
 to standard output in PEM format
 and exit.
 .
-.It Fl p Ar port , Cm port = Ar port
+.It Fl p Ar port | Cm port No = Ar port
 Connect to
 .Ar port .
 The default port is 6697.
 .
-.It Fl q Ar mesg , Cm quit = Ar mesg
+.It Fl q Ar mesg | Cm quit No = Ar mesg
 Quit with message
 .Ar mesg
 when shutting down.
 .
-.It Fl r Ar real , Cm real = Ar real
+.It Fl r Ar real | Cm real No = Ar real
 Set realname to
 .Ar real .
 The default realname is the same as the nickname.
 .
-.It Fl s Ar size , Cm size = Ar size
+.It Fl s Ar size | Cm size No = Ar size
 Set the number of messages contained in the buffer to
 .Ar size .
 The size must be a power of two.
 The default size is 4096.
 .
-.It Fl t Ar path , Cm trust = Ar path
+.It Fl t Ar path | Cm trust No = Ar path
 Trust the certificate loaded from
 .Ar path .
 Server name verification is disabled.
 See
 .Sx Connecting to Servers with Self-signed Certificates .
 .
-.It Fl u Ar user , Cm user = Ar user
+.It Fl u Ar user | Cm user No = Ar user
 Set username to
 .Ar user .
 The default username is the same as the nickname.
 .
-.It Fl v , Cm verbose
+.It Fl v | Cm verbose
 Write IRC messages to standard error
 in the following colors:
 .Pp
@@ -369,7 +369,7 @@ from
 to clients
 .El
 .
-.It Fl w Ar pass , Cm pass = Ar pass
+.It Fl w Ar pass | Cm pass No = Ar pass
 Log in with the server password
 .Ar pass .
 .
@@ -379,7 +379,7 @@ and output a hash
 for use with
 .Fl W .
 .
-.It Fl y Ar mesg , Cm away = Ar mesg
+.It Fl y Ar mesg | Cm away No = Ar mesg
 Set away status to
 .Ar mesg
 when no clients are connected.
