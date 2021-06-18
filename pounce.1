@@ -297,9 +297,11 @@ otherwise it is self-signed.
 Connect to
 .Ar host .
 .
-.It Fl j Ar chan | Cm join No = Ar chan
+.It Fl j Ar channels Oo Ar keys Oc | Cm join No = Ar channels Op Ar keys
 Join the comma-separated list of
-.Ar chan .
+.Ar channels
+with the optional comma-separated list of channel
+.Ar keys .
 .
 .It Fl k Ar path | Cm client-priv No = Ar path
 Load the TLS client private key from
