@@ -49,6 +49,7 @@ case "$(uname)" in
 	(Darwin)
 		cflags -D__STDC_WANT_LIB_EXT1__=1
 		cflags "-D'explicit_bzero(b,l)=memset_s((b),(l),0,(l))'"
+		ldadd crypt ''
 		config libtls
 		defvar OPENSSL_BIN openssl exec_prefix /bin/openssl
 		;;
