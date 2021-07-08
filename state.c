@@ -416,11 +416,13 @@ void stateSync(struct Client *client) {
 		);
 	}
 	if (i < support.len) {
-		clientFormat(client, ":%s 005 %s", intro.origin, self.nick);
+		char buf[512], *ptr = buf, *end = &buf[sizeof(buf)];
+		ptr = seprintf(ptr, end, ":%s 005 %s", intro.origin, self.nick);
 		for (; i < support.len; ++i) {
-			clientFormat(client, " %s", support.tokens[i]);
+			ptr = seprintf(ptr, end, " %s", support.tokens[i]);
 		}
-		clientFormat(client, " :are supported by this server\r\n");
+		ptr = seprintf(ptr, end, " :are supported by this server\r\n");
+		clientSend(client, buf, ptr - buf);
 	}
 
 	clientFormat(
