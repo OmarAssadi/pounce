@@ -86,7 +86,7 @@ void clientFree(struct Client *client) {
 }
 
 void clientSend(struct Client *client, const char *ptr, size_t len) {
-	if (verbose) fprintf(stderr, "\x1B[34m%.*s\x1B[m", (int)len, ptr);
+	if (verbose) fprintf(stderr, "<- %.*s", (int)len, ptr);
 	fcntl(client->sock, F_SETFL, 0);
 	while (len) {
 		ssize_t ret = tls_write(client->tls, ptr, len);
@@ -409,9 +409,7 @@ void clientRecv(struct Client *client) {
 	for (;;) {
 		lf = memchr(line, '\n', &client->buf[client->len] - line);
 		if (!lf) break;
-		if (verbose) {
-			fprintf(stderr, "\x1B[33m%.*s\x1B[m\n", (int)(lf - line), line);
-		}
+		if (verbose) fprintf(stderr, "-> %.*s\n", (int)(lf - line), line);
 		if (client->need || intercept(line, lf - line)) {
 			lf[0] = '\0';
 			if (lf - line && lf[-1] == '\r') lf[-1] = '\0';

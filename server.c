@@ -163,7 +163,7 @@ void serverPrintCert(void) {
 }
 
 void serverSend(const char *ptr, size_t len) {
-	if (verbose) fprintf(stderr, "\x1B[31m%.*s\x1B[m", (int)len, ptr);
+	if (verbose) fprintf(stderr, "<< %.*s", (int)len, ptr);
 	while (len) {
 		ssize_t ret = tls_write(client, ptr, len);
 		if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT) continue;
@@ -239,7 +239,7 @@ void serverRecv(void) {
 		crlf = memmem(line, &buf[len] - line, "\r\n", 2);
 		if (!crlf) break;
 		crlf[0] = '\0';
-		if (verbose) fprintf(stderr, "\x1B[32m%s\x1B[m\n", line);
+		if (verbose) fprintf(stderr, ">> %s\n", line);
 		const char *ping = line;
 		if (ping[0] == '@') {
 			ping += strcspn(ping, " ");
