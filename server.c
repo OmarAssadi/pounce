@@ -146,7 +146,9 @@ int serverConnect(const char *bindHost, const char *host, const char *port) {
 	error = tls_connect_socket(client, sock, host);
 	if (error) errx(EX_PROTOCOL, "tls_connect: %s", tls_error(client));
 
-	error = tls_handshake(client);
+	do {
+		error = tls_handshake(client);
+	} while (error == TLS_WANT_POLLIN || error == TLS_WANT_POLLOUT);
 	if (error) errx(EX_PROTOCOL, "tls_handshake: %s", tls_error(client));
 
 	return sock;
