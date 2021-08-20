@@ -41,12 +41,13 @@
 #include "bounce.h"
 
 static struct tls *client;
+static struct tls_config *config;
 
 void serverConfig(
 	bool insecure, const char *trust, const char *cert, const char *priv
 ) {
 	int error = 0;
-	struct tls_config *config = tls_config_new();
+	config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
 	if (insecure) {
@@ -89,7 +90,6 @@ void serverConfig(
 
 	error = tls_configure(client, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(client));
-	tls_config_free(config);
 }
 
 int serverConnect(const char *bindHost, const char *host, const char *port) {
@@ -150,6 +150,7 @@ int serverConnect(const char *bindHost, const char *host, const char *port) {
 		error = tls_handshake(client);
 	} while (error == TLS_WANT_POLLIN || error == TLS_WANT_POLLOUT);
 	if (error) errx(EX_PROTOCOL, "tls_handshake: %s", tls_error(client));
+	tls_config_clear_keys(config);
 
 	return sock;
 }
