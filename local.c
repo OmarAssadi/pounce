@@ -91,6 +91,7 @@ void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require) {
 	if (error) {
 		errx(EX_CONFIG, "tls_config_set_key_mem: %s", tls_config_error(config));
 	}
+	explicit_bzero(buf, len);
 	free(buf);
 
 	if (ca) {
