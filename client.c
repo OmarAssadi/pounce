@@ -76,7 +76,7 @@ static void clientHandshake(struct Client *client) {
 
 void clientFree(struct Client *client) {
 	if (!client->need) {
-		if (!(client->caps & CapPassive) && !--active) {
+		if (!(client->caps & CapPassive) && !--active && !stateAway) {
 			serverEnqueue("AWAY :%s\r\n", clientAway);
 		}
 	}

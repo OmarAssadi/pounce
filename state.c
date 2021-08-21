@@ -38,6 +38,7 @@
 
 bool stateNoNames;
 enum Cap stateCaps;
+bool stateAway;
 
 typedef void Handler(struct Message *msg);
 
@@ -331,6 +332,16 @@ static void handleReplyTopic(struct Message *msg) {
 	chanTopic(msg->params[1], msg->params[2]);
 }
 
+static void handleReplyUnaway(struct Message *msg) {
+	(void)msg;
+	stateAway = false;
+}
+
+static void handleReplyNowAway(struct Message *msg) {
+	(void)msg;
+	stateAway = true;
+}
+
 static void handleError(struct Message *msg) {
 	require(msg, false, 1);
 	errx(EX_UNAVAILABLE, "%s", msg->params[0]);
@@ -345,6 +356,8 @@ static const struct {
 	{ "003", handleReplyCreated },
 	{ "004", handleReplyMyInfo },
 	{ "005", handleReplyISupport },
+	{ "305", handleReplyUnaway },
+	{ "306", handleReplyNowAway },
 	{ "332", handleReplyTopic },
 	{ "375", handleReplyMOTDStart },
 	{ "422", handleReplyMOTDStart },
