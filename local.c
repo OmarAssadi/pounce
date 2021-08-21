@@ -71,8 +71,7 @@ static byte *readFile(size_t *len, FILE *file) {
 }
 
 void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require) {
-	tls_free(server);
-	server = tls_server();
+	if (!server) server = tls_server();
 	if (!server) errx(EX_SOFTWARE, "tls_server");
 
 	struct tls_config *config = tls_config_new();
