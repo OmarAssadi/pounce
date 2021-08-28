@@ -53,7 +53,7 @@ void ringAlloc(size_t len) {
 	ring.len = len;
 }
 
-size_t producer;
+static size_t producer;
 
 void ringProduce(const char *line) {
 	size_t i = producer++ & (ring.len - 1);
