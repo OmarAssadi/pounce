@@ -558,7 +558,7 @@ static const char *filterUserhostInNames(const char *line) {
 	);
 }
 
-static Filter *Filters[] = {
+static Filter *Filters[CapBits] = {
 	[CapAccountNotifyBit] = filterAccountNotify,
 	[CapAwayNotifyBit] = filterAwayNotify,
 	[CapBatchBit] = filterBatch,
