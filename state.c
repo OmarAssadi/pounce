@@ -397,14 +397,19 @@ void stateSync(struct Client *client) {
 	);
 
 	clientFormat(
-		client,
-		":%s 001 %s :%s\r\n"
-		":%s 002 %s :%s\r\n"
-		":%s 003 %s :%s\r\n"
-		":%s 004 %s %s %s %s %s%s%s\r\n",
-		intro.origin, self.nick, intro.welcome,
-		intro.origin, self.nick, intro.yourHost,
-		intro.origin, self.nick, intro.created,
+		client, ":%s 001 %s :%s\r\n",
+		intro.origin, self.nick, intro.welcome
+	);
+	clientFormat(
+		client, ":%s 002 %s :%s\r\n",
+		intro.origin, self.nick, intro.yourHost
+	);
+	clientFormat(
+		client, ":%s 003 %s :%s\r\n",
+		intro.origin, self.nick, intro.created
+	);
+	clientFormat(
+		client, ":%s 004 %s %s %s %s %s%s%s\r\n",
 		intro.origin, self.nick,
 		intro.myInfo[0], intro.myInfo[1], intro.myInfo[2], intro.myInfo[3],
 		(intro.myInfo[4] ? " " : ""), (intro.myInfo[4] ? intro.myInfo[4] : "")
