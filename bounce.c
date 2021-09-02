@@ -51,11 +51,6 @@
 #include <sys/capsicum.h>
 #endif
 
-// For getentropy(2):
-#ifdef __APPLE__
-#include <sys/random.h>
-#endif
-
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
@@ -587,12 +582,13 @@ static void hashPass(void) {
 #else
 static void hashPass(void) {
 	byte rand[12];
-	int error = getentropy(rand, sizeof(rand));
-	if (error) err(EX_OSERR, "getentropy");
-
+	FILE *file = fopen("/dev/urandom", "r");
+	if (!file) err(EX_OSFILE, "/dev/urandom");
+	size_t n = fread(rand, sizeof(rand), 1, file);
+	if (!n) err(EX_IOERR, "/dev/urandom");
+	fclose(file);
 	char salt[3 + BASE64_SIZE(sizeof(rand))] = "$6$";
 	base64(&salt[3], rand, sizeof(rand));
-
 	char *pass = getpass("Password: ");
 	printf("%s\n", crypt(pass, salt));
 }
