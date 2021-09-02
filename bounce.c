@@ -341,6 +341,17 @@ int main(int argc, char *argv[]) {
 		errx(EX_CONFIG, "password must be hashed with -x");
 	}
 
+	if (printCert) {
+#ifdef __OpenBSD__
+		error = pledge("stdio inet dns", NULL);
+		if (error) err(EX_OSERR, "pledge");
+#endif
+		serverConfig(true, NULL, NULL, NULL);
+		serverConnect(serverBindHost, host, port);
+		serverPrintCert();
+		return EX_OK;
+	}
+
 #ifdef __OpenBSD__
 	unveilConfig(certPath);
 	unveilConfig(privPath);
@@ -357,13 +368,6 @@ int main(int argc, char *argv[]) {
 	error = pledge("stdio rpath wpath cpath flock inet dns unix recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif
-
-	if (printCert) {
-		serverConfig(true, NULL, NULL, NULL);
-		serverConnect(serverBindHost, host, port);
-		serverPrintCert();
-		return EX_OK;
-	}
 
 	// Either exit with cleanup or ignore signals until entering the main loop.
 	signal(SIGINT, justExit);
