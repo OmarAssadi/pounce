@@ -577,9 +577,11 @@ int main(int argc, char *argv[]) {
 
 #ifdef __OpenBSD__
 static void hashPass(void) {
+	int error = pledge("stdio tty", NULL);
+	if (error) err(EX_OSERR, "pledge");
 	char hash[_PASSWORD_LEN];
 	char *pass = getpass("Password: ");
-	int error = crypt_newhash(pass, "bcrypt,a", hash, sizeof(hash));
+	error = crypt_newhash(pass, "bcrypt,a", hash, sizeof(hash));
 	if (error) err(EX_OSERR, "crypt_newhash");
 	printf("%s\n", hash);
 }
