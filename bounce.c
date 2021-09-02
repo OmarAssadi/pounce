@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
 			break; case 'k': clientPriv = optarg;
 			break; case 'm': mode = optarg;
 			break; case 'n': nick = optarg;
-			break; case 'o': insecure = true; printCert = true;
+			break; case 'o': printCert = true;
 			break; case 'p': port = optarg;
 			break; case 'q': quit = optarg;
 			break; case 'r': real = optarg;
@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	if (printCert) {
-		serverConfig(insecure, trust, clientCert, clientPriv);
+		serverConfig(true, NULL, NULL, NULL);
 		serverConnect(serverBindHost, host, port);
 		serverPrintCert();
 		return EX_OK;
