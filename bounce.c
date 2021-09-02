@@ -624,8 +624,14 @@ static void genCert(const char *path, const char *ca) {
 	int out = open(path, O_WRONLY | O_APPEND | O_CREAT, 0600);
 	if (out < 0) err(EX_CANTCREAT, "%s", path);
 
+	int error;
+#ifdef __OpenBSD__
+	error = pledge("stdio proc exec", NULL);
+	if (error) err(EX_OSERR, "pledge");
+#endif
+
 	int rw[2];
-	int error = pipe(rw);
+	error = pipe(rw);
 	if (error) err(EX_OSERR, "pipe");
 
 	pid_t pid = fork();
