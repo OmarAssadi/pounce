@@ -198,6 +198,7 @@ void serverFormat(const char *format, ...)
 void serverEnqueue(const char *format, ...)
 	__attribute__((format(printf, 1, 2)));
 void serverDequeue(void);
+void serverClose(void);
 
 enum Need {
 	BIT(NeedHandshake),

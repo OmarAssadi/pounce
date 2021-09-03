@@ -349,6 +349,7 @@ int main(int argc, char *argv[]) {
 		serverConfig(true, NULL, NULL, NULL);
 		serverConnect(serverBindHost, host, port);
 		serverPrintCert();
+		serverClose();
 		return EX_OK;
 	}
 
@@ -564,6 +565,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	serverFormat("QUIT :%s\r\n", quit);
+	serverClose();
 	for (size_t i = clientIndex; i < event.len; ++i) {
 		struct Client *client = event.clients[i];
 		if (!client->need) {

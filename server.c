@@ -155,6 +155,11 @@ int serverConnect(const char *bindHost, const char *host, const char *port) {
 	return sock;
 }
 
+void serverClose(void) {
+	tls_close(client);
+	tls_free(client);
+}
+
 void serverPrintCert(void) {
 	size_t len;
 	const byte *pem = tls_peer_cert_chain_pem(client, &len);
