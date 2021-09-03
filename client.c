@@ -423,11 +423,6 @@ void clientRecv(struct Client *client) {
 	memmove(client->buf, line, client->len);
 }
 
-size_t clientDiff(const struct Client *client) {
-	if (client->need) return 0;
-	return ringDiff(client->consumer);
-}
-
 static int wordcmp(const char *line, size_t i, const char *word) {
 	if (line[0] == '@') {
 		line += strcspn(line, " ");

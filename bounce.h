@@ -227,7 +227,6 @@ void clientRecv(struct Client *client);
 void clientSend(struct Client *client, const char *ptr, size_t len);
 void clientFormat(struct Client *client, const char *format, ...)
 	__attribute__((format(printf, 2, 3)));
-size_t clientDiff(const struct Client *client);
 void clientConsume(struct Client *client);
 
 extern bool stateNoNames;

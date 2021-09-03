@@ -488,11 +488,12 @@ int main(int argc, char *argv[]) {
 	for (;;) {
 		enum Need needs = 0;
 		for (size_t i = clientIndex; i < event.len; ++i) {
+			struct Client *client = event.clients[i];
 			event.fds[i].events = POLLIN;
-			if (clientDiff(event.clients[i])) {
+			if (!client->need && ringDiff(client->consumer)) {
 				event.fds[i].events |= POLLOUT;
 			}
-			needs |= event.clients[i]->need;
+			needs |= client->need;
 		}
 
 		int timeout = 10000;
