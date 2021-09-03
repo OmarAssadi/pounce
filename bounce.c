@@ -567,10 +567,8 @@ int main(int argc, char *argv[]) {
 	for (size_t i = clientIndex; i < event.len; ++i) {
 		struct Client *client = event.clients[i];
 		if (!client->need) {
-			clientFormat(
-				client, ":%s QUIT :%s\r\nERROR :Disconnecting\r\n",
-				stateEcho(), quit
-			);
+			clientFormat(client, ":%s QUIT :%s\r\n", stateEcho(), quit);
+			clientFormat(client, "ERROR :Disconnecting\r\n");
 		}
 		clientFree(client);
 	}
