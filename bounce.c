@@ -156,14 +156,6 @@ static void unveilConfig(const char *path) {
 		unveilTarget(abs, "r");
 	}
 }
-
-static void unveilData(const char *path) {
-	const char *dirs = NULL;
-	for (const char *abs; NULL != (abs = dataPath(&dirs, path));) {
-		int error = unveil(abs, "rwc");
-		if (error && errno != ENOENT) err(EX_CANTCREAT, "%s", abs);
-	}
-}
 #endif /* __OpenBSD__ */
 
 static size_t parseSize(const char *str) {
@@ -367,16 +359,15 @@ int main(int argc, char *argv[]) {
 	unveilConfig(certPath);
 	unveilConfig(privPath);
 	if (caPath) unveilConfig(caPath);
-	if (trust) unveilConfig(trust);
-	if (clientCert) unveilConfig(clientCert);
-	if (clientPriv) unveilConfig(clientPriv);
-	if (savePath) unveilData(savePath);
 	if (bindPath[0]) unveilParent(bindPath, "rwc");
-
 	error = unveil(tls_default_ca_cert_file(), "r");
 	if (error) err(EX_OSFILE, "%s", tls_default_ca_cert_file());
 
-	error = pledge("stdio rpath wpath cpath flock inet dns unix recvfd", NULL);
+	if (bindPath[0]) {
+		error = pledge("stdio rpath inet dns cpath unix recvfd", NULL);
+	} else {
+		error = pledge("stdio rpath inet dns", NULL);
+	}
 	if (error) err(EX_OSERR, "pledge");
 #endif
 
@@ -426,12 +417,11 @@ int main(int argc, char *argv[]) {
 	int server = serverConnect(serverBindHost, host, port);
 
 #ifdef __OpenBSD__
-	char promises[64];
-	snprintf(
-		promises, sizeof(promises), "stdio rpath inet%s",
-		(bindPath[0] ? " cpath unix recvfd" : "")
-	);
-	error = pledge(promises, NULL);
+	if (bindPath[0]) {
+		error = pledge("stdio rpath inet cpath unix recvfd", NULL);
+	} else {
+		error = pledge("stdio rpath inet", NULL);
+	}
 	if (error) err(EX_OSERR, "pledge");
 #endif
 
