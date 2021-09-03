@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef __OpenBSD__
 	if (bindPath[0]) {
-		error = pledge("stdio rpath inet cpath unix recvfd", NULL);
+		error = pledge("stdio rpath cpath unix recvfd", NULL);
 	} else {
 		error = pledge("stdio rpath inet", NULL);
 	}
