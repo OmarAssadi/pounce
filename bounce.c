@@ -353,6 +353,16 @@ int main(int argc, char *argv[]) {
 		return EX_OK;
 	}
 
+	// Either exit with cleanup or ignore signals until entering the main loop.
+	signal(SIGINT, justExit);
+	signal(SIGTERM, justExit);
+	signal(SIGINFO, SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
+
+	ringAlloc(ringSize);
+	if (savePath) saveLoad(savePath);
+	serverConfig(insecure, trust, clientCert, clientPriv);
+
 #ifdef __OpenBSD__
 	unveilConfig(certPath);
 	unveilConfig(privPath);
@@ -369,15 +379,6 @@ int main(int argc, char *argv[]) {
 	error = pledge("stdio rpath wpath cpath flock inet dns unix recvfd", NULL);
 	if (error) err(EX_OSERR, "pledge");
 #endif
-
-	// Either exit with cleanup or ignore signals until entering the main loop.
-	signal(SIGINT, justExit);
-	signal(SIGTERM, justExit);
-	signal(SIGINFO, SIG_IGN);
-	signal(SIGUSR1, SIG_IGN);
-
-	ringAlloc(ringSize);
-	if (savePath) saveLoad(savePath);
 
 	struct Cert localCA = { -1, -1, "" };
 	if (caPath) {
@@ -422,8 +423,6 @@ int main(int argc, char *argv[]) {
 	size_t binds = bindPath[0]
 		? localUnix(bind, ARRAY_LEN(bind), bindPath)
 		: localBind(bind, ARRAY_LEN(bind), bindHost, bindPort);
-
-	serverConfig(insecure, trust, clientCert, clientPriv);
 	int server = serverConnect(serverBindHost, host, port);
 
 #ifdef __OpenBSD__
