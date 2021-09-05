@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 			break; default:  return EX_USAGE;
 		}
 	}
-	if (blindReq & CapUnsupported) errx(EX_CONFIG, "unsupported capability");
+	if (blindReq & CapUnsupported) errx(EX_USAGE, "unsupported capability");
 	if (genPath) genCert(genPath, caPath);
 
 	if (bindPath[0]) {
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
 	if (!real) real = nick;
 	if (!clientAway) clientAway = "pounced :3";
 	if (clientPass && clientPass[0] != '$') {
-		errx(EX_CONFIG, "password must be hashed with -x");
+		errx(EX_USAGE, "password must be hashed with -x");
 	}
 
 	if (printCert) {

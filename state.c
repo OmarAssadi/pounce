@@ -63,10 +63,10 @@ void stateLogin(
 	if (plain) {
 		byte buf[AuthLen] = {0};
 		size_t len = 1 + strlen(plain);
-		if (len > sizeof(buf)) errx(EX_CONFIG, "SASL PLAIN too long");
+		if (len > sizeof(buf)) errx(EX_USAGE, "SASL PLAIN too long");
 		memcpy(&buf[1], plain, len - 1);
 		byte *sep = memchr(buf, ':', len);
-		if (!sep) errx(EX_CONFIG, "SASL PLAIN missing colon");
+		if (!sep) errx(EX_USAGE, "SASL PLAIN missing colon");
 		*sep = 0;
 		base64(plainBase64, buf, len);
 		explicit_bzero(buf, len);

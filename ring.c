@@ -44,7 +44,7 @@ static struct {
 
 void ringAlloc(size_t len) {
 	if (len & (len - 1)) {
-		errx(EX_CONFIG, "ring length must be power of two: %zu", len);
+		errx(EX_USAGE, "ring length must be power of two: %zu", len);
 	}
 	ring.lines = calloc(len, sizeof(*ring.lines));
 	if (!ring.lines) err(EX_OSERR, "calloc");
