@@ -59,10 +59,17 @@ is a multi-client, TLS-only IRC bouncer.
 It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
 receiving messages that were missed upon reconnection.
+Clients must uniquely identify themselves to
+.Nm
+by their IRC username
+(not nickname).
 The IRCv3
 .Sy server-time
 extension is used to indicate
 when messages were originally received.
+See
+.Sx Client Configuration
+for details.
 .
 .Pp
 One instance of
@@ -72,7 +79,7 @@ Instances of
 .Nm
 must either use different local ports with
 .Fl P
-or different local hosts with
+or different local host names with
 .Fl H
 and
 .Fl U
@@ -81,26 +88,27 @@ to be dispatched from the same port by
 .
 .Pp
 TLS certificates can be automatically loaded from
-.Pa /usr/local/etc/letsencrypt
+.Pa /etc/letsencrypt
 (or equivalent)
 based on the local host set by
 .Fl H .
 These certificates can be obtained using
 .Xr certbot 8 .
-.
-.Pp
-Clients must uniquely identify themselves to
-.Nm
-by their IRC username.
-See
-.Sx Client Configuration
-for details.
+Certificates obtained through other methods
+must be loaded with
+.Fl C
+and
+.Fl K .
 .
 .Pp
 Options can be loaded from
 files listed on the command line.
 Files are searched for in
 .Pa $XDG_CONFIG_DIRS/pounce
+.Po
+usually
+.Pa ~/.config/pounce
+.Pc
 unless the path starts with
 .Ql / ,
 .Ql \&./
@@ -108,6 +116,11 @@ or
 .Ql \&../ .
 Certificate and private key paths
 are searched for in the same manner.
+Files and flags
+listed later on the command line
+take precedence over those listed earlier.
+.
+.Pp
 Each option is placed on a line,
 and lines beginning with
 .Ql #
@@ -115,14 +128,13 @@ are ignored.
 The options are listed below
 following their corresponding flags.
 .
-.Pp
-The arguments are as follows:
-.
 .Bl -tag -width Ds
 .It Fl A Ar path | Cm local-ca No = Ar path
 Require clients to authenticate
 using a TLS client certificate
-signed by the certificate authority loaded from
+either contained in
+or signed by a certificate in
+the file loaded from
 .Ar path .
 See
 .Sx Generating Client Certificates .
@@ -181,16 +193,19 @@ The default port is 6697.
 .
 .It Fl Q Ar ms | Cm queue-interval No = Ar ms
 Set the server send queue interval in milliseconds.
-The queue is only used
-for automated messages sent by
-.Nm .
+The queue is used
+to send automated messages from
+.Nm
+to the server.
 Messages from clients
-are sent to the server immediately.
+are sent to the server directly.
 The default interval is 200 milliseconds.
 .
 .It Fl R Ar caps | Cm blind-req No = Ar caps
 Blindly request the IRCv3 capabilities
-.Ar caps .
+.Ar caps ,
+which must be supported by
+.Nm .
 This can be used to enable hidden capabilities,
 such as
 .Sy userhost-in-names
@@ -431,7 +446,7 @@ If both are used,
 clients may authenticate with either method.
 .
 .Pp
-Clients must register with unique usernames,
+Clients must register with unique usernames (not nicknames),
 for example the name of the client software
 or location from which it is connecting.
 New clients with the same username
@@ -486,8 +501,10 @@ pounce -g client2.pem
 .It
 Concatenate the certificate public keys into a CA file:
 .Bd -literal -offset indent
-openssl x509 -subject -in client1.pem >> ~/.config/pounce/auth.pem
-openssl x509 -subject -in client2.pem >> ~/.config/pounce/auth.pem
+openssl x509 -subject -in client1.pem \e
+	>> ~/.config/pounce/auth.pem
+openssl x509 -subject -in client2.pem \e
+	>> ~/.config/pounce/auth.pem
 .Ed
 .It
 Configure
