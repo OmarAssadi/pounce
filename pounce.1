@@ -666,6 +666,39 @@ host = irc.tilde.chat
 join = #ascii.town
 .Ed
 .
+.Sh DIAGNOSTICS
+Upon receiving the
+.Dv SIGINFO
+signal,
+.Nm
+prints the current producer position
+and the positions of each consumer
+identified by username.
+Following each consumer position
+is the number by which it trails the producer.
+On systems lacking
+.Dv SIGINFO ,
+.Dv SIGUSR2
+is used.
+.
+.Pp
+If a client reconnects
+after having missed more messages
+than the size of the buffer,
+.Nm
+will print a warning:
+.Bd -ragged -offset indent
+consumer
+.Em name
+dropped
+.Em n
+messages
+.Ed
+.Pp
+The size of the buffer
+can be adjusted with
+.Fl s .
+.
 .Sh SEE ALSO
 .Xr calico 1
 .
