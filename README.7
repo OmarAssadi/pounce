@@ -1,4 +1,4 @@
-.Dd May 27, 2021
+.Dd September  6, 2021
 .Dt README 7
 .Os "Causal Agency"
 .
@@ -9,13 +9,33 @@
 .Sh DESCRIPTION
 .Xr pounce 1
 is a multi-client, TLS-only IRC bouncer.
-It takes a simple approach,
-using a multiple-consumer ring buffer
-and the IRCv3
-.Sy server-time
-extension to communicate with clients.
+It maintains a persistent connection
+to an IRC server,
+acting as a proxy and buffer
+for a number of clients.
+When a client connects,
+any messages received
+since it last disconnected
+will be relayed to it.
+Unlike some other bouncers,
+.Nm
+uses a single buffer
+for all IRC messages,
+which acts as a queue
+from which each client
+reads messages independently.
 .
 .Pp
+.Nm
+speaks regular modern IRC
+to both servers and clients,
+using the
+.Sy server-time
+extension to indicate
+when messages originally occurred.
+Clients identify themselves to
+.Nm
+by their IRC usernames.
 See
 .Xr QUIRKS 7
 for notes on connecting
