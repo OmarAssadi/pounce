@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
 			break; case 's': ringSize = parseSize(optarg);
 			break; case 't': trust = optarg;
 			break; case 'u': user = optarg;
-			break; case 'v': verbose = true;
+			break; case 'v': verbose = true; setlinebuf(stdout);
 			break; case 'w': pass = optarg;
 			break; case 'x': hashPass(); return EX_OK;
 			break; case 'y': clientAway = optarg;

@@ -167,6 +167,13 @@ static inline const char *capList(enum Cap caps, const char *values[CapBits]) {
 }
 
 extern bool verbose;
+static inline void
+verboseLog(const char *prefix, const char *line, size_t len) {
+	if (!verbose) return;
+	if (len && line[len - 1] == '\n') len--;
+	if (len && line[len - 1] == '\r') len--;
+	printf("%s %.*s\n", prefix, (int)len, line);
+}
 
 void ringAlloc(size_t len);
 void ringProduce(const char *line);
