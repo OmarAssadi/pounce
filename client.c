@@ -55,6 +55,7 @@ struct Client *clientAlloc(int sock, struct tls *tls) {
 	client->sock = sock;
 	client->tls = tls;
 	client->time = time(NULL);
+	client->idle = client->time;
 	client->need = NeedHandshake | NeedNick | NeedUser;
 	if (clientPass) client->need |= NeedPass;
 	return client;
@@ -100,6 +101,7 @@ void clientSend(struct Client *client, const char *ptr, size_t len) {
 		len -= ret;
 	}
 	fcntl(client->sock, F_SETFL, O_NONBLOCK);
+	client->idle = time(NULL);
 }
 
 void clientFormat(struct Client *client, const char *format, ...) {
@@ -421,6 +423,7 @@ void clientRecv(struct Client *client) {
 	}
 	client->len -= line - client->buf;
 	memmove(client->buf, line, client->len);
+	client->idle = time(NULL);
 }
 
 static int wordcmp(const char *line, size_t i, const char *word) {

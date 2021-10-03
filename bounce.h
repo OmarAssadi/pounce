@@ -219,6 +219,7 @@ struct Client {
 	int sock;
 	struct tls *tls;
 	time_t time;
+	time_t idle;
 	enum Need need;
 	enum Cap caps;
 	size_t consumer;
