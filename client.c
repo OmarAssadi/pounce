@@ -340,6 +340,11 @@ static void handlePalaver(struct Client *client, struct Message *msg) {
 	clientProduce(client, buf);
 }
 
+static void handlePong(struct Client *client, struct Message *msg) {
+	(void)client;
+	(void)msg;
+}
+
 static const struct {
 	bool intercept;
 	bool need;
@@ -352,6 +357,7 @@ static const struct {
 	{ false, false, "USER", handleUser },
 	{ true, false, "CAP", handleCap },
 	{ true, false, "PALAVER", handlePalaver },
+	{ true, false, "PONG", handlePong },
 	{ true, true, "NOTICE", handlePrivmsg },
 	{ true, true, "PRIVMSG", handlePrivmsg },
 	{ true, true, "QUIT", handleQuit },
