@@ -475,19 +475,24 @@ int main(int argc, char *argv[]) {
 	eventAdd(server, NULL);
 	size_t clientIndex = event.len;
 
+	enum {
+		NeedTime = 10,
+		IdleTime = 15 * 60,
+	};
 	for (;;) {
 		enum Need needs = 0;
+		time_t now = time(NULL);
 		for (size_t i = clientIndex; i < event.len; ++i) {
 			struct Client *client = event.clients[i];
 			event.fds[i].events = POLLIN;
-			if (!client->need && ringDiff(client->consumer)) {
+			needs |= client->need;
+			if (client->need) continue;
+			if (ringDiff(client->consumer) || now - client->idle >= IdleTime) {
 				event.fds[i].events |= POLLOUT;
 			}
-			needs |= client->need;
 		}
 
-		int timeout = 10000;
-		int ready = poll(event.fds, event.len, (needs ? timeout : -1));
+		int ready = poll(event.fds, event.len, (needs ? NeedTime * 1000 : -1));
 		if (ready < 0 && errno != EINTR) err(EX_IOERR, "poll");
 
 		if (needs) {
@@ -495,7 +500,7 @@ int main(int argc, char *argv[]) {
 			for (size_t i = event.len - 1; i >= clientIndex; --i) {
 				struct Client *client = event.clients[i];
 				if (!client->need) continue;
-				if (now - client->time < timeout / 1000) continue;
+				if (now - client->time < NeedTime) continue;
 				clientFree(client);
 				eventRemove(i);
 			}
@@ -507,7 +512,12 @@ int main(int argc, char *argv[]) {
 
 			struct Client *client = event.clients[i];
 			if (client) {
-				if (revents & POLLOUT) clientConsume(client);
+				if (revents & POLLOUT) {
+					clientConsume(client);
+					if (now - client->idle >= IdleTime) {
+						clientFormat(client, "PING :%s\r\n", ORIGIN);
+					}
+				}
 				if (revents & POLLIN) clientRecv(client);
 				if (client->error || revents & (POLLHUP | POLLERR)) {
 					clientFree(client);
