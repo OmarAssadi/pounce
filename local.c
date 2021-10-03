@@ -31,7 +31,6 @@
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,10 +47,6 @@
 #endif
 
 #include "bounce.h"
-
-#ifdef __APPLE__
-#define TCP_KEEPIDLE TCP_KEEPALIVE
-#endif
 
 static struct tls *server;
 
@@ -248,17 +243,7 @@ int localAccept(struct tls **client, int bind) {
 		fd = sent;
 	}
 
-	int on = 1;
-	int error = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
-	if (error) err(EX_OSERR, "setsockopt");
-
-#ifdef TCP_KEEPIDLE
-	int idle = 15 * 60;
-	error = setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
-	if (error) err(EX_OSERR, "setsockopt");
-#endif
-
-	error = tls_accept_socket(server, client, fd);
+	int error = tls_accept_socket(server, client, fd);
 	if (error) errx(EX_SOFTWARE, "tls_accept_socket: %s", tls_error(server));
 
 	return fd;
