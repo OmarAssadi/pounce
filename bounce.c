@@ -47,10 +47,6 @@
 #include <tls.h>
 #include <unistd.h>
 
-#ifdef __FreeBSD__
-#include <sys/capsicum.h>
-#endif
-
 #ifndef SIGINFO
 #define SIGINFO SIGUSR2
 #endif
@@ -120,13 +116,6 @@ static void saveLoad(const char *path) {
 
 	atexit(saveSave);
 }
-
-#ifdef __FreeBSD__
-static void capLimit(int fd, const cap_rights_t *rights) {
-	int error = cap_rights_limit(fd, rights);
-	if (error) err(EX_OSERR, "cap_rights_limit");
-}
-#endif
 
 #ifdef __OpenBSD__
 static void unveilParent(const char *path, const char *mode) {
@@ -417,32 +406,6 @@ int main(int argc, char *argv[]) {
 		error = pledge("stdio rpath inet", NULL);
 	}
 	if (error) err(EX_OSERR, "pledge");
-#endif
-
-#ifdef __FreeBSD__
-	error = cap_enter();
-	if (error) err(EX_OSERR, "cap_enter");
-
-	cap_rights_t saveRights, fileRights, sockRights, bindRights;
-	cap_rights_init(&saveRights, CAP_WRITE);
-	cap_rights_init(&fileRights, CAP_FCNTL, CAP_FSTAT, CAP_LOOKUP, CAP_PREAD);
-	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
-	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
-	cap_rights_merge(&bindRights, &sockRights);
-
-	if (saveFile) capLimit(fileno(saveFile), &saveRights);
-	capLimit(cert.parent, &fileRights);
-	capLimit(cert.target, &fileRights);
-	capLimit(priv.parent, &fileRights);
-	capLimit(priv.target, &fileRights);
-	if (caPath) {
-		capLimit(localCA.parent, &fileRights);
-		capLimit(localCA.target, &fileRights);
-	}
-	for (size_t i = 0; i < binds; ++i) {
-		capLimit(bind[i], &bindRights);
-	}
-	capLimit(server, &sockRights);
 #endif
 
 	stateLogin(pass, blindReq, plain, nick, user, real);

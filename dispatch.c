@@ -41,10 +41,6 @@
 #include <sysexits.h>
 #include <unistd.h>
 
-#ifdef __FreeBSD__
-#include <sys/capsicum.h>
-#endif
-
 static struct {
 	uint8_t buf[4096];
 	uint8_t *ptr;
@@ -169,10 +165,7 @@ int main(int argc, char *argv[]) {
 	if (error) err(EX_OSERR, "pledge");
 #endif
 
-	int dir = open(path, O_DIRECTORY);
-	if (dir < 0) err(EX_NOINPUT, "%s", path);
-
-	error = fchdir(dir);
+	error = chdir(path);
 	if (error) err(EX_NOINPUT, "%s", path);
 
 	enum { Cap = 1024 };
@@ -211,25 +204,6 @@ int main(int argc, char *argv[]) {
 	}
 	if (!binds) errx(EX_UNAVAILABLE, "could not bind any sockets");
 	freeaddrinfo(head);
-
-#ifdef __FreeBSD__
-	error = cap_enter();
-	if (error) err(EX_OSERR, "cap_enter");
-
-	cap_rights_t dirRights, sockRights, unixRights, bindRights;
-	cap_rights_init(&dirRights, CAP_CONNECTAT);
-	cap_rights_init(&sockRights, CAP_EVENT, CAP_RECV, CAP_SEND, CAP_SETSOCKOPT);
-	cap_rights_init(&unixRights, CAP_CONNECT, CAP_SEND);
-	cap_rights_init(&bindRights, CAP_LISTEN, CAP_ACCEPT);
-	cap_rights_merge(&bindRights, &sockRights);
-
-	error = cap_rights_limit(dir, &dirRights);
-	if (error) err(EX_OSERR, "cap_rights_limit");
-	for (size_t i = 0; i < binds; ++i) {
-		error = cap_rights_limit(fds[i].fd, &bindRights);
-		if (error) err(EX_OSERR, "cap_rights_limit");
-	}
-#endif
 
 	for (size_t i = 0; i < binds; ++i) {
 		error = listen(fds[i].fd, -1);
@@ -290,17 +264,7 @@ int main(int argc, char *argv[]) {
 			int sock = socket(PF_UNIX, SOCK_STREAM, 0);
 			if (sock < 0) err(EX_OSERR, "socket");
 
-#ifdef __FreeBSD__
-			error = cap_rights_limit(sock, &unixRights);
-			if (error) err(EX_OSERR, "cap_rights_limit");
-
-			error = connectat(
-				dir, sock, (struct sockaddr *)&addr, SUN_LEN(&addr)
-			);
-#else
 			error = connect(sock, (struct sockaddr *)&addr, SUN_LEN(&addr));
-#endif
-
 			if (error) {
 				warn("%s", name);
 				alert(fds[i].fd);

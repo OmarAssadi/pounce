@@ -42,10 +42,6 @@
 #include <tls.h>
 #include <unistd.h>
 
-#ifdef __FreeBSD__
-#include <sys/capsicum.h>
-#endif
-
 #include "bounce.h"
 
 static struct tls *server;
@@ -199,12 +195,6 @@ size_t localUnix(int fds[], size_t cap, const char *path) {
 	unixDir = open(dir, O_DIRECTORY);
 	if (unixDir < 0) err(EX_UNAVAILABLE, "%s", dir);
 	atexit(unixUnlink);
-
-#ifdef __FreeBSD__
-	cap_rights_t rights;
-	error = cap_rights_limit(unixDir, cap_rights_init(&rights, CAP_UNLINKAT));
-	if (error) err(EX_OSERR, "cap_rights_limit");
-#endif
 
 	unix = true;
 	fds[0] = sock;
