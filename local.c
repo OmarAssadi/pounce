@@ -27,6 +27,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdbool.h>
@@ -52,24 +53,22 @@ int localConfig(
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
 	int error;
-	const char *dirs = NULL;
-	for (const char *path; NULL != (path = configPath(&dirs, cert));) {
-		error = tls_config_set_cert_file(config, path);
+	char buf[PATH_MAX];
+	for (int i = 0; configPath(buf, sizeof(buf), cert, i); ++i) {
+		error = tls_config_set_cert_file(config, buf);
 		if (!error) break;
 	}
 	if (error) goto fail;
 
-	dirs = NULL;
-	for (const char *path; NULL != (path = configPath(&dirs, priv));) {
-		error = tls_config_set_key_file(config, path);
+	for (int i = 0; configPath(buf, sizeof(buf), priv, i); ++i) {
+		error = tls_config_set_key_file(config, buf);
 		if (!error) break;
 	}
 	if (error) goto fail;
 
 	if (ca) {
-		dirs = NULL;
-		for (const char *path; NULL != (path = configPath(&dirs, ca));) {
-			error = tls_config_set_ca_file(config, path);
+		for (int i = 0; configPath(buf, sizeof(buf), ca, i); ++i) {
+			error = tls_config_set_ca_file(config, buf);
 			if (!error) break;
 		}
 		if (error) goto fail;

@@ -59,80 +59,73 @@ static const struct Base Data = {
 	.defDirs = "/usr/local/share:/usr/share",
 };
 
-static const char *
-basePath(struct Base base, const char **dirs, const char *path) {
-	static char buf[PATH_MAX];
-
-	if (*dirs) {
-		if (!**dirs) return NULL;
-		size_t len = strcspn(*dirs, ":");
-		snprintf(buf, sizeof(buf), "%.*s/" SUBDIR "/%s", (int)len, *dirs, path);
-		*dirs += len;
-		if (**dirs) *dirs += 1;
+static char *basePath(
+	struct Base base, char *buf, size_t cap, const char *path, int i
+) {
+	if (path[strspn(path, ".")] == '/') {
+		if (i > 0) return NULL;
+		snprintf(buf, cap, "%s", path);
 		return buf;
 	}
 
-	if (path[strspn(path, ".")] == '/') {
-		*dirs = "";
-		return path;
+	if (i > 0) {
+		const char *dirs = getenv(base.envDirs);
+		if (!dirs) dirs = base.defDirs;
+		for (; i > 1; --i) {
+			dirs += strcspn(dirs, ":");
+			dirs += (*dirs == ':');
+		}
+		if (!*dirs) return NULL;
+		snprintf(
+			buf, cap, "%.*s/" SUBDIR "/%s",
+			(int)strcspn(dirs, ":"), dirs, path
+		);
+		return buf;
 	}
-
-	*dirs = getenv(base.envDirs);
-	if (!*dirs) *dirs = base.defDirs;
 
 	const char *home = getenv("HOME");
 	const char *baseHome = getenv(base.envHome);
 	if (baseHome) {
-		snprintf(buf, sizeof(buf), "%s/" SUBDIR "/%s", baseHome, path);
+		snprintf(buf, cap, "%s/" SUBDIR "/%s", baseHome, path);
 	} else if (home) {
-		snprintf(
-			buf, sizeof(buf), "%s/%s/" SUBDIR "/%s",
-			home, base.defHome, path
-		);
+		snprintf(buf, cap, "%s/%s/" SUBDIR "/%s", home, base.defHome, path);
 	} else {
-		errx(EX_CONFIG, "HOME unset");
+		errx(EX_USAGE, "HOME unset");
 	}
 	return buf;
 }
 
-const char *configPath(const char **dirs, const char *path) {
-	return basePath(Config, dirs, path);
+char *configPath(char *buf, size_t cap, const char *path, int i) {
+	return basePath(Config, buf, cap, path, i);
 }
 
-const char *dataPath(const char **dirs, const char *path) {
-	return basePath(Data, dirs, path);
+char *dataPath(char *buf, size_t cap, const char *path, int i) {
+	return basePath(Data, buf, cap, path, i);
 }
 
 FILE *configOpen(const char *path, const char *mode) {
-	const char *dirs = NULL;
-	for (const char *abs; NULL != (abs = configPath(&dirs, path));) {
-		FILE *file = fopen(abs, mode);
+	char buf[PATH_MAX];
+	for (int i = 0; configPath(buf, sizeof(buf), path, i); ++i) {
+		FILE *file = fopen(buf, mode);
 		if (file) return file;
-		if (errno != ENOENT) warn("%s", abs);
+		if (errno != ENOENT) warn("%s", buf);
 	}
-	dirs = NULL;
-	warn("%s", configPath(&dirs, path));
+	warn("%s", configPath(buf, sizeof(buf), path, 0));
 	return NULL;
 }
 
-static void dataMkdir(const char *path) {
-	const char *dirs = NULL;
-	path = dataPath(&dirs, path);
-	int error = mkdir(path, S_IRWXU);
-	if (error && errno != EEXIST) warn("%s", path);
-}
-
 FILE *dataOpen(const char *path, const char *mode) {
-	const char *dirs = NULL;
-	for (const char *abs; NULL != (abs = dataPath(&dirs, path));) {
-		FILE *file = fopen(abs, mode);
+	char buf[PATH_MAX];
+	for (int i = 0; dataPath(buf, sizeof(buf), path, i); ++i) {
+		FILE *file = fopen(buf, mode);
 		if (file) return file;
-		if (errno != ENOENT) warn("%s", abs);
+		if (errno != ENOENT) warn("%s", buf);
 	}
-	if (mode[0] != 'r') dataMkdir("");
-	dirs = NULL;
-	path = dataPath(&dirs, path);
-	FILE *file = fopen(path, mode);
-	if (!file) warn("%s", path);
+	if (mode[0] != 'r') {
+		int error = mkdir(dataPath(buf, sizeof(buf), "", 0), S_IRWXU);
+		if (error && errno != EEXIST) warn("%s", buf);
+	}
+	FILE *file = fopen(dataPath(buf, sizeof(buf), path, 0), mode);
+	if (!file) warn("%s", buf);
 	return file;
 }

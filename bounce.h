@@ -249,8 +249,8 @@ void stateSync(struct Client *client);
 const char *stateNick(void);
 const char *stateEcho(void);
 
-const char *configPath(const char **dirs, const char *path);
-const char *dataPath(const char **dirs, const char *path);
+char *configPath(char *buf, size_t cap, const char *path, int i);
+char *dataPath(char *buf, size_t cap, const char *path, int i);
 FILE *configOpen(const char *path, const char *mode);
 FILE *dataOpen(const char *path, const char *mode);
 

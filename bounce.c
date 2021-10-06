@@ -139,10 +139,10 @@ static void unveilTarget(const char *path, const char *mode) {
 }
 
 static void unveilConfig(const char *path) {
-	const char *dirs = NULL;
-	for (const char *abs; NULL != (abs = configPath(&dirs, path));) {
-		unveilParent(abs, "r");
-		unveilTarget(abs, "r");
+	char buf[PATH_MAX];
+	for (int i = 0; configPath(buf, sizeof(buf), path, i); ++i) {
+		unveilParent(buf, "r");
+		unveilTarget(buf, "r");
 	}
 }
 #endif /* __OpenBSD__ */
