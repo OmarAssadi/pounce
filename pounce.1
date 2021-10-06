@@ -1,4 +1,4 @@
-.Dd October  2, 2021
+.Dd October  5, 2021
 .Dt POUNCE 1
 .Os
 .
@@ -87,20 +87,6 @@ to be dispatched from the same port by
 .Xr calico 1 .
 .
 .Pp
-TLS certificates can be automatically loaded from
-.Pa /etc/letsencrypt
-(or equivalent)
-based on the local host set by
-.Fl H .
-These certificates can be obtained using
-.Xr certbot 8 .
-Certificates obtained through other methods
-must be loaded with
-.Fl C
-and
-.Fl K .
-.
-.Pp
 Options can be loaded from
 files listed on the command line.
 Files are searched for in
@@ -147,11 +133,11 @@ with a server password.
 .It Fl C Ar path | Cm local-cert No = Ar path
 Load TLS certificate from
 .Ar path .
-The default path is the
-.Xr certbot 8
-path for the
+The default path is
+.Ar host Ns .pem ,
+where
 .Ar host
-set by
+is set by
 .Fl H .
 .
 .It Fl H Ar host | Cm local-host No = Ar host
@@ -162,11 +148,11 @@ The default host is localhost.
 .It Fl K Ar path | Cm local-priv No = Ar path
 Load TLS private key from
 .Ar path .
-The default path is the
-.Xr certbot 8
-path for the
+The default path is
+.Ar host Ns .key ,
+where
 .Ar host
-set by
+is set by
 .Fl H .
 .
 .It Fl L | Cm palaver
@@ -640,31 +626,6 @@ New save files are created in
 .It Pa ~/.local/share/pounce
 The most likely location of save files.
 .El
-.
-.Sh EXAMPLES
-Obtain a certificate
-and make its private key available to
-.Nm :
-.Bd -literal -offset indent
-sudo certbot certonly -d irc.example.org
-sudo chown :$USER /etc/letsencrypt/live/irc.example.org/privkey.pem
-sudo chmod g+r /etc/letsencrypt/live/irc.example.org/privkey.pem
-.Ed
-.
-.Pp
-Start
-.Nm :
-.Bd -literal -offset indent
-pounce -H irc.example.org -h irc.tilde.chat -j '#ascii.town'
-.Ed
-.
-.Pp
-Equivalent configuration file:
-.Bd -literal -offset indent
-local-host = irc.example.org
-host = irc.tilde.chat
-join = #ascii.town
-.Ed
 .
 .Sh DIAGNOSTICS
 Upon receiving the

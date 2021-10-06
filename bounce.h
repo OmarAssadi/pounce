@@ -34,10 +34,6 @@
 #include <sys/time.h>
 #include <tls.h>
 
-#ifndef CERTBOT_PATH
-#define CERTBOT_PATH "/etc/letsencrypt"
-#endif
-
 #ifndef OPENSSL_BIN
 #define OPENSSL_BIN "openssl"
 #endif

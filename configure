@@ -35,7 +35,6 @@ case "$(uname)" in
 	(FreeBSD)
 		config libtls
 		defstr OPENSSL_BIN /usr/bin/openssl
-		defstr CERTBOT_PATH /usr/local/etc/letsencrypt
 		;;
 	(OpenBSD)
 		ldadd crypt ''
