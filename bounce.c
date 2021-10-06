@@ -530,6 +530,7 @@ int main(int argc, char *argv[]) {
 		}
 		clientFree(client);
 	}
+	if (bindPath[0]) unlink(bindPath);
 }
 
 #ifdef __OpenBSD__

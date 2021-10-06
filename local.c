@@ -27,14 +27,11 @@
 
 #include <err.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -141,13 +138,6 @@ size_t localBind(int fds[], size_t cap, const char *host, const char *port) {
 }
 
 static bool unix;
-static int unixDir = -1;
-static char unixFile[PATH_MAX];
-
-static void unixUnlink(void) {
-	int error = unlinkat(unixDir, unixFile, 0);
-	if (error) warn("unlinkat");
-}
 
 static int unixBind(int sock, const char *path) {
 	struct sockaddr_un addr = { .sun_family = AF_UNIX };
@@ -181,20 +171,6 @@ size_t localUnix(int fds[], size_t cap, const char *path) {
 
 	int error = unixBind(sock, path);
 	if (error) err(EX_UNAVAILABLE, "%s", path);
-
-	char dir[PATH_MAX] = ".";
-	const char *base = strrchr(path, '/');
-	if (base) {
-		snprintf(dir, sizeof(dir), "%.*s", (int)(base - path), path);
-		base++;
-	} else {
-		base = path;
-	}
-	snprintf(unixFile, sizeof(unixFile), "%s", base);
-
-	unixDir = open(dir, O_DIRECTORY);
-	if (unixDir < 0) err(EX_UNAVAILABLE, "%s", dir);
-	atexit(unixUnlink);
 
 	unix = true;
 	fds[0] = sock;
