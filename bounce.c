@@ -354,44 +354,8 @@ int main(int argc, char *argv[]) {
 	if (error) err(EX_OSERR, "pledge");
 #endif
 
-	struct Cert localCA = { -1, -1, "" };
-	if (caPath) {
-		error = 0;
-		const char *dirs = NULL;
-		for (const char *path; NULL != (path = configPath(&dirs, caPath));) {
-			error = certOpen(&localCA, path);
-			if (!error) break;
-		}
-		if (error) err(EX_NOINPUT, "%s", caPath);
-	}
-
-	const char *dirs;
-	struct Cert cert;
-	struct Cert priv;
-	dirs = NULL;
-	for (const char *path; NULL != (path = configPath(&dirs, certPath));) {
-		error = certOpen(&cert, path);
-		if (!error) break;
-	}
-	if (error) err(EX_NOINPUT, "%s", certPath);
-	dirs = NULL;
-	for (const char *path; NULL != (path = configPath(&dirs, privPath));) {
-		error = certOpen(&priv, path);
-		if (!error) break;
-	}
-	if (error) err(EX_NOINPUT, "%s", privPath);
-
-	FILE *certRead = certFile(&cert);
-	if (!certRead) err(EX_NOINPUT, "%s", certPath);
-	FILE *privRead = certFile(&priv);
-	if (!privRead) err(EX_NOINPUT, "%s", privPath);
-	FILE *caRead = (caPath ? certFile(&localCA) : NULL);
-	if (caPath && !caRead) err(EX_NOINPUT, "%s", caPath);
-
-	localConfig(certRead, privRead, caRead, !clientPass);
-	fclose(certRead);
-	fclose(privRead);
-	if (caPath) fclose(caRead);
+	error = localConfig(certPath, privPath, caPath, !clientPass);
+	if (error) return EX_NOINPUT;
 
 	int bind[8];
 	size_t binds = bindPath[0]
@@ -506,17 +470,7 @@ int main(int argc, char *argv[]) {
 		}
 		if (signals[SIGUSR1]) {
 			signals[SIGUSR1] = 0;
-			certRead = certFile(&cert);
-			privRead = certFile(&priv);
-			if (caPath) caRead = certFile(&localCA);
-			if (!certRead) warn("%s", certPath);
-			if (!privRead) warn("%s", privPath);
-			if (!caRead && caPath) warn("%s", caPath);
-			if (!certRead || !privRead || (!caRead && caPath)) continue;
-			localConfig(certRead, privRead, caRead, !clientPass);
-			fclose(certRead);
-			fclose(privRead);
-			if (caPath) fclose(caRead);
+			localConfig(certPath, privPath, caPath, !clientPass);
 		}
 	}
 

@@ -183,7 +183,9 @@ void ringInfo(void);
 int ringSave(FILE *file);
 void ringLoad(FILE *file);
 
-void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require);
+int localConfig(
+	const char *cert, const char *priv, const char *ca, bool require
+);
 size_t localBind(int fds[], size_t cap, const char *host, const char *port);
 size_t localUnix(int fds[], size_t cap, const char *path);
 int localAccept(struct tls **tls, int bind);
@@ -246,14 +248,6 @@ void stateParse(char *line);
 void stateSync(struct Client *client);
 const char *stateNick(void);
 const char *stateEcho(void);
-
-struct Cert {
-	int parent;
-	int target;
-	char name[NAME_MAX];
-};
-int certOpen(struct Cert *cert, const char *path);
-FILE *certFile(const struct Cert *cert);
 
 const char *configPath(const char **dirs, const char *path);
 const char *dataPath(const char **dirs, const char *path);

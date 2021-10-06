@@ -17,7 +17,6 @@ LDLIBS.pounce = ${LDADD.crypt} ${LDADD.libtls}
 OBJS.calico += dispatch.o
 
 OBJS.pounce += bounce.o
-OBJS.pounce += cert.o
 OBJS.pounce += client.o
 OBJS.pounce += config.o
 OBJS.pounce += local.o

@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <sys/un.h>
 #include <sysexits.h>
 #include <tls.h>
@@ -43,54 +42,37 @@
 
 static struct tls *server;
 
-static byte *readFile(size_t *len, FILE *file) {
-	struct stat stat;
-	int error = fstat(fileno(file), &stat);
-	if (error) err(EX_IOERR, "fstat");
-
-	byte *buf = malloc(stat.st_size);
-	if (!buf) err(EX_OSERR, "malloc");
-
-	rewind(file);
-	*len = fread(buf, 1, stat.st_size, file);
-	if (ferror(file)) err(EX_IOERR, "fread");
-
-	return buf;
-}
-
-void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require) {
+int localConfig(
+	const char *cert, const char *priv, const char *ca, bool require
+) {
 	if (!server) server = tls_server();
 	if (!server) errx(EX_SOFTWARE, "tls_server");
 
 	struct tls_config *config = tls_config_new();
 	if (!config) errx(EX_SOFTWARE, "tls_config_new");
 
-	size_t len;
-	byte *buf = readFile(&len, cert);
-	int error = tls_config_set_cert_mem(config, buf, len);
-	if (error) {
-		errx(EX_CONFIG, "tls_config_set_cert_mem: %s", tls_config_error(config));
+	int error;
+	const char *dirs = NULL;
+	for (const char *path; NULL != (path = configPath(&dirs, cert));) {
+		error = tls_config_set_cert_file(config, path);
+		if (!error) break;
 	}
-	free(buf);
+	if (error) goto fail;
 
-	buf = readFile(&len, priv);
-	error = tls_config_set_key_mem(config, buf, len);
-	if (error) {
-		errx(EX_CONFIG, "tls_config_set_key_mem: %s", tls_config_error(config));
+	dirs = NULL;
+	for (const char *path; NULL != (path = configPath(&dirs, priv));) {
+		error = tls_config_set_key_file(config, path);
+		if (!error) break;
 	}
-	explicit_bzero(buf, len);
-	free(buf);
+	if (error) goto fail;
 
 	if (ca) {
-		buf = readFile(&len, ca);
-		error = tls_config_set_ca_mem(config, buf, len);
-		if (error) {
-			errx(
-				EX_CONFIG, "tls_config_set_ca_mem: %s",
-				tls_config_error(config)
-			);
+		dirs = NULL;
+		for (const char *path; NULL != (path = configPath(&dirs, ca));) {
+			error = tls_config_set_ca_file(config, path);
+			if (!error) break;
 		}
-		free(buf);
+		if (error) goto fail;
 		if (require) {
 			tls_config_verify_client(config);
 		} else {
@@ -101,6 +83,12 @@ void localConfig(FILE *cert, FILE *priv, FILE *ca, bool require) {
 	error = tls_configure(server, config);
 	if (error) errx(EX_SOFTWARE, "tls_configure: %s", tls_error(server));
 	tls_config_free(config);
+	return 0;
+
+fail:
+	warnx("%s", tls_config_error(config));
+	tls_config_free(config);
+	return -1;
 }
 
 size_t localBind(int fds[], size_t cap, const char *host, const char *port) {
