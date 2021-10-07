@@ -78,11 +78,11 @@ must be configured for each IRC network.
 Instances of
 .Nm
 must either use different local ports with
-.Fl P
+.Cm local-port
 or different local host names with
-.Fl H
+.Cm local-host
 and
-.Fl U
+.Cm local-path
 to be dispatched from the same port by
 .Xr calico 1 .
 .
@@ -137,7 +137,7 @@ signal is received.
 See
 .Sx Generating Client Certificates .
 If
-.Fl W
+.Cm local-pass
 is also set,
 clients may instead authenticate
 with a server password.
@@ -153,7 +153,7 @@ The default path is
 where
 .Ar host
 is set by
-.Fl H .
+.Cm local-host .
 .
 .It Fl H Ar host | Cm local-host No = Ar host
 Bind to
@@ -171,7 +171,7 @@ The default path is
 where
 .Ar host
 is set by
-.Fl H .
+.Cm local-host .
 .
 .It Fl L | Cm palaver
 Advertise the
@@ -203,12 +203,12 @@ is a directory,
 the
 .Ar host
 set by
-.Fl H
+.Cm local-host
 is appended to it.
 This option takes precedence over
-.Fl H
+.Cm local-host
 and
-.Fl P .
+.Cm local-port .
 .
 .It Fl W Ar pass | Cm local-pass No = Ar pass
 Require the server password
@@ -219,7 +219,7 @@ The
 string must be hashed using
 .Fl x .
 If
-.Fl A
+.Cm local-ca
 is also set,
 clients may instead authenticate
 using a TLS client certificate.
@@ -229,6 +229,8 @@ Save and load the contents of the buffer from
 .Ar path
 in
 .Pa $XDG_DATA_DIRS/pounce ,
+usually
+.Pa ~/.local/share/pounce ,
 or an absolute or relative path if
 .Ar path
 starts with
@@ -292,17 +294,17 @@ with
 using SASL PLAIN.
 Since this method requires
 the account password in plaintext,
-it is recommended to use SASL EXTERNAL instead with
-.Fl e .
+it is recommended to use CertFP instead with
+.Cm sasl-external .
 .
 .It Fl c Ar path | Cm client-cert No = Ar path
 Load the TLS client certificate from
 .Ar path .
 If the private key is in a separate file,
 it is loaded with
-.Fl k .
+.Cm client-priv .
 With
-.Fl e ,
+.Cm sasl-external ,
 authenticate using SASL EXTERNAL.
 Certificates can be generated with
 .Fl g .
@@ -311,7 +313,7 @@ Certificates can be generated with
 Authenticate using SASL EXTERNAL,
 also known as CertFP.
 The TLS client certificate is loaded with
-.Fl c .
+.Cm client-cert .
 See
 .Sx Configuring CertFP .
 .
@@ -372,7 +374,8 @@ Log in with the server password
 .It Fl y Ar mesg | Cm away No = Ar mesg
 Set away status to
 .Ar mesg
-when no clients are connected.
+when no clients are connected
+and no other away status has been set.
 .El
 .
 .Ss Other Options
@@ -417,22 +420,22 @@ to clients
 Prompt for a password
 and output a hash
 for use with
-.Fl W .
+.Cm local-pass .
 .El
 .
 .Ss Client Configuration
 Clients should be configured to
 connect to the host and port set by
-.Fl H
+.Cm local-host
 and
-.Fl P ,
+.Cm local-port ,
 with TLS or SSL enabled.
 If
-.Fl W
+.Cm local-pass
 is used,
 clients must send a server password.
 If
-.Fl A
+.Cm local-ca
 is used,
 clients must connect with a client certificate
 and may request SASL EXTERNAL.
