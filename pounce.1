@@ -87,6 +87,14 @@ to be dispatched from the same port by
 .Xr calico 1 .
 .
 .Pp
+Client connections are not accepted
+until successful login to the server.
+If the server connection is lost,
+the
+.Nm
+daemon exits.
+.
+.Pp
 Options can be loaded from
 files listed on the command line.
 Files are searched for in
@@ -114,6 +122,7 @@ are ignored.
 The options are listed below
 following their corresponding flags.
 .
+.Ss Local Server Options
 .Bl -tag -width Ds
 .It Fl A Ar path | Cm local-ca No = Ar path
 Require clients to authenticate
@@ -122,6 +131,9 @@ either contained in
 or signed by a certificate in
 the file loaded from
 .Ar path .
+The file is reloaded when the
+.Dv SIGUSR1
+signal is received.
 See
 .Sx Generating Client Certificates .
 If
@@ -133,6 +145,9 @@ with a server password.
 .It Fl C Ar path | Cm local-cert No = Ar path
 Load TLS certificate from
 .Ar path .
+The file is reloaded when the
+.Dv SIGUSR1
+signal is received.
 The default path is
 .Ar host Ns .pem ,
 where
@@ -148,6 +163,9 @@ The default host is localhost.
 .It Fl K Ar path | Cm local-priv No = Ar path
 Load TLS private key from
 .Ar path .
+The file is reloaded when the
+.Dv SIGUSR1
+signal is received.
 The default path is
 .Ar host Ns .key ,
 where
@@ -164,43 +182,10 @@ push notifications must be provided by the
 .Xr pounce-palaver 1
 special-purpose client.
 .
-.It Fl N | Cm no-names
-Do not request
-.Ql NAMES
-for each channel when a client connects.
-This avoids already connected clients
-receiving unsolicited responses
-but prevents new clients from populating user lists.
-.
 .It Fl P Ar port | Cm local-port No = Ar port
 Bind to
 .Ar port .
 The default port is 6697.
-.
-.It Fl Q Ar ms | Cm queue-interval No = Ar ms
-Set the server send queue interval in milliseconds.
-The queue is used
-to send automated messages from
-.Nm
-to the server.
-Messages from clients
-are sent to the server directly.
-The default interval is 200 milliseconds.
-.
-.It Fl R Ar caps | Cm blind-req No = Ar caps
-Blindly request the IRCv3 capabilities
-.Ar caps ,
-which must be supported by
-.Nm .
-This can be used to enable hidden capabilities,
-such as
-.Sy userhost-in-names
-on some networks.
-.
-.It Fl S Ar host | Cm bind No = Ar host
-Bind to source address
-.Ar host
-when connecting to the server.
 .
 .It Fl T | Cm no-sts
 Do not advertise a
@@ -239,6 +224,66 @@ is also set,
 clients may instead authenticate
 using a TLS client certificate.
 .
+.It Fl f Ar path | Cm save No = Ar path
+Save and load the contents of the buffer from
+.Ar path
+in
+.Pa $XDG_DATA_DIRS/pounce ,
+or an absolute or relative path if
+.Ar path
+starts with
+.Ql / ,
+.Ql \&./
+or
+.Ql \&../ .
+The file is truncated after loading.
+.
+.It Fl s Ar size | Cm size No = Ar size
+Set the number of messages contained in the buffer to
+.Ar size .
+This sets the maximum number
+of recent messages
+which can be relayed
+to a reconnecting client.
+The size must be a power of two.
+The default size is 4096.
+.El
+.
+.Ss Remote Server Options
+.Bl -tag -width Ds
+.It Fl N | Cm no-names
+Do not request
+.Ql NAMES
+for each channel when a client connects.
+This avoids already connected clients
+receiving unsolicited responses
+but prevents new clients from populating user lists.
+.
+.It Fl Q Ar ms | Cm queue-interval No = Ar ms
+Set the server send queue interval in milliseconds.
+The queue is used
+to send automated messages from
+.Nm
+to the server.
+Messages from clients
+are sent to the server directly.
+The default interval is 200 milliseconds.
+.
+.It Fl R Ar caps | Cm blind-req No = Ar caps
+Blindly request the IRCv3 capabilities
+.Ar caps ,
+which must be supported by
+.Nm .
+This can be used to enable hidden capabilities,
+such as
+.Sy userhost-in-names
+on some networks.
+.
+.It Fl S Ar host | Cm bind No = Ar host
+Bind to source address
+.Ar host
+when connecting to the server.
+.
 .It Fl a Ar user : Ns Ar pass | Cm sasl-plain No = Ar user : Ns Ar pass
 Authenticate as
 .Ar user
@@ -270,31 +315,6 @@ The TLS client certificate is loaded with
 See
 .Sx Configuring CertFP .
 .
-.It Fl f Ar path | Cm save No = Ar path
-Save and load the contents of the buffer from
-.Ar path
-in
-.Pa $XDG_DATA_DIRS/pounce ,
-or an absolute or relative path if
-.Ar path
-starts with
-.Ql / ,
-.Ql \&./
-or
-.Ql \&../ .
-The file is truncated after loading.
-.
-.It Fl g Ar path
-Generate a TLS client certificate using
-.Xr openssl 1
-and write it to
-.Ar path .
-The certificate is signed
-by the certificate authority if
-.Fl A
-is set,
-otherwise it is self-signed.
-.
 .It Fl h Ar host | Cm host No = Ar host
 Connect to
 .Ar host .
@@ -318,11 +338,6 @@ Set nickname to
 .Ar nick .
 The default nickname is the user's name.
 .
-.It Fl o
-Print the server certificate chain
-to standard output in PEM format
-and exit.
-.
 .It Fl p Ar port | Cm port No = Ar port
 Connect to
 .Ar port .
@@ -338,16 +353,6 @@ Set realname to
 .Ar real .
 The default realname is the same as the nickname.
 .
-.It Fl s Ar size | Cm size No = Ar size
-Set the number of messages contained in the buffer to
-.Ar size .
-This sets the maximum number
-of recent messages
-which can be relayed
-to a reconnecting client.
-The size must be a power of two.
-The default size is 4096.
-.
 .It Fl t Ar path | Cm trust No = Ar path
 Trust the certificate loaded from
 .Ar path .
@@ -359,6 +364,34 @@ See
 Set username to
 .Ar user .
 The default username is the same as the nickname.
+.
+.It Fl w Ar pass | Cm pass No = Ar pass
+Log in with the server password
+.Ar pass .
+.
+.It Fl y Ar mesg | Cm away No = Ar mesg
+Set away status to
+.Ar mesg
+when no clients are connected.
+.El
+.
+.Ss Other Options
+.Bl -tag -width Ds
+.It Fl g Ar path
+Generate a TLS client certificate using
+.Xr openssl 1
+and write it to
+.Ar path .
+The certificate is signed
+by the certificate authority if
+.Fl A
+is set,
+otherwise it is self-signed.
+.
+.It Fl o
+Print the server certificate chain
+to standard output in PEM format
+and exit.
 .
 .It Fl v | Cm verbose
 Log IRC messages to standard output:
@@ -380,41 +413,12 @@ from
 to clients
 .El
 .
-.It Fl w Ar pass | Cm pass No = Ar pass
-Log in with the server password
-.Ar pass .
-.
 .It Fl x
 Prompt for a password
 and output a hash
 for use with
 .Fl W .
-.
-.It Fl y Ar mesg | Cm away No = Ar mesg
-Set away status to
-.Ar mesg
-when no clients are connected.
 .El
-.
-.Pp
-Client connections are not accepted
-until successful login to the server.
-If the server connection is lost,
-the
-.Nm
-daemon exits.
-.
-.Pp
-Upon receiving the
-.Dv SIGUSR1
-signal,
-the certificate, private key and local CA
-will be reloaded from the paths
-specified by
-.Fl C ,
-.Fl K
-and
-.Fl A .
 .
 .Ss Client Configuration
 Clients should be configured to
