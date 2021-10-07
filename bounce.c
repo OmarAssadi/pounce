@@ -117,36 +117,6 @@ static void saveLoad(const char *path) {
 	atexit(saveSave);
 }
 
-#ifdef __OpenBSD__
-static void unveilParent(const char *path, const char *mode) {
-	char buf[PATH_MAX];
-	strlcpy(buf, path, sizeof(buf));
-	char *base = strrchr(buf, '/');
-	if (base) *base = '\0';
-	int error = unveil((base ? buf : "."), mode);
-	if (error && errno != ENOENT) err(EX_NOINPUT, "%s", path);
-}
-
-static void unveilTarget(const char *path, const char *mode) {
-	char buf[PATH_MAX];
-	strlcpy(buf, path, sizeof(buf));
-	char *base = strrchr(buf, '/');
-	base = (base ? base + 1 : buf);
-	ssize_t len = readlink(path, base, sizeof(buf) - (base - buf) - 1);
-	if (len < 0) return;
-	base[len] = '\0';
-	unveilParent(buf, mode);
-}
-
-static void unveilConfig(const char *path) {
-	char buf[PATH_MAX];
-	for (int i = 0; configPath(buf, sizeof(buf), path, i); ++i) {
-		unveilParent(buf, "r");
-		unveilTarget(buf, "r");
-	}
-}
-#endif /* __OpenBSD__ */
-
 static size_t parseSize(const char *str) {
 	char *rest;
 	size_t size = strtoull(str, &rest, 0);
@@ -339,14 +309,21 @@ int main(int argc, char *argv[]) {
 	serverConfig(insecure, trust, clientCert, clientPriv);
 
 #ifdef __OpenBSD__
-	unveilConfig(certPath);
-	unveilConfig(privPath);
-	if (caPath) unveilConfig(caPath);
-	if (bindPath[0]) unveilParent(bindPath, "rwc");
+	char buf[PATH_MAX];
+	const char *paths[] = { certPath, privPath, caPath };
+	for (size_t i = 0; i < ARRAY_LEN(paths); ++i) {
+		if (!paths[i]) continue;
+		for (int j = 0; configPath(buf, sizeof(buf), paths[i], j); ++j) {
+			error = unveil(buf, "r");
+			if (error && errno != ENOENT) err(EX_NOINPUT, "%s", buf);
+		}
+	}
 	error = unveil(tls_default_ca_cert_file(), "r");
 	if (error) err(EX_OSFILE, "%s", tls_default_ca_cert_file());
 
 	if (bindPath[0]) {
+		error = unveil(bindPath, "c");
+		if (error) err(EX_NOINPUT, "%s", bindPath);
 		error = pledge("stdio rpath inet dns cpath unix recvfd", NULL);
 	} else {
 		error = pledge("stdio rpath inet dns", NULL);
