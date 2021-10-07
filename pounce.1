@@ -54,7 +54,7 @@
 .Sh DESCRIPTION
 The
 .Nm
-daemon
+program
 is a multi-client, TLS-only IRC bouncer.
 It maintains a persistent connection to an IRC server
 while allowing clients to connect and disconnect,
@@ -92,7 +92,7 @@ until successful login to the server.
 If the server connection is lost,
 the
 .Nm
-daemon exits.
+process exits.
 .
 .Pp
 Options can be loaded from
@@ -786,7 +786,7 @@ indicate if
 capabilities MUST NOT have values.
 The
 .Nm
-daemon parses
+implementation parses
 .Ql CAP REQ
 values in the same way as
 .Ql CAP LS
@@ -808,13 +808,13 @@ One instance of
 is required for each server connection.
 The
 .Nm
-daemon must be restarted
+process must be restarted
 if the server connection is lost.
 .
 .Pp
 The
 .Nm
-daemon makes no distinction between channels.
+bouncer makes no distinction between channels.
 Elevated activity in one channel
 may push messages from a quieter channel
 out of the buffer.
