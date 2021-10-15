@@ -504,15 +504,15 @@ not to the server.
 .It
 Generate self-signed client certificates and private keys:
 .Bd -literal -offset indent
-pounce -g client1.pem
-pounce -g client2.pem
+$ pounce -g client1.pem
+$ pounce -g client2.pem
 .Ed
 .It
 Concatenate the certificate public keys into a CA file:
 .Bd -literal -offset indent
-openssl x509 -subject -in client1.pem \e
+$ openssl x509 -subject -in client1.pem \e
 	>> ~/.config/pounce/auth.pem
-openssl x509 -subject -in client2.pem \e
+$ openssl x509 -subject -in client2.pem \e
 	>> ~/.config/pounce/auth.pem
 .Ed
 .It
@@ -522,7 +522,7 @@ to verify client certificates
 against the CA file:
 .Bd -literal -offset indent
 local-ca = auth.pem
-# or: pounce -A auth.pem
+# or: $ pounce -A auth.pem
 .Ed
 .El
 .
@@ -535,21 +535,21 @@ by a generated certificate authority:
 .It
 Generate a self-signed certificate authority:
 .Bd -literal -offset indent
-pounce -g auth.pem
+$ pounce -g auth.pem
 .Ed
 .It
 Generate and sign client certificates
 using the CA:
 .Bd -literal -offset indent
-pounce -A auth.pem -g client1.pem
-pounce -A auth.pem -g client2.pem
+$ pounce -A auth.pem -g client1.pem
+$ pounce -A auth.pem -g client2.pem
 .Ed
 .It
 Since only the public key is needed
 for certificate verification,
 extract it from the CA:
 .Bd -literal -offset indent
-openssl x509 -in auth.pem -out ~/.config/pounce/auth.crt
+$ openssl x509 -in auth.pem -out ~/.config/pounce/auth.crt
 .Ed
 .It
 Configure
@@ -558,7 +558,7 @@ to verify client certificates
 against the CA:
 .Bd -literal -offset indent
 local-ca = auth.crt
-# or: pounce -A auth.crt
+# or: $ pounce -A auth.crt
 .Ed
 .El
 .
@@ -567,13 +567,13 @@ local-ca = auth.crt
 .It
 Generate a new TLS client certificate:
 .Bd -literal -offset indent
-pounce -g ~/.config/pounce/example.pem
+$ pounce -g ~/.config/pounce/example.pem
 .Ed
 .It
 Connect to the server using the certificate:
 .Bd -literal -offset indent
 client-cert = example.pem
-# or: pounce -c example.pem
+# or: $ pounce -c example.pem
 .Ed
 .It
 Identify with services or use
@@ -588,7 +588,7 @@ to require successful authentication when connecting:
 .Bd -literal -offset indent
 client-cert = example.pem
 sasl-external
-# or: pounce -e -c example.pem
+# or: $ pounce -e -c example.pem
 .Ed
 .El
 .
@@ -598,7 +598,7 @@ sasl-external
 Connect to the server
 and write its certificate to a file:
 .Bd -literal -offset indent
-pounce -o -h irc.example.org > ~/.config/pounce/example.pem
+$ pounce -o -h irc.example.org > ~/.config/pounce/example.pem
 .Ed
 .It
 Configure
@@ -606,7 +606,7 @@ Configure
 to trust the certificate:
 .Bd -literal -offset indent
 trust = example.pem
-# or: pounce -t example.pem
+# or: $ pounce -t example.pem
 .Ed
 .El
 .
