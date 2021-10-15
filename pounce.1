@@ -646,6 +646,53 @@ New save files are created in
 The most likely location of save files.
 .El
 .
+.Sh EXAMPLES
+Start
+.Nm :
+.Bd -literal -offset indent
+$ pounce -H irc.example.org -h irc.tilde.chat -j '#ascii.town'
+.Ed
+.Pp
+Write an equivalent configuration file to
+.Pa ~/.config/pounce/tilde.conf :
+.Bd -literal -offset indent
+local-host = irc.example.org
+host = irc.tilde.chat
+join = #ascii.town
+.Ed
+.Pp
+Load the configuration file:
+.Bd -literal -offset indent
+$ pounce tilde.conf
+.Ed
+.
+.Pp
+Add a certificate to
+.Xr acme-client.conf 5 :
+.Bd -literal -offset indent
+domain irc.example.org {
+	domain key "/home/user/.config/pounce/irc.example.org.key"
+	domain full chain certificate \e
+		"/home/user/.config/pounce/irc.example.org.pem"
+	sign with letsencrypt
+}
+.Ed
+.Pp
+Obtain the certificate
+and make the private key readable by
+.Nm :
+.Bd -literal -offset indent
+# acme-client irc.example.org
+# chown user /home/user/.config/pounce/irc.example.org.key
+.Ed
+.Pp
+Renew and reload the certificate with a
+.Xr cron 8
+job:
+.Bd -literal -offset indent
+~ * * * *	acme-client irc.example.org && pkill -USR1 pounce
+.Ed
+.
 .Sh DIAGNOSTICS
 Upon receiving the
 .Dv SIGINFO
