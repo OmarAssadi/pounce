@@ -70,9 +70,9 @@ UNIX-domain sockets.
 Start and dispatch to two instances of
 .Xr pounce 1 :
 .Bd -literal -offset indent
-pounce -U /var/run/calico -H oftc.example.org oftc.conf
-pounce -U /var/run/calico -H libera.example.org libera.conf
-calico -H example.org /var/run/calico
+$ pounce -U /var/run/calico -H oftc.example.org oftc.conf
+$ pounce -U /var/run/calico -H libera.example.org libera.conf
+$ calico -H example.org /var/run/calico
 .Ed
 .Pp
 The two instances can be connected to via
