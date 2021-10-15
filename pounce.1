@@ -72,6 +72,18 @@ See
 for details.
 .
 .Pp
+The local server portion of
+.Nm
+requires a TLS certificate,
+which can be obtained for example
+by an ACME client such as
+.Xr acme-client 8 .
+The private key
+must be made readable by
+the user running
+.Nm .
+.
+.Pp
 One instance of
 .Nm
 must be configured for each IRC network.
