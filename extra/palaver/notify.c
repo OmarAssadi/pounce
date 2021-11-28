@@ -693,9 +693,10 @@ int main(int argc, char *argv[]) {
 	const char *host = NULL;
 	const char *port = "6697";
 	const char *pass = NULL;
+	const char *trust = NULL;
 	const char *user = "pounce-palaver";
 
-	for (int opt; 0 < (opt = getopt(argc, argv, "!NPc:d:k:p:su:vw:"));) {
+	for (int opt; 0 < (opt = getopt(argc, argv, "!NPc:d:k:p:st:u:vw:"));) {
 		switch (opt) {
 			break; case '!': insecure = true;
 			break; case 'N': noPreview = true;
@@ -705,6 +706,7 @@ int main(int argc, char *argv[]) {
 			break; case 'k': priv = optarg;
 			break; case 'p': port = optarg;
 			break; case 's': sensitive = true;
+			break; case 't': trust = optarg;
 			break; case 'u': user = optarg;
 			break; case 'v': verbose = true;
 			break; case 'w': pass = optarg;
@@ -757,6 +759,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	int error;
+	if (trust) {
+		tls_config_insecure_noverifyname(config);
+		error = tls_config_set_ca_file(config, trust);
+		if (error) errx(EX_NOINPUT, "%s: %s", trust, tls_config_error(config));
+	}
 	if (cert) {
 		error = tls_config_set_keypair_file(config, cert, (priv ? priv : cert));
 		if (error) {

@@ -1,4 +1,4 @@
-.Dd April 30, 2021
+.Dd November 28, 2021
 .Dt POUNCE-PALAVER 1
 .Os
 .
@@ -13,6 +13,7 @@
 .Op Fl d Ar path
 .Op Fl k Ar priv
 .Op Fl p Ar port
+.Op Fl t Ar trust
 .Op Fl u Ar user
 .Op Fl w Ar pass
 .Ar host
@@ -59,6 +60,10 @@ The default port is 6697.
 .It Fl s
 Match nick and keywords case-sensitively,
 despite the specification.
+.It Fl t Ar path
+Trust the self-signed certificate loaded from
+.Ar path
+and disable server name verification.
 .It Fl u Ar user
 Set the username to
 .Ar user .
